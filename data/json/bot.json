@@ -1,0 +1,92 @@
+[
+    {
+        "AI": false,
+        "attack_proba": 0,
+        "body_color": 16777215,
+        "drops": [
+            {
+                "maxnum": 4,
+                "minnum": 2,
+                "name": "Stone",
+                "proba": 100
+            },
+            {
+                "maxnum": 2,
+                "minnum": 1,
+                "name": "Metal",
+                "proba": 50
+            },
+            {
+                "maxnum": 2,
+                "minnum": 0,
+                "name": "Dust",
+                "proba": 50
+            },
+            {
+                "maxnum": 4,
+                "minnum": 1,
+                "name": "Nitra",
+                "proba": 25
+            }
+        ],
+        "feet_color": 0,
+        "gun": false,
+        "hammer": false,
+        "health": 20,
+        "hook": false,
+        "name": "Stone",
+        "skin": "default",
+        "spawn_proba": 60,
+        "teamdamage": false
+    },
+    {
+        "AI": true,
+        "attack_proba": 20,
+        "body_color": 16777215,
+        "drops": [
+            {
+                "maxnum": 3,
+                "minnum": 1,
+                "name": "Bear Meat",
+                "proba": 100
+            }
+        ],
+        "feet_color": 16777215,
+        "gun": false,
+        "hammer": true,
+        "health": 20,
+        "hook": false,
+        "name": "Bear",
+        "skin": "brownbear",
+        "spawn_proba": 20,
+        "teamdamage": false
+    },
+    {
+        "AI": true,
+        "attack_proba": 0,
+        "body_color": 16777215,
+        "drops": [
+            {
+                "maxnum": 3,
+                "minnum": 1,
+                "name": "Chicken Meat",
+                "proba": 100
+            },
+            {
+                "maxnum": 1,
+                "minnum": 1,
+                "name": "Egg",
+                "proba": 20
+            }
+        ],
+        "feet_color": 16777215,
+        "gun": false,
+        "hammer": false,
+        "health": 20,
+        "hook": false,
+        "name": "Chicken",
+        "skin": "cootbird",
+        "spawn_proba": 60,
+        "teamdamage": false
+    }
+]

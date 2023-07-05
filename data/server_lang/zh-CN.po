@@ -1,0 +1,367 @@
+# Chinese translations for LunarTee package
+# LunarTee 软件包的简体中文翻译.
+# Copyright (C) 2023 RemakePower
+# This file is distributed under the same license as the LunarTee package.
+# Automatically generated, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: LunarTee 0.1.3\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-07-04 15:51+0800\n"
+"PO-Revision-Date: 2023-07-04 15:51+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "You got %t x%d"
+msgstr ""
+
+msgid "Vote aborted"
+msgstr ""
+
+msgid "Vote passed"
+msgstr ""
+
+msgid "Vote failed"
+msgstr ""
+
+#, c-format
+msgid "Survivor '%s' is coming"
+msgstr ""
+
+msgid "===Welcome to LunarTee==="
+msgstr ""
+
+msgid "Bind /menu to your key"
+msgstr ""
+
+msgid "Show clan plate to show health bar"
+msgstr ""
+
+#, c-format
+msgid "Survivor '%s' went to other world"
+msgstr ""
+
+msgid "Spectators aren't allowed to start a vote."
+msgstr ""
+
+msgid "Wait for current vote to end before calling a new one."
+msgstr ""
+
+#, c-format
+msgid "You must wait %d seconds before making another vote"
+msgstr ""
+
+#, c-format
+msgid "'%s' called vote to change server option '%s' (%s)"
+msgstr ""
+
+#, c-format
+msgid "'%s' isn't an option on this server"
+msgstr ""
+
+msgid "Server does not allow voting to kick players"
+msgstr ""
+
+#, c-format
+msgid "Kick voting requires %d players on the server"
+msgstr ""
+
+msgid "Invalid client id to kick"
+msgstr ""
+
+msgid "You can't kick yourself"
+msgstr ""
+
+msgid "You can't kick admins"
+msgstr ""
+
+#, c-format
+msgid "'%s' called for vote to kick you"
+msgstr ""
+
+msgid "Server does not allow voting to move players to spectators"
+msgstr ""
+
+msgid "Invalid client id to move"
+msgstr ""
+
+msgid "You can't move yourself"
+msgstr ""
+
+msgid "Save your hope"
+msgstr ""
+
+msgid "Please login!"
+msgstr ""
+
+msgid "Invalid spectator id used"
+msgstr ""
+
+#, c-format
+msgid "'%s' changed name to '%s'"
+msgstr ""
+
+#, c-format
+msgid "admin forced server option '%s' (%s)"
+msgstr ""
+
+#, c-format
+msgid "admin moved '%s' to spectator (%s)"
+msgstr ""
+
+msgid "admin forced vote yes"
+msgstr ""
+
+msgid "admin forced vote no"
+msgstr ""
+
+#, c-format
+msgid "%s by %s"
+msgstr ""
+
+#, c-format
+msgid "Thanks %s"
+msgstr ""
+
+msgid "Language successfully switched to English"
+msgstr ""
+
+msgid "Unknown language or no input language code"
+msgstr ""
+
+#, c-format
+msgid "Available languages: %s"
+msgstr ""
+
+msgid "Use /register <username> <password>"
+msgstr ""
+
+msgctxt "UTF8 char in accounts"
+msgid "Invalid char"
+msgstr ""
+
+#, c-format
+msgid "The length of the <Username> should be between %d-%d"
+msgstr ""
+
+#, c-format
+msgid "The length of the <Password> should be between %d-%d"
+msgstr ""
+
+msgid "Use /login <username> <password>"
+msgstr ""
+
+msgid "The server doesn't have any motd"
+msgstr ""
+
+msgid "Server Motd"
+msgstr ""
+
+msgid "Player Inventory"
+msgstr ""
+
+msgid "Change Language"
+msgstr ""
+
+msgid "Make Item"
+msgstr ""
+
+msgid "Sit"
+msgstr ""
+
+msgid "red team"
+msgstr ""
+
+msgid "blue team"
+msgstr ""
+
+msgid "game"
+msgstr ""
+
+msgid "spectators"
+msgstr ""
+
+msgid "Inventory"
+msgstr ""
+
+msgctxt "Mode's game menu"
+msgid "Menu"
+msgstr ""
+
+msgid "Use <mouse1>(Fire) to use option"
+msgstr ""
+
+msgid "Use <mouse2>(Hook) to back main menu"
+msgstr ""
+
+msgid "Need"
+msgstr ""
+
+msgid "Give"
+msgstr ""
+
+msgid "Info"
+msgstr ""
+
+#, c-format
+msgid "Survivor '%s' left"
+msgstr ""
+
+msgid "This account already exists!"
+msgstr ""
+
+msgid "You're register now!"
+msgstr ""
+
+msgid "Register failed! Please ask server hoster!"
+msgstr ""
+
+msgid "You're login now!"
+msgstr ""
+
+msgid "Wrong password!"
+msgstr ""
+
+msgid "Wrong player nickname!"
+msgstr ""
+
+msgid "This account doesn't exists!"
+msgstr ""
+
+msgid "Login failed! Please ask server hoster!"
+msgstr ""
+
+msgid "No such item!"
+msgstr ""
+
+msgid "You don't have enough resources"
+msgstr ""
+
+msgid "You had %t"
+msgstr ""
+
+msgid "Making %t..."
+msgstr ""
+
+msgid "Make finish, you get %t x%d"
+msgstr ""
+
+msgid "Make finish, you get %t"
+msgstr ""
+
+msgctxt "Bot name"
+msgid "Stone"
+msgstr ""
+
+msgctxt "Bot name"
+msgid "Bear"
+msgstr ""
+
+msgctxt "Bot name"
+msgid "Chicken"
+msgstr ""
+
+msgctxt "An item"
+msgid "Stone"
+msgstr ""
+
+msgctxt "An item"
+msgid "Metal"
+msgstr ""
+
+msgctxt "An item"
+msgid "Dust"
+msgstr ""
+
+msgctxt "An item"
+msgid "Nitra"
+msgstr ""
+
+msgctxt "An item"
+msgid "Bear Meat"
+msgstr ""
+
+msgctxt "An item"
+msgid "Chicken Meat"
+msgstr ""
+
+msgctxt "An item"
+msgid "Egg"
+msgstr ""
+
+msgctxt "An item"
+msgid "Hammer"
+msgstr ""
+
+msgctxt "An item"
+msgid "Gun"
+msgstr ""
+
+msgctxt "An item"
+msgid "Gun Ammo"
+msgstr ""
+
+msgctxt "An item"
+msgid "Shotgun"
+msgstr ""
+
+msgctxt "An item"
+msgid "Shotgun Ammo"
+msgstr ""
+
+msgctxt "An item"
+msgid "Grenade"
+msgstr ""
+
+msgctxt "An item"
+msgid "Grenade Ammo"
+msgstr ""
+
+msgctxt "An item"
+msgid "Rifle"
+msgstr ""
+
+msgctxt "An item"
+msgid "Laser"
+msgstr ""
+
+msgctxt "An item"
+msgid "Ninja"
+msgstr ""
+
+msgctxt "An item"
+msgid "Freeze-Rifle"
+msgstr ""
+
+msgctxt "An item"
+msgid "Eggshell"
+msgstr ""
+
+msgctxt "An item"
+msgid "Shelled Eggs"
+msgstr ""
+
+msgctxt "An item"
+msgid "Empty Ammo"
+msgstr ""
+
+msgctxt "An item"
+msgid "Frame"
+msgstr ""
+
+msgctxt "An item"
+msgid "Gunpowder"
+msgstr ""
+
+msgctxt "An item"
+msgid "Charcoal"
+msgstr ""
+
+msgctxt "An item"
+msgid "Plasma"
+msgstr ""
