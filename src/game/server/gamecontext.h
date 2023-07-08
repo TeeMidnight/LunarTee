@@ -237,6 +237,7 @@ public:
 	
 	void OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID) override;
 
+	int GetOneWorldPlayerNum(CGameWorld *pGameWorld) const;
 	int GetOneWorldPlayerNum(int ClientID) const override;
 
 	// MakeItem

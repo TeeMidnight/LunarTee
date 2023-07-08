@@ -301,6 +301,8 @@ class CCache
 	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainConsoleOutputLevelUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	
+	static void ConNewMap(IConsole::IResult *pResult, void *pUser);
+
 	void RegisterCommands();
 
 	int SnapNewID() override;

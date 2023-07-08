@@ -2,7 +2,7 @@
     {
         "AI": false,
         "attack_proba": 0,
-        "body_color": 16777215,
+        "body_color": 0,
         "drops": [
             {
                 "maxnum": 4,

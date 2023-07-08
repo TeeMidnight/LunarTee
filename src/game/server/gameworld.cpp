@@ -241,7 +241,7 @@ void CGameWorld::UpdatePlayerMaps()
 		if(GameServer()->m_apPlayers[i]->GameWorld() != this)
 			continue;
 
-		int* map = Server()->GetIdMap(i);
+		int *pMap = Server()->GetIdMap(i);
 		int MaxClients = (Server()->Is64Player(i) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS);
 
 		std::vector<std::pair<float,int>> Dist;
@@ -259,10 +259,18 @@ void CGameWorld::UpdatePlayerMaps()
 				continue;
 			if(!GameServer()->m_apPlayers[j])
 				continue;
-			if(GameServer()->m_apPlayers[j]->GameWorld() == this)
+			if(j == i)
+			{
+				Dist[Dist.size()-1].first = -1; // first snap player self
+			}
+			else if(GameServer()->m_apPlayers[j]->GameWorld() == this)
+			{
 				Dist[Dist.size()-1].first = distance(GameServer()->m_apPlayers[i]->m_ViewPos, GameServer()->m_apPlayers[j]->m_ViewPos);
+			}
 			else
-				Dist[Dist.size()-1].first = 1e8;
+			{
+				Dist[Dist.size()-1].first = 3e5;
+			}
 		}
 
 		for (int j = 0; j < (int) GameServer()->m_vpBotPlayers.size(); j++)
@@ -272,28 +280,26 @@ void CGameWorld::UpdatePlayerMaps()
 				
 			std::pair<float,int> temp;
 			temp.first = distance(GameServer()->m_apPlayers[i]->m_ViewPos, GameServer()->m_vpBotPlayers[j]->m_ViewPos);
+			
 			temp.second = GameServer()->m_vpBotPlayers[j]->GetCID();
 
 			Dist.push_back(temp);
 		}
 
-		// always send the player themselves, even if all in same position
-		Dist[i].first = -1;
-
 		std::nth_element(&Dist[0], &Dist[MaxClients - 1], &Dist[Dist.size()], distCompare);
 
-		int Index = 1; // exclude self client id
+		int Index = 0;
 		for(int j = 0; j < MaxClients - 1; j++)
 		{
-			map[j + 1] = -1; // also fill player with empty name to say chat msgs
-			if(Dist[j].second == i || Dist[j].first > 5e9f)
+			pMap[j + 1] = -1; // also fill player with empty name to say chat msgs
+			if(Dist[j].first > 5e9f)
 				continue;
-			map[Index++] = Dist[j].second;
+			pMap[Index++] = Dist[j].second;
 		}
 
 		// sort by real client ids, guarantee order on distance changes, O(Nlog(N)) worst case
 		// sort just clients in game always except first (self client id) and last (fake client id) indexes
-		std::sort(&map[1], &map[minimum(Index, MaxClients - 1)]);
+		std::sort(&pMap[1], &pMap[minimum(Index, MaxClients - 1)]);
 	}
 	
 }

@@ -247,12 +247,6 @@ void CConsole::Print(int Level, const char *pFrom, const char *pStr)
 			if(Level == OUTPUT_LEVEL_CHAT)
 				m_aPrintCB[i].m_pfnPrintCallback(pStr, m_aPrintCB[i].m_pPrintCallbackUserdata);
 		}
-		else if(Level <= m_aPrintCB[i].m_OutputLevel)
-		{
-			char aBuf[1024];
-			str_format(aBuf, sizeof(aBuf), "[%s]: %s", pFrom, pStr);
-			m_aPrintCB[i].m_pfnPrintCallback(aBuf, m_aPrintCB[i].m_pPrintCallbackUserdata);
-		}
 	}
 }
 

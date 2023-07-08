@@ -870,6 +870,7 @@ int CServer::ClientRejoinCallback(int ClientID, void *pUser)
 
 	pThis->m_aClients[ClientID].Reset();
 
+	pThis->SendCapabilities(ClientID);
 	pThis->SendMap(ClientID);
 
 	return 0;
@@ -892,7 +893,6 @@ int CServer::NewClientNoAuthCallback(int ClientID, void *pUser)
 
 	memset(&pThis->m_aClients[ClientID].m_Addr, 0, sizeof(NETADDR));
 	pThis->m_aClients[ClientID].Reset();
-
 
 	pThis->SendCapabilities(ClientID);
 	pThis->SendMap(ClientID);
@@ -942,6 +942,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
+	pThis->m_aClients[ClientID].m_pMapData = &pThis->m_vMapDatas[0];
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
 
 	return 0;
@@ -965,6 +966,12 @@ void CServer::SendCapabilities(int ClientID)
 void CServer::SendMap(int ClientID)
 {
 	CMapData *pMapData = m_aClients[ClientID].m_pMapData;
+
+	char aBuf[256];
+	const char* MapName = GetMapName(pMapData);
+	str_format(aBuf, sizeof(aBuf), "Sending ClientID %d Map '%s'", ClientID, MapName);
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Multimap", aBuf);
+
 	{
 		CMsgPacker Msg(NETMSG_MAP_DETAILS, true);
 		Msg.AddString(GetMapName(pMapData), 0);
@@ -1087,14 +1094,26 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 	int ClientID = pPacket->m_ClientID;
 	CUnpacker Unpacker;
 	Unpacker.Reset(pPacket->m_pData, pPacket->m_DataSize);
+	CMsgPacker Packer(NETMSG_EX, true);
 
 	// unpack msgid and system flag
-	int Msg = Unpacker.GetInt();
-	int Sys = Msg&1;
-	Msg >>= 1;
+	int Msg;
+	bool Sys;
+	CUuid Uuid;
 
-	if(Unpacker.Error())
+	int Result = UnpackMessageID(&Msg, &Sys, &Uuid, &Unpacker, &Packer);
+	if(Result == UNPACKMESSAGE_ERROR)
+	{
 		return;
+	}
+
+	if(Result == UNPACKMESSAGE_ANSWER)
+	{
+		SendMsg(&Packer, MSGFLAG_VITAL, ClientID);
+	}
+
+	//if(Msg != NETMSG_INPUT && Msg != NETMSG_REQUEST_MAP_DATA)
+	//	dbg_msg("debug", "packet %d of client=%d, state=%d, ready=%d", Msg, ClientID, m_aClients[ClientID].m_State, GameServer()->IsClientReady(ClientID));
 
 	if(Sys)
 	{
@@ -1141,8 +1160,8 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				}
 
 				m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
-				SendMap(ClientID);
 				SendCapabilities(ClientID);
+				SendMap(ClientID);
 			}
 		}
 		else if(Msg == NETMSG_REQUEST_MAP_DATA)
@@ -1169,7 +1188,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		}
 		else if(Msg == NETMSG_READY)
 		{
-			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State == CClient::STATE_CONNECTING)
+			if((pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 && (m_aClients[ClientID].m_State == CClient::STATE_CONNECTING))
 			{
 				char aAddrStr[NETADDR_MAXSTRSIZE];
 				net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
@@ -1177,14 +1196,15 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				char aBuf[256];
 				str_format(aBuf, sizeof(aBuf), "player is ready. ClientID=%d addr=%s secure=%s", ClientID, aAddrStr, m_NetServer.HasSecurityToken(ClientID)?"yes":"no");
 				Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
+
 				m_aClients[ClientID].m_State = CClient::STATE_READY;
 				GameServer()->OnClientConnected(ClientID);
-				SendConnectionReady(ClientID);
 			}
+			SendConnectionReady(ClientID);
 		}
 		else if(Msg == NETMSG_ENTERGAME)
 		{
-			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State == CClient::STATE_READY && GameServer()->IsClientReady(ClientID))
+			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && (m_aClients[ClientID].m_State == CClient::STATE_READY) && GameServer()->IsClientReady(ClientID))
 			{
 				char aAddrStr[NETADDR_MAXSTRSIZE];
 				net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
@@ -1262,8 +1282,6 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				}
 			}
 			else if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && Unpacker.Error() == 0 && m_aClients[ClientID].m_Authed)
-
-			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && Unpacker.Error() == 0 && m_aClients[ClientID].m_Authed)
 			{
 				char aBuf[256];
 				str_format(aBuf, sizeof(aBuf), "ClientID=%d rcon='%s'", ClientID, pCmd);
@@ -1372,16 +1390,9 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		{
 			if(g_Config.m_Debug)
 			{
-				char aHex[] = "0123456789ABCDEF";
-				char aBuf[512];
-
-				for(int b = 0; b < pPacket->m_DataSize && b < 32; b++)
-				{
-					aBuf[b*3] = aHex[((const unsigned char *)pPacket->m_pData)[b]>>4];
-					aBuf[b*3+1] = aHex[((const unsigned char *)pPacket->m_pData)[b]&0xf];
-					aBuf[b*3+2] = ' ';
-					aBuf[b*3+3] = 0;
-				}
+				constexpr int MaxDumpedDataSize = 32;
+				char aBuf[MaxDumpedDataSize * 3 + 1];
+				str_hex(aBuf, sizeof(aBuf), pPacket->m_pData, minimum(pPacket->m_DataSize, MaxDumpedDataSize));
 
 				char aBufMsg[256];
 				str_format(aBufMsg, sizeof(aBufMsg), "strange message ClientID=%d msg=%d data_size=%d", ClientID, Msg, pPacket->m_DataSize);
@@ -1393,7 +1404,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 	else
 	{
 		// game message
-		if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State >= CClient::STATE_READY)
+		if((pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State >= CClient::STATE_READY)
 			GameServer()->OnMessage(Msg, &Unpacker, ClientID);
 	}
 }
@@ -1974,27 +1985,35 @@ int CServer::GenerateMap(const char *pMapName)
 	return 1;
 }
 
-std::mutex s_maplock;
 void CServer::CreateMapThread(const char* pMapName)
 {
-	std::thread Thread([this, pMapName]()
+	char aBuf[256];
+	str_copy(aBuf, pMapName);
+	std::thread Thread([this, aBuf]()
 	{
-		s_maplock.lock();
-		// load map
-		if(!GenerateMap(pMapName) && !m_MainMapLoaded)
+		static std::mutex s_Lock;
+		if(!s_Lock.try_lock())
 		{
-			s_maplock.unlock();
-			
+			log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "server", "failed lock create map thread");
+			return;
+		}
+
+		// load map
+		if(!GenerateMap(aBuf) && !m_MainMapLoaded)
+		{
+			s_Lock.unlock();
+
 			log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "server", "failed generate main map");
 			Console()->ExecuteLine("shutdown", -1);
 			
 			return;
 		}
 
+		s_Lock.unlock();
+
 		m_MainMapLoaded = true;
 		UpdateServerInfo();
-		s_maplock.unlock();
-		log_log_color(LEVEL_INFO, LOG_COLOR_SUCCESS, "server", "Loaded new worlds '%s'", pMapName);
+		log_log_color(LEVEL_INFO, LOG_COLOR_SUCCESS, "server", "Loaded new worlds '%s'", aBuf);
 	});
 	Thread.detach();
 }
@@ -2191,6 +2210,8 @@ int CServer::Run()
 	}
 
 	GameServer()->OnShutdown();
+
+	m_pRegister->OnShutdown();
 	
 	for(int i = 0; i < (int) m_vMapDatas.size(); i ++)
 	{
@@ -2199,8 +2220,6 @@ int CServer::Run()
 		if(m_vMapDatas[i].m_pCurrentMapData)
 			free(m_vMapDatas[i].m_pCurrentMapData);
 	}
-
-	m_pRegister->OnShutdown();
 	return 0;
 }
 
@@ -2313,6 +2332,11 @@ void CServer::ConLogout(IConsole::IResult *pResult, void *pUser)
 	}
 }
 
+void CServer::ConNewMap(IConsole::IResult *pResult, void *pUser)
+{
+	((CServer *)pUser)->CreateMapThread(pResult->GetString(0));
+}
+
 void CServer::ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
@@ -2382,6 +2406,8 @@ void CServer::RegisterCommands()
 
 	Console()->Register("record", "?s", CFGFLAG_SERVER|CFGFLAG_STORE, ConRecord, this, "Record to a file");
 	Console()->Register("stoprecord", "", CFGFLAG_SERVER, ConStopRecord, this, "Stop recording");
+
+	Console()->Register("new_map", "r", CFGFLAG_SERVER, ConNewMap, this, "Create new map");
 
 	Console()->Chain("sv_name", ConchainSpecialInfoupdate, this);
 	Console()->Chain("password", ConchainSpecialInfoupdate, this);
@@ -2459,7 +2485,7 @@ int main(int argc, const char **argv) // ignore_convention
 	// create the components
 	IEngine *pEngine = CreateEngine("Teeworlds", pFutureConsoleLogger, 2);
 
-	IEngineMap *pEngineMap = CreateEngineMap();
+	// IEngineMap *pEngineMap = CreateEngineMap();
 	IGameServer *pGameServer = CreateGameServer();
 	IConsole *pConsole = CreateConsole(CFGFLAG_SERVER|CFGFLAG_ECON);
 	IStorage *pStorage = CreateStorage("Teeworlds", IStorage::STORAGETYPE_SERVER, argc, argv); // ignore_convention
@@ -2472,8 +2498,8 @@ int main(int argc, const char **argv) // ignore_convention
 
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pServer); // register as both
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pEngine);
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IEngineMap*>(pEngineMap)); // register as both
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pEngineMap));
+		// RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IEngineMap*>(pEngineMap)); // register as both
+		// RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pEngineMap));
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pGameServer);
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pConsole);
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pStorage);
@@ -2565,11 +2591,11 @@ bool CServer::IsActive()
 
 void CServer::ChangeClientMap(int ClientID, int MapID)
 {
-	m_aClients[ClientID].m_pMapData = &m_vMapDatas[MapID];
-
 	if(m_aClients[ClientID].m_State <= CClient::STATE_AUTH)
 		return;
 
+	m_aClients[ClientID].m_pMapData = &m_vMapDatas[MapID];
+	
 	SendMap(ClientID);
 	m_aClients[ClientID].Reset();
 	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;

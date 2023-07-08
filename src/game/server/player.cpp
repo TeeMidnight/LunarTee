@@ -58,6 +58,7 @@ void CPlayer::Reset()
 	m_Emote = EMOTE_NORMAL;
 
 	m_Authed = IServer::AUTHED_NO;
+	m_IsReady = false;
 
 	m_PrevTuningParams = GameWorld()->m_Core.m_Tuning;
 	m_NextTuningParams = m_PrevTuningParams;
@@ -66,12 +67,15 @@ void CPlayer::Reset()
 	{
 		SetLanguage(Server()->GetClientLanguage(m_ClientID));
 		int* idMap = Server()->GetIdMap(m_ClientID);
-		for (int i = 1;i < (Server()->Is64Player(m_ClientID) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS);i++)
+		for (int i = 0;i < (Server()->Is64Player(m_ClientID) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS);i++)
 		{
 			idMap[i] = -1;
 		}
 		idMap[0] = m_ClientID;
 	}
+
+	if(IsBot())
+		Respawn();
 
 	m_UserID = 0;
 }
@@ -227,7 +231,7 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
 	pPlayerInfo->m_ClientID = id;
 	pPlayerInfo->m_Score = m_Score;
-	pPlayerInfo->m_Team = IsBot() ? 2 : m_Team;
+	pPlayerInfo->m_Team = IsBot() ? 2 : m_Team; // do not snap bot in scorebroad
 	pPlayerInfo->m_Local = (m_ClientID == SnappingClient);
 
 	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, id, sizeof(CNetObj_DDNetPlayer)));
@@ -240,6 +244,7 @@ void CPlayer::Snap(int SnappingClient)
 		pDDNetPlayer->m_AuthLevel = Info.m_Authed;
 		pDDNetPlayer->m_Flags = 0;
 	}
+
 	if(m_Sit)
 		pDDNetPlayer->m_Flags |= EXPLAYERFLAG_AFK;
 
@@ -293,7 +298,7 @@ void CPlayer::OnDisconnect(const char *pReason)
 
 	if(Server()->ClientIngame(m_ClientID))
 	{
-		GameServer()->SendChatTarget_Localization(-1, "Survivor '%s' left", Server()->ClientName(m_ClientID));
+		GameServer()->SendChatTarget_Localization(-1, "'%s' left the server", Server()->ClientName(m_ClientID));
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", m_ClientID, Server()->ClientName(m_ClientID));
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
@@ -379,10 +384,10 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	{
 		if(Team == TEAM_SPECTATORS)
 		{
-			GameServer()->SendChatTarget_Localization(-1, _("Survivor '%s' left"), Server()->ClientName(m_ClientID));
+			GameServer()->SendChatTarget_Localization(-1, _("'%s' is going to check the world"), Server()->ClientName(m_ClientID));
 		}else
 		{
-			GameServer()->SendChatTarget_Localization(-1, _("Survivor '%s' is coming"), Server()->ClientName(m_ClientID));
+			GameServer()->SendChatTarget_Localization(-1, _("'%s' backed world"), Server()->ClientName(m_ClientID));
 		}
 	}
 

@@ -72,6 +72,10 @@ CGameContext::~CGameContext()
 		delete m_vpBotPlayers[i];
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
+
+	delete m_pPostgresql;
+	delete m_pMenu;
+	delete m_pItem;
 }
 
 void CGameContext::OnSetAuthed(int ClientID, int Level)
@@ -623,7 +627,7 @@ void CGameContext::OnTick()
 		}
 	}
 
-	for(int i = 0;i < (int) m_vWorlds.size(); i ++)
+	for(int i = 0; i < (int) m_vWorlds.size(); i ++)
 	{
 		m_vWorlds[i].m_Core.m_Tuning = m_Tuning;
 		m_vWorlds[i].Tick();
@@ -731,14 +735,14 @@ void CGameContext::OnClientEnter(int ClientID)
 
 	if(FindWorldIDWithWorld((m_apPlayers[ClientID]->GameWorld())) == 0)
 	{
-		SendChatTarget_Localization(-1, _("Survivor '%s' is coming"), Server()->ClientName(ClientID));
+		SendChatTarget_Localization(-1, _("'%s' entered the server"), Server()->ClientName(ClientID));
 
 		SendChatTarget_Localization(ClientID, _("===Welcome to LunarTee==="));
 		SendChatTarget_Localization(ClientID, _("Bind /menu to your key"));
 		SendChatTarget_Localization(ClientID, _("Show clan plate to show health bar"));
 	}else
 	{
-		SendChatTarget_Localization(-1, _("Survivor '%s' went to other world"), Server()->ClientName(ClientID));
+		SendChatTarget_Localization(-1, _("'%s' entered other world"), Server()->ClientName(ClientID));
 	}
 	m_VoteUpdate = true;
 	Server()->ExpireServerInfo();
@@ -1582,7 +1586,7 @@ void CGameContext::ConNextWorld(IConsole::IResult *pResult, void *pUserData)
 	if(MapID >= pSelf->Server()->GetLoadedMapNum())
 		MapID = 0;
 
-	pSelf->m_apPlayers[ClientID]->KillCharacter(WEAPON_WORLD);
+	pSelf->m_apPlayers[ClientID]->KillCharacter();
 	
 	delete pSelf->m_apPlayers[ClientID];
 	pSelf->m_apPlayers[ClientID] = 0;
@@ -1592,9 +1596,9 @@ void CGameContext::ConNextWorld(IConsole::IResult *pResult, void *pUserData)
 
 void CGameContext::ConMapRegenerate(IConsole::IResult *pResult, void *pUserData)
 {
-	CGameContext* pSelf = (CGameContext*) pUserData;
-	pSelf->Server()->RegenerateMap();
-	pSelf->SendChatTarget_Localization(-1, "Map will regenerate!");
+	// CGameContext* pSelf = (CGameContext*) pUserData;
+	// pSelf->Server()->RegenerateMap();
+	// pSelf->SendChatTarget_Localization(-1, "Map will regenerate!");
 }
 
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -1730,6 +1734,17 @@ void CGameContext::ConEmote(IConsole::IResult *pResult, void *pUserData)
 	pPlayer->SetEmote(EmoteType);
 }
 
+static bool CheckStringSQL(const char* string)
+{
+	for(int i = 0;i < str_length(string); i ++)
+	{
+		bool Check = (((string[i] >= '0') && (string[i] <= '9')) || ((string[i] >= 'A') && (string[i] <= 'Z')) || ((string[i] >= 'a') && (string[i] <= 'z')));
+		if(!Check)
+			return false;
+	}
+	return true;
+}
+
 void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
@@ -1744,9 +1759,11 @@ void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-	if(!str_utf8_check(pResult->GetString(0)) || !str_utf8_check(pResult->GetString(1)))
+	if(!CheckStringSQL(pResult->GetString(0)) || !CheckStringSQL(pResult->GetString(1)))
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _C("UTF8 char in accounts", "Invalid char"));
+		pSelf->SendChatTarget_Localization(ClientID, _C("Special char in accounts", "Invalid char"));
+
+		pSelf->SendChatTarget_Localization(ClientID, _C("Special char in accounts", "Please input 0-9, A-Z, a-z for your username and password"));
 		return;
 	}
 
@@ -1787,9 +1804,11 @@ void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-	if(!str_utf8_check(pResult->GetString(0)) || !str_utf8_check(pResult->GetString(1)))
+	if(!CheckStringSQL(pResult->GetString(0)) || !CheckStringSQL(pResult->GetString(1)))
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _C("UTF8 char in accounts", "Invalid char"));
+		pSelf->SendChatTarget_Localization(ClientID, _C("Special char in accounts", "Invalid char"));
+
+		pSelf->SendChatTarget_Localization(ClientID, _C("Special char in accounts", "Please input 0-9, A-Z, a-z for your username and password"));
 		return;
 	}
 
@@ -1899,7 +1918,7 @@ void CGameContext::OnMenuOptionsInit()
 	Menu()->Register(_("Player Inventory"), MENUPAGE_MAIN, MenuInventory, this, true);
 	Menu()->Register(_("Change Language"), MENUPAGE_MAIN, MenuLanguage, this, false);
 	Menu()->Register(_("Make Item"), MENUPAGE_MAIN, MenuItem, this, false);
-	Menu()->Register(_("Sit"), MENUPAGE_MAIN, MenuSit, this, false);
+	Menu()->Register(_("Sit/Stand"), MENUPAGE_MAIN, MenuSit, this, false);
 }
 
 void CGameContext::OnConsoleInit()
@@ -2101,9 +2120,7 @@ void CGameContext::OnBotDead(int ClientID)
 
 void CGameContext::CreateBot(int ClientID, CGameWorld *pGameWorld, CBotData BotPower)
 {
-	CPlayer *pPlayer = new CPlayer(pGameWorld, ClientID, 0, BotPower);
-	pPlayer->TryRespawn();
-	m_vpBotPlayers.push_back(pPlayer);
+	m_vpBotPlayers.push_back(new CPlayer(pGameWorld, ClientID, 0, BotPower));
 }
 
 void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)
@@ -2144,12 +2161,16 @@ void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)
 		"\"afk\":%s,"
 		"\"team\":%d",
 		aJsonSkin,
-		JsonBool(m_apPlayers[ID]->m_Sit),
+		JsonBool(false),
 		m_apPlayers[ID]->GetTeam());
+}
+
+int CGameContext::GetOneWorldPlayerNum(CGameWorld *pGameWorld) const
+{
+	return GetPlayerNum() + GetBotNum(pGameWorld);
 }
 
 int CGameContext::GetOneWorldPlayerNum(int ClientID) const
 {
-	CGameWorld *pWorld = FindWorldWithClientID(ClientID);
-	return GetPlayerNum() + GetBotNum(pWorld);
+	return GetOneWorldPlayerNum(FindWorldWithClientID(ClientID));
 }

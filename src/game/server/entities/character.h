@@ -25,9 +25,10 @@ public:
 
 	CCharacter(CGameWorld *pWorld);
 	~CCharacter();
+	
+	void DestroyChar();
 
 	void Reset() override;
-	void Destroy() override;
 	void Tick() override;
 	void TickDefered() override;
 	void TickPaused() override;

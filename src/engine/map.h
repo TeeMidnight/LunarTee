@@ -7,7 +7,7 @@
 #include "storage.h"
 #include "kernel.h"
 
-class IMap : public IInterface
+class IMap
 {
 	MACRO_INTERFACE("map", 0)
 public:

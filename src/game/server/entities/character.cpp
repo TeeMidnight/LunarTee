@@ -6,6 +6,8 @@
 #include <game/mapitems.h>
 #include <game/server/gameworld.h>
 
+#include <thread>
+#include <mutex>
 #include <bitset>
 
 #include "pickup.h"
@@ -49,12 +51,11 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 
 CCharacter::~CCharacter()
 {
-	Destroy();
 }
 
 void CCharacter::Reset()
 {
-	Destroy();
+	DestroyChar();
 }
 
 bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
@@ -101,10 +102,11 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	return true;
 }
 
-void CCharacter::Destroy()
+void CCharacter::DestroyChar()
 {
-	GameWorld()->m_Core.DeleteCharacter(&m_Core);
 	m_Alive = false;
+	GameWorld()->m_Core.DeleteCharacter(&m_Core);
+	GameWorld()->DestroyEntity(this);
 }
 
 void CCharacter::SetWeapon(int W)
@@ -521,9 +523,8 @@ void CCharacter::Tick()
 	// Sync
 	SyncWeapon();
 	SyncHealth();
-
-	if(Server()->IsActive())
-		DoBotActions();
+	
+	DoBotActions();
 
 	if(!m_Alive)
 		return;
@@ -674,17 +675,17 @@ void CCharacter::Die(int Killer, int Weapon)
 			m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial);
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 		
-		// send the kill message
-		CNetMsg_Sv_KillMsg Msg;
-		Msg.m_Killer = Killer;
-		Msg.m_Victim = m_pPlayer->GetCID();
-		Msg.m_Weapon = Killer == GetCID() ? WEAPON_GAME : g_Weapons.m_aWeapons[m_ActiveWeapon]->GetShowType();
-		Msg.m_ModeSpecial = ModeSpecial;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
-		
 		// close menu
 		m_pPlayer->CloseMenu();
 	}
+		
+	// send the kill message
+	CNetMsg_Sv_KillMsg Msg;
+	Msg.m_Killer = Killer;
+	Msg.m_Victim = m_pPlayer->GetCID();
+	Msg.m_Weapon = (Weapon < 0 || Weapon >= NUM_LUNARTEE_WEAPONS) ? Weapon : g_Weapons.m_aWeapons[Weapon]->GetShowType();
+	Msg.m_ModeSpecial = ModeSpecial;
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
 
 	// a nice sound
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
@@ -931,6 +932,9 @@ void CCharacter::DoBotActions()
 	if(!m_pPlayer->m_BotData.m_AI)
 		return;
 
+	if(!(GameServer()->GetOneWorldPlayerNum(GameWorld()) - GameServer()->GetBotNum(GameWorld())))
+		return;
+
 	CCharacter *pOldTarget = GameServer()->GetPlayerChar(m_Botinfo.m_Target);
 	CBotData *pBotData = &m_pPlayer->m_BotData;
 
@@ -1123,7 +1127,6 @@ void CCharacter::DoBotActions()
 		m_Botinfo.m_Direction = -m_Botinfo.m_Direction;
 	}
 
-
 	if(IsGrounded())
 		m_Botinfo.m_LastGroundPos = m_Pos;
 	
@@ -1131,7 +1134,6 @@ void CCharacter::DoBotActions()
 	
 	m_Botinfo.m_LastVel = m_Core.m_Vel;
 	m_Input.m_Direction = m_Botinfo.m_Direction;
-	
 }
 
 CCharacter *CCharacter::FindTarget(vec2 Pos, float Radius)

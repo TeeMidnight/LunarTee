@@ -8,360 +8,368 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LunarTee 0.1.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-04 15:51+0800\n"
-"PO-Revision-Date: 2023-07-04 15:51+0800\n"
+"POT-Creation-Date: 2023-07-05 18:35+0800\n"
+"PO-Revision-Date: 2023-07-05 15:28+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
-"Language: zh_CN\n"
+"Language: /home/power/code/teeworlds-mods/lunartee/data/server_lang/zh-CN.po\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "You got %t x%d"
-msgstr ""
+msgstr "你得到了%tx%d"
 
 msgid "Vote aborted"
-msgstr ""
+msgstr "投票取消"
 
 msgid "Vote passed"
-msgstr ""
+msgstr "投票通过"
 
 msgid "Vote failed"
-msgstr ""
+msgstr "投票否决"
 
 #, c-format
-msgid "Survivor '%s' is coming"
-msgstr ""
+msgid "'%s' entered the server"
+msgstr "'%s' 进入了服务器"
 
 msgid "===Welcome to LunarTee==="
-msgstr ""
+msgstr "===欢迎来到LunarTee==="
 
 msgid "Bind /menu to your key"
-msgstr ""
+msgstr "绑定/menu到你的按键"
 
 msgid "Show clan plate to show health bar"
-msgstr ""
+msgstr "显示战队以显示血量条"
 
 #, c-format
-msgid "Survivor '%s' went to other world"
-msgstr ""
+msgid "'%s' entered other world"
+msgstr "'%s' 进入了另一个世界"
 
 msgid "Spectators aren't allowed to start a vote."
-msgstr ""
+msgstr "旁观者不能发起投票"
 
 msgid "Wait for current vote to end before calling a new one."
-msgstr ""
+msgstr "等待当前投票结束再发起投票"
 
 #, c-format
 msgid "You must wait %d seconds before making another vote"
-msgstr ""
+msgstr "你必须等待%d秒才能发起下一投票"
 
 #, c-format
 msgid "'%s' called vote to change server option '%s' (%s)"
-msgstr ""
+msgstr "'%s' 发起投票以使用服务器选项 '%s' (%s)"
 
 #, c-format
 msgid "'%s' isn't an option on this server"
-msgstr ""
+msgstr "'%s' 在此服务器上不是一个选项"
 
 msgid "Server does not allow voting to kick players"
-msgstr ""
+msgstr "服务器不允许投票踢出玩家"
 
 #, c-format
 msgid "Kick voting requires %d players on the server"
-msgstr ""
+msgstr "踢出投票需要%d名玩家在服务器上"
 
 msgid "Invalid client id to kick"
-msgstr ""
+msgstr "无效的客户端ID"
 
 msgid "You can't kick yourself"
-msgstr ""
+msgstr "你不能踢出你自己"
 
 msgid "You can't kick admins"
-msgstr ""
+msgstr "你不能踢出管理员"
 
 #, c-format
 msgid "'%s' called for vote to kick you"
-msgstr ""
+msgstr "'%s' 发起投票踢出你"
 
 msgid "Server does not allow voting to move players to spectators"
-msgstr ""
+msgstr "服务器不允许投票移动玩家到旁观者"
 
 msgid "Invalid client id to move"
-msgstr ""
+msgstr "无效的客户端ID"
 
 msgid "You can't move yourself"
-msgstr ""
+msgstr "你不能移动你自己"
 
 msgid "Save your hope"
-msgstr ""
+msgstr "保持你的希望"
 
 msgid "Please login!"
-msgstr ""
+msgstr "请登录!"
 
 msgid "Invalid spectator id used"
-msgstr ""
+msgstr "无效的旁观ID"
 
 #, c-format
 msgid "'%s' changed name to '%s'"
-msgstr ""
+msgstr "'%s' 已改名为 '%s'"
 
 #, c-format
 msgid "admin forced server option '%s' (%s)"
-msgstr ""
+msgstr "管理员强制使用服务器选项 '%s' (%s)"
 
 #, c-format
 msgid "admin moved '%s' to spectator (%s)"
-msgstr ""
+msgstr "管理员已移动 '%s' 到旁观者 (%s)"
 
 msgid "admin forced vote yes"
-msgstr ""
+msgstr "管理员通过投票"
 
 msgid "admin forced vote no"
-msgstr ""
+msgstr "管理员否决投票"
 
 #, c-format
 msgid "%s by %s"
-msgstr ""
+msgstr "%s由%s制作"
 
 #, c-format
 msgid "Thanks %s"
-msgstr ""
+msgstr "感谢 %s"
 
 msgid "Language successfully switched to English"
-msgstr ""
+msgstr "语言已成功切换到简体中文"
 
 msgid "Unknown language or no input language code"
-msgstr ""
+msgstr "未知的语言或没有输入语言代码"
 
 #, c-format
 msgid "Available languages: %s"
-msgstr ""
+msgstr "可用语言: %s"
 
 msgid "Use /register <username> <password>"
-msgstr ""
+msgstr "请使用 /register <用户名> <密码>"
 
-msgctxt "UTF8 char in accounts"
+msgctxt "Special char in accounts"
 msgid "Invalid char"
-msgstr ""
+msgstr "无效的字符"
+
+msgctxt "Special char in accounts"
+msgid "Please input 0-9, A-Z, a-z for your username and password"
+msgstr "请输入0-9, A-Z, a-z间的字符作为你的用户名和密码"
 
 #, c-format
 msgid "The length of the <Username> should be between %d-%d"
-msgstr ""
+msgstr "<用户名>的长度应当在%d-%d间"
 
 #, c-format
 msgid "The length of the <Password> should be between %d-%d"
-msgstr ""
+msgstr "<密码>的长度应当在%d-%d间"
 
 msgid "Use /login <username> <password>"
-msgstr ""
+msgstr "请使用/login <用户名> <密码>"
 
 msgid "The server doesn't have any motd"
-msgstr ""
+msgstr "服务器没有任何公告"
 
 msgid "Server Motd"
-msgstr ""
+msgstr "服务器公告"
 
 msgid "Player Inventory"
-msgstr ""
+msgstr "玩家物品栏"
 
 msgid "Change Language"
-msgstr ""
+msgstr "修改语言"
 
 msgid "Make Item"
-msgstr ""
+msgstr "制造物品"
 
-msgid "Sit"
-msgstr ""
+msgid "Sit/Stand"
+msgstr "坐下/站起"
 
 msgid "red team"
-msgstr ""
+msgstr "红队"
 
 msgid "blue team"
-msgstr ""
+msgstr "蓝队"
 
 msgid "game"
-msgstr ""
+msgstr "游戏"
 
 msgid "spectators"
-msgstr ""
+msgstr "旁观者"
 
 msgid "Inventory"
-msgstr ""
+msgstr "物品栏"
 
 msgctxt "Mode's game menu"
 msgid "Menu"
-msgstr ""
+msgstr "菜单"
 
 msgid "Use <mouse1>(Fire) to use option"
-msgstr ""
+msgstr "<鼠标左键>(开火)使用选项"
 
 msgid "Use <mouse2>(Hook) to back main menu"
-msgstr ""
+msgstr "<鼠标右键>(钩子)返回主菜单"
 
 msgid "Need"
-msgstr ""
+msgstr "需要"
 
 msgid "Give"
-msgstr ""
+msgstr "给予"
 
 msgid "Info"
-msgstr ""
+msgstr "提示"
 
 #, c-format
-msgid "Survivor '%s' left"
-msgstr ""
+msgid "'%s' is going to check the world"
+msgstr "'%s' 要去查看世界"
+
+#, c-format
+msgid "'%s' backed world"
+msgstr "'%s' 返回了世界"
 
 msgid "This account already exists!"
-msgstr ""
+msgstr "该账号已存在!"
 
 msgid "You're register now!"
-msgstr ""
+msgstr "你现在注册了!"
 
 msgid "Register failed! Please ask server hoster!"
-msgstr ""
+msgstr "注册失败! 请询问服务器开设者!"
 
 msgid "You're login now!"
-msgstr ""
+msgstr "你现在登录了!"
 
 msgid "Wrong password!"
-msgstr ""
+msgstr "错误的密码!"
 
 msgid "Wrong player nickname!"
-msgstr ""
+msgstr "错误的玩家昵称!"
 
 msgid "This account doesn't exists!"
-msgstr ""
+msgstr "账号不存在!"
 
 msgid "Login failed! Please ask server hoster!"
-msgstr ""
+msgstr "登录失败! 请询问服务器开设者!"
 
 msgid "No such item!"
-msgstr ""
+msgstr "没有此物品!"
 
 msgid "You don't have enough resources"
-msgstr ""
+msgstr "你没有足够的资源!"
 
 msgid "You had %t"
-msgstr ""
+msgstr "你已经有了%t"
 
 msgid "Making %t..."
-msgstr ""
+msgstr "制造%t中..."
 
 msgid "Make finish, you get %t x%d"
-msgstr ""
+msgstr "制造完成, 你得到了%t x%d"
 
 msgid "Make finish, you get %t"
-msgstr ""
+msgstr "制造完成, 你得到了%t"
 
 msgctxt "Bot name"
 msgid "Stone"
-msgstr ""
+msgstr "石头"
 
 msgctxt "Bot name"
 msgid "Bear"
-msgstr ""
+msgstr "熊"
 
 msgctxt "Bot name"
 msgid "Chicken"
-msgstr ""
+msgstr "鸡"
 
 msgctxt "An item"
 msgid "Stone"
-msgstr ""
+msgstr "石头"
 
 msgctxt "An item"
 msgid "Metal"
-msgstr ""
+msgstr "金属材料"
 
 msgctxt "An item"
 msgid "Dust"
-msgstr ""
+msgstr "尘土"
 
 msgctxt "An item"
 msgid "Nitra"
-msgstr ""
+msgstr "硫磺"
 
 msgctxt "An item"
 msgid "Bear Meat"
-msgstr ""
+msgstr "熊肉"
 
 msgctxt "An item"
 msgid "Chicken Meat"
-msgstr ""
+msgstr "鸡肉"
 
 msgctxt "An item"
 msgid "Egg"
-msgstr ""
+msgstr "鸡蛋"
 
 msgctxt "An item"
 msgid "Hammer"
-msgstr ""
+msgstr "锤子"
 
 msgctxt "An item"
 msgid "Gun"
-msgstr ""
+msgstr "手枪"
 
 msgctxt "An item"
 msgid "Gun Ammo"
-msgstr ""
+msgstr "手枪子弹"
 
 msgctxt "An item"
 msgid "Shotgun"
-msgstr ""
+msgstr "霰弹枪"
 
 msgctxt "An item"
 msgid "Shotgun Ammo"
-msgstr ""
+msgstr "霰弹"
 
 msgctxt "An item"
 msgid "Grenade"
-msgstr ""
+msgstr "榴弹炮"
 
 msgctxt "An item"
 msgid "Grenade Ammo"
-msgstr ""
+msgstr "榴弹"
 
 msgctxt "An item"
 msgid "Rifle"
-msgstr ""
+msgstr "激光枪"
 
 msgctxt "An item"
 msgid "Laser"
-msgstr ""
+msgstr "激光"
 
 msgctxt "An item"
 msgid "Ninja"
-msgstr ""
+msgstr "忍者刀"
 
 msgctxt "An item"
 msgid "Freeze-Rifle"
-msgstr ""
+msgstr "冻结激光枪"
 
 msgctxt "An item"
 msgid "Eggshell"
-msgstr ""
+msgstr "蛋壳"
 
 msgctxt "An item"
 msgid "Shelled Eggs"
-msgstr ""
+msgstr "去壳蛋"
 
 msgctxt "An item"
 msgid "Empty Ammo"
-msgstr ""
+msgstr "空子弹"
 
 msgctxt "An item"
 msgid "Frame"
-msgstr ""
+msgstr "框架"
 
 msgctxt "An item"
 msgid "Gunpowder"
-msgstr ""
+msgstr "火药"
 
 msgctxt "An item"
 msgid "Charcoal"
-msgstr ""
+msgstr "木炭"
 
 msgctxt "An item"
 msgid "Plasma"
-msgstr ""
+msgstr "等离子体"
