@@ -182,6 +182,7 @@ public:
 	virtual const char* GetClientLanguage(int ClientID) = 0;
 	virtual void SetClientLanguage(int ClientID, const char* pLanguage) = 0;
 	virtual int* GetIdMap(int ClientID) = 0;
+	virtual void ClearIdMap(int ClientID) = 0;
 	
 	virtual void ExpireServerInfo() = 0;
 	virtual void RegenerateMap() = 0;

@@ -129,7 +129,7 @@ enum
 struct CIDMap
 {
 	int m_VanillaIDMap[VANILLA_MAX_CLIENTS];
-	int m_IDMap[MAX_CLIENTS];
+	int m_IDMap[DDNET_MAX_CLIENTS];
 };
 
 typedef std::bitset<MAX_CLIENTS> CClientMask;

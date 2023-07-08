@@ -251,6 +251,8 @@ public:
 	void OnBotDead(int ClientID);
 	void CreateBot(int ClientID, CGameWorld *pGameWorld, CBotData BotPower);
 	//Bot END
+
+	void UpdatePlayerMaps(int ClientID);
 };
 
 #endif

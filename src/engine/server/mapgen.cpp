@@ -59,8 +59,8 @@ CMapGen::CMapGen(IStorage *pStorage, IConsole* pConsole, CServer *pServer) :
 	m_pHookableTiles = 0;
 	m_pUnhookableTiles = 0;
 
-	m_HookableReady = 0;
-	m_UnhookableReady = 0;
+	m_HookableReady = false;
+	m_UnhookableReady = false;
 }
 
 CMapGen::~CMapGen()
@@ -590,21 +590,6 @@ void CMapGen::GenerateHookable(CMapGen *pParent)
 	int Width = g_Config.m_SvGeneratedMapWidth;
 	int Height = g_Config.m_SvGeneratedMapHeight;
 
-	CMapItemGroup Item;
-	Item.m_Version = CMapItemGroup::CURRENT_VERSION;
-	Item.m_ParallaxX = 100;
-	Item.m_ParallaxY = 100;
-	Item.m_OffsetX = 0;
-	Item.m_OffsetY = 0;
-	Item.m_StartLayer = pParent->m_NumLayers;
-	Item.m_NumLayers = 2;
-	Item.m_UseClipping = 0;
-	Item.m_ClipX = 0;
-	Item.m_ClipY = 0;
-	Item.m_ClipW = 0;
-	Item.m_ClipH = 0;
-	StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), "Tiles");
-
 	pParent->m_pHookableTiles = new CTile[Width*Height];
 	for(int x = 0;x < Width;x ++)
 	{
@@ -623,8 +608,6 @@ void CMapGen::GenerateHookable(CMapGen *pParent)
 		}
 	}
 	pParent->Proceed(pParent->m_pHookableTiles, pParent->m_MainRules, Width, Height);
-	
-	pParent->m_DataFile.AddItem(MAPITEMTYPE_GROUP, pParent->m_NumGroups++, sizeof(Item), &Item);
 
 	pParent->m_HookableReady = true;
 
@@ -669,7 +652,6 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 
 void CMapGen::GenerateMap()
 {
-
 	// save version
 	{
 		CMapItemVersion Item;
@@ -693,6 +675,13 @@ void CMapGen::GenerateMap()
 	GenerateBackground();
 	// Generate game tile
 	GenerateGameLayer();
+	// to fast generate
+	{
+		// Generate hookable tile
+		std::thread(&CMapGen::GenerateHookable, this).detach();
+		// Generate unhookable tile
+		std::thread(&CMapGen::GenerateUnhookable, this).detach();
+	}
 	// Generate background tiles
 	{
 		CMapItemGroup Item;
@@ -738,10 +727,6 @@ void CMapGen::GenerateMap()
 	}
 	// Generate doodads tile
 	GenerateDoodadsLayer();
-	// Generate hookable tile
-	std::thread(&CMapGen::GenerateHookable, this).detach();
-	// Generate unhookable tile
-	std::thread(&CMapGen::GenerateUnhookable, this).detach();
 
 	while(1)
 	{
@@ -750,10 +735,31 @@ void CMapGen::GenerateMap()
 			break;
 		}
 	}
-	AddTile(m_pHookableTiles, "Hookable", m_MainImageID);
 
-	int ImageUnhookable = AddExternalImage("generic_unhookable", 1024, 1024);
-	AddTile(m_pUnhookableTiles, "Unhookable", ImageUnhookable);
+	// append the group
+	{
+		CMapItemGroup Item;
+		Item.m_Version = CMapItemGroup::CURRENT_VERSION;
+		Item.m_ParallaxX = 100;
+		Item.m_ParallaxY = 100;
+		Item.m_OffsetX = 0;
+		Item.m_OffsetY = 0;
+		Item.m_StartLayer = m_NumLayers;
+		Item.m_NumLayers = 2;
+		Item.m_UseClipping = 0;
+		Item.m_ClipX = 0;
+		Item.m_ClipY = 0;
+		Item.m_ClipW = 0;
+		Item.m_ClipH = 0;
+		StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), "Tiles");
+	
+		m_DataFile.AddItem(MAPITEMTYPE_GROUP, m_NumGroups++, sizeof(Item), &Item);
+
+		AddTile(m_pHookableTiles, "Hookable", m_MainImageID);
+
+		int ImageUnhookable = AddExternalImage("generic_unhookable", 1024, 1024);
+		AddTile(m_pUnhookableTiles, "Unhookable", ImageUnhookable);
+	}
 
 	return;
 }

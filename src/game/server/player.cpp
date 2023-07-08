@@ -66,12 +66,7 @@ void CPlayer::Reset()
 	if(!IsBot())
 	{
 		SetLanguage(Server()->GetClientLanguage(m_ClientID));
-		int* idMap = Server()->GetIdMap(m_ClientID);
-		for (int i = 0;i < (Server()->Is64Player(m_ClientID) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS);i++)
-		{
-			idMap[i] = -1;
-		}
-		idMap[0] = m_ClientID;
+		Server()->ClearIdMap(m_ClientID);
 	}
 
 	if(IsBot())

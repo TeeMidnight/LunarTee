@@ -50,8 +50,6 @@ public:
 
 	void SetLayers(CLayers Layers) { m_Layers = Layers; }
 	void SetCollision(CCollision Collision) { m_Collision = Collision; }
-	
-	void UpdatePlayerMaps();
 
 	bool m_ResetRequested;
 	CWorldCore m_Core;

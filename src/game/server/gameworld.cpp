@@ -182,8 +182,6 @@ void CGameWorld::Tick()
 		}
 
 	RemoveEntities();
-
-	UpdatePlayerMaps();
 }
 
 
@@ -218,90 +216,6 @@ CCharacter *CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 	}
 
 	return pClosest;
-}
-
-bool distCompare(std::pair<float,int> a, std::pair<float,int> b)
-{
-	return (a.first < b.first);
-}
-
-void CGameWorld::UpdatePlayerMaps()
-{
-	if (Server()->Tick() % g_Config.m_SvMapUpdateRate) 
-		return;
-
-	for (int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if (!Server()->ClientIngame(i)) 
-			continue;
-
-		if(!GameServer()->m_apPlayers[i])
-			continue;
-	
-		if(GameServer()->m_apPlayers[i]->GameWorld() != this)
-			continue;
-
-		int *pMap = Server()->GetIdMap(i);
-		int MaxClients = (Server()->Is64Player(i) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS);
-
-		std::vector<std::pair<float,int>> Dist;
-
-		// compute distances
-		for (int j = 0; j < MAX_CLIENTS; j++)
-		{
-			std::pair<float,int> temp;
-			temp.second = j;
-			temp.first = 1e10;
-
-			Dist.push_back(temp);
-
-			if (!Server()->ClientIngame(j))
-				continue;
-			if(!GameServer()->m_apPlayers[j])
-				continue;
-			if(j == i)
-			{
-				Dist[Dist.size()-1].first = -1; // first snap player self
-			}
-			else if(GameServer()->m_apPlayers[j]->GameWorld() == this)
-			{
-				Dist[Dist.size()-1].first = distance(GameServer()->m_apPlayers[i]->m_ViewPos, GameServer()->m_apPlayers[j]->m_ViewPos);
-			}
-			else
-			{
-				Dist[Dist.size()-1].first = 3e5;
-			}
-		}
-
-		for (int j = 0; j < (int) GameServer()->m_vpBotPlayers.size(); j++)
-		{
-			if(GameServer()->m_vpBotPlayers[j]->GameWorld() != this)
-				continue;
-				
-			std::pair<float,int> temp;
-			temp.first = distance(GameServer()->m_apPlayers[i]->m_ViewPos, GameServer()->m_vpBotPlayers[j]->m_ViewPos);
-			
-			temp.second = GameServer()->m_vpBotPlayers[j]->GetCID();
-
-			Dist.push_back(temp);
-		}
-
-		std::nth_element(&Dist[0], &Dist[MaxClients - 1], &Dist[Dist.size()], distCompare);
-
-		int Index = 0;
-		for(int j = 0; j < MaxClients - 1; j++)
-		{
-			pMap[j + 1] = -1; // also fill player with empty name to say chat msgs
-			if(Dist[j].first > 5e9f)
-				continue;
-			pMap[Index++] = Dist[j].second;
-		}
-
-		// sort by real client ids, guarantee order on distance changes, O(Nlog(N)) worst case
-		// sort just clients in game always except first (self client id) and last (fake client id) indexes
-		std::sort(&pMap[1], &pMap[minimum(Index, MaxClients - 1)]);
-	}
-	
 }
 
 CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotThis)
