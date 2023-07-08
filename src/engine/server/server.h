@@ -254,11 +254,12 @@ class CCache
 		public:
 			CCacheChunk(const void *pData, int Size);
 			CCacheChunk(const CCacheChunk &) = delete;
+			CCacheChunk(CCacheChunk &&) = default;
 
 			std::vector<uint8_t> m_vData;
 		};
 
-		std::list<CCacheChunk> m_Cache;
+		std::vector<CCacheChunk> m_vCache;
 
 		CCache();
 		~CCache();
