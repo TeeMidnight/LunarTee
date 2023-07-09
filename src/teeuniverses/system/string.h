@@ -40,25 +40,25 @@ public:
 	}
 
 	inline char* buffer() { return m_aBuffer; }
-	inline const char* buffer() const { return m_aBuffer; }
+	inline const char *buffer() const { return m_aBuffer; }
 	inline int maxsize() const { return SIZE; }
 	
-	inline void copy(const char* pBuffer)
+	inline void copy(const char *pBuffer)
 	{
 		str_copy(m_aBuffer, pBuffer, SIZE);
 	}
 	
 	inline void transfert(_fixed_string_core& String)
 	{
-		copy((const char*) String.buffer());
+		copy((const char *) String.buffer());
 	}
 	
-	inline void append_at(int Pos, const char* pBuffer)
+	inline void append_at(int Pos, const char *pBuffer)
 	{
 		str_append(m_aBuffer+Pos, pBuffer, SIZE-Pos);
 	}
 	
-	inline void append_at_num(int Pos, const char* pBuffer, int num)
+	inline void append_at_num(int Pos, const char *pBuffer, int num)
 	{
 		str_append_num(m_aBuffer+Pos, pBuffer, SIZE-Pos, num);
 	}
@@ -110,10 +110,10 @@ public:
 	}
 
 	inline char* buffer() { return m_pBuffer; }
-	inline const char* buffer() const { return m_pBuffer; }
+	inline const char *buffer() const { return m_pBuffer; }
 	inline int maxsize() const { return m_MaxSize; }
 	
-	inline void copy(const char* pBuffer)
+	inline void copy(const char *pBuffer)
 	{
 		int Size = str_length(pBuffer)+1;
 		if(Size > m_MaxSize)
@@ -133,7 +133,7 @@ public:
 		String.m_MaxSize = 0;
 	}
 	
-	inline int append_at(int Pos, const char* pBuffer)
+	inline int append_at(int Pos, const char *pBuffer)
 	{
 		int BufferSize = str_length(pBuffer);
 		int Size = Pos+BufferSize+1;
@@ -151,7 +151,7 @@ public:
 		return minimum(Pos + BufferSize, m_MaxSize-1);
 	}
 	
-	inline int append_at_num(int Pos, const char* pBuffer, int Num)
+	inline int append_at_num(int Pos, const char *pBuffer, int Num)
 	{
 		int Size = Pos+Num+1;
 		if(Size > m_MaxSize)
@@ -179,7 +179,7 @@ public:
 		
 	}
 	
-	string(const char* pBuffer) :
+	string(const char *pBuffer) :
 		BASE()
 	{
 		BASE::copy(pBuffer);
@@ -189,7 +189,7 @@ public:
 	inline void clear() { BASE::buffer()[0] = 0; }
 	inline bool empty() const { return (BASE::buffer()[0] == 0); }
 	
-	inline void copy(const char* pBuffer) { BASE::copy(pBuffer); }
+	inline void copy(const char *pBuffer) { BASE::copy(pBuffer); }
 	
 	template<typename STR>
 	inline void copy(const STR& str)
@@ -197,7 +197,7 @@ public:
 		BASE::copy(str.buffer());
 	}
 	
-	inline void append(const char* pBuffer) { BASE::append_at(length(), pBuffer); }
+	inline void append(const char *pBuffer) { BASE::append_at(length(), pBuffer); }
 	
 	template<typename STR>
 	inline void append(const STR& str)
@@ -205,7 +205,7 @@ public:
 		BASE::append_at(length(), str.buffer());
 	}
 	
-	inline void append_num(const char* pBuffer, int num) { BASE::append_at_num(length(), pBuffer, num); }
+	inline void append_num(const char *pBuffer, int num) { BASE::append_at_num(length(), pBuffer, num); }
 	
 	template<typename STR>
 	inline void append_num(const STR& str, int num)
@@ -213,7 +213,7 @@ public:
 		BASE::append_at_num(length(), str.buffer(), num);
 	}
 	
-	bool operator<(const char* buffer) const
+	bool operator<(const char *buffer) const
 	{
 		return (str_comp(BASE::buffer(), buffer) < 0);
 	}
@@ -224,7 +224,7 @@ public:
 		return (str_comp(BASE::buffer(), str.buffer()) < 0);
 	}
 	
-	bool operator>(const char* buffer) const
+	bool operator>(const char *buffer) const
 	{
 		return (str_comp(BASE::buffer(), buffer) > 0);
 	}
@@ -235,7 +235,7 @@ public:
 		return (str_comp(BASE::buffer(), str.buffer()) > 0);
 	}
 	
-	bool operator==(const char* buffer) const
+	bool operator==(const char *buffer) const
 	{
 		return (str_comp(BASE::buffer(), buffer) == 0);
 	}
@@ -246,7 +246,7 @@ public:
 		return (str_comp(BASE::buffer(), str.buffer()) == 0);
 	}
 	
-	bool operator!=(const char* buffer) const
+	bool operator!=(const char *buffer) const
 	{
 		return (str_comp(BASE::buffer(), buffer) != 0);
 	}
@@ -257,7 +257,7 @@ public:
 		return (str_comp(BASE::buffer(), str.buffer()) != 0);
 	}
 
-	int comp_num(const char* str, int num) const
+	int comp_num(const char *str, int num) const
 	{
 		return (str_comp_num(BASE::buffer(), str, num) != 0);
 	}

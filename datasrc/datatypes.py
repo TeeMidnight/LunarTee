@@ -149,7 +149,7 @@ class Float(BaseType):
 
 class String(BaseType):
 	def __init__(self, value):
-		BaseType.__init__(self, "const char*")
+		BaseType.__init__(self, "const char *")
 		self.value = value
 	def Set(self, value):
 		self.value = value

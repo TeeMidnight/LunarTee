@@ -118,17 +118,17 @@ public:
 
 	void InitState();
 	
-	void AddImageQuad(const char* pName, int ImageID, int GridX, int GridY, int X, int Y, int Width, int Height, vec2 Pos, vec2 Size, vec4 Color, int Env);
+	void AddImageQuad(const char *pName, int ImageID, int GridX, int GridY, int X, int Y, int Width, int Height, vec2 Pos, vec2 Size, vec4 Color, int Env);
 	
-	int AddExternalImage(const char* pImageName, int Width, int Height);
-	int AddEmbeddedImage(const char* pImageName, int Width, int Height);
+	int AddExternalImage(const char *pImageName, int Width, int Height);
+	int AddEmbeddedImage(const char *pImageName, int Width, int Height);
 	
 	void GenerateMap();
 
 	CMapGen(IStorage *pStorage, IConsole* pConsole, CServer *pServer);
 	~CMapGen();
 
-	bool CreateMap(const char* pFilename);
+	bool CreateMap(const char *pFilename);
 };
 
 #endif

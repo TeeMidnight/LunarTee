@@ -6,7 +6,7 @@ char* format_int64_with_commas(char commas, int64_t  n)
 	char _number_array[64] = { '\0' };
 	str_format(_number_array, sizeof(_number_array), "%ld", n); // %ll
 
-	const char* _number_pointer = _number_array;
+	const char *_number_pointer = _number_array;
 	int _number_of_digits = 0;
 	while (*(_number_pointer + _number_of_digits++));
 	--_number_of_digits;

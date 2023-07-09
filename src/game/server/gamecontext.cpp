@@ -117,7 +117,7 @@ int CGameContext::FindWorldIDWithWorld(CGameWorld *pGameWorld) const
 	return -1;
 }
 
-CGameWorld *CGameContext::CreateNewWorld(IMap *pMap)
+CGameWorld *CGameContext::CreateNewWorld(IMap *pMap, const char *WorldName)
 {
 	CGameWorld GameWorld;
 
@@ -127,6 +127,8 @@ CGameWorld *CGameContext::CreateNewWorld(IMap *pMap)
 	GameWorld.Collision()->Init(GameWorld.Layers());
 
 	GameWorld.InitSpawnPos();
+
+	str_copy(GameWorld.m_aWorldName, WorldName);
 
 	m_vWorlds.push_back(GameWorld);
 
@@ -172,6 +174,19 @@ CGameWorld *CGameContext::FindWorldWithMap(IMap *pMap)
 	for(int i = 0; i < (int) m_vWorlds.size(); i ++)
 	{
 		if(m_vWorlds[i].Layers()->Map() == pMap)
+		{
+			return &m_vWorlds[i];
+		}
+	}
+	
+	return 0x0;
+}
+
+CGameWorld *CGameContext::FindWorldWithName(const char *WorldName)
+{
+	for(int i = 0; i < (int) m_vWorlds.size(); i ++)
+	{
+		if(str_comp(m_vWorlds[i].m_aWorldName, WorldName) == 0)
 		{
 			return &m_vWorlds[i];
 		}
@@ -285,6 +300,7 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, CClientMask Mask)
 		pEvent->m_SoundID = Sound;
 	}
 }
+
 void CGameContext::CreateSoundGlobal(int Sound, int Target)
 {
 	if (Sound < 0)
@@ -303,7 +319,7 @@ void CGameContext::CreateSoundGlobal(int Sound, int Target)
 	}
 }
 
-void CGameContext::SendMenuChat(int To, const char* pText)
+void CGameContext::SendMenuChat(int To, const char *pText)
 {
 	if(To < 0)
 	{
@@ -315,7 +331,7 @@ void CGameContext::SendMenuChat(int To, const char* pText)
 	else m_pMenu->AddMenuChat(To, pText);
 }
 
-void CGameContext::SendMenuChat_Localization(int To, const char* pText, ...)
+void CGameContext::SendMenuChat_Localization(int To, const char *pText, ...)
 {
 	int Start = (To < 0 ? 0 : To);
 	int End = (To < 0 ? MAX_CLIENTS : To+1);
@@ -339,7 +355,7 @@ void CGameContext::SendMenuChat_Localization(int To, const char* pText, ...)
 	va_end(VarArgs);
 }
 
-void CGameContext::SendMotd(int To, const char* pText)
+void CGameContext::SendMotd(int To, const char *pText)
 {
 	if(m_apPlayers[To])
 	{
@@ -350,7 +366,7 @@ void CGameContext::SendMotd(int To, const char* pText)
 	}
 }
 
-void CGameContext::SendChatTarget(int To, const char* pText)
+void CGameContext::SendChatTarget(int To, const char *pText)
 {
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Team = 0;
@@ -748,11 +764,11 @@ void CGameContext::OnClientEnter(int ClientID)
 	Server()->ExpireServerInfo();
 }
 
-void CGameContext::OnClientConnected(int ClientID)
+void CGameContext::OnClientConnected(int ClientID, const char *WorldName)
 {
-	CGameWorld *pGameWorld = FindWorldWithMap(Server()->GetClientMap(ClientID));
+	CGameWorld *pGameWorld = FindWorldWithName(WorldName);
 	if(!pGameWorld)
-		pGameWorld = CreateNewWorld(Server()->GetClientMap(ClientID));
+		pGameWorld = CreateNewWorld(Server()->GetClientMap(ClientID), WorldName);
 
 	m_apPlayers[ClientID] = new CPlayer(pGameWorld, ClientID, TEAM_SPECTATORS);
 
@@ -1666,8 +1682,8 @@ void CGameContext::ConLanguage(IConsole::IResult *pResult, void *pUserData)
 	}
 	else
 	{
-		const char* pLanguage = pSelf->m_apPlayers[ClientID]->GetLanguage();
-		const char* pTxtUnknownLanguage = pSelf->Server()->Localization()->Localize(pLanguage, _("Unknown language or no input language code"));
+		const char *pLanguage = pSelf->m_apPlayers[ClientID]->GetLanguage();
+		const char *pTxtUnknownLanguage = pSelf->Server()->Localization()->Localize(pLanguage, _("Unknown language or no input language code"));
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "language", pTxtUnknownLanguage);
 
 		std::string BufferList;
@@ -1734,7 +1750,7 @@ void CGameContext::ConEmote(IConsole::IResult *pResult, void *pUserData)
 	pPlayer->SetEmote(EmoteType);
 }
 
-static bool CheckStringSQL(const char* string)
+static bool CheckStringSQL(const char *string)
 {
 	for(int i = 0;i < str_length(string); i ++)
 	{
@@ -1826,7 +1842,7 @@ void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::MenuMotd(int ClientID, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	const char* pLanguage = !pSelf->m_apPlayers[ClientID] ? "en" : pSelf->m_apPlayers[ClientID]->GetLanguage();
+	const char *pLanguage = !pSelf->m_apPlayers[ClientID] ? "en" : pSelf->m_apPlayers[ClientID]->GetLanguage();
 
 	if(g_Config.m_SvMotd[0])
 		pSelf->SendMotd(ClientID, g_Config.m_SvMotd);
@@ -1876,7 +1892,7 @@ void CGameContext::SetClientLanguage(int ClientID, const char *pLanguage)
 	}
 }
 
-const char* CGameContext::Localize(const char *pLanguageCode, const char* pText) const
+const char *CGameContext::Localize(const char *pLanguageCode, const char *pText) const
 {
 	if(str_comp(pLanguageCode, "en") == 0)
 		return pText;

@@ -23,7 +23,7 @@ public:
 
     void InitWeapon();
 
-    CItemData *GetItemData(const char* Name);
+    CItemData *GetItemData(const char *Name);
     CInventory *GetInventory(int ClientID);
     int GetInvItemNum(const char *ItemName, int ClientID);
     void AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true);

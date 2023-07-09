@@ -123,7 +123,7 @@ void CMapGen::InitQuad(CQuad* pQuad, vec2 Pos, vec2 Size)
 	pQuad->m_aPoints[4].y = YC;
 }
 
-void CMapGen::AddImageQuad(const char* pName, int ImageID, int GridX, int GridY, int X, int Y, int Width, int Height, vec2 Pos, vec2 Size, vec4 Color, int Env)
+void CMapGen::AddImageQuad(const char *pName, int ImageID, int GridX, int GridY, int X, int Y, int Width, int Height, vec2 Pos, vec2 Size, vec4 Color, int Env)
 {
 	array<CQuad> aQuads;
 	CQuad Quad;
@@ -224,7 +224,7 @@ int LoadPNG(CImageInfo *pImg, const char *pFilename)
 	return 1;
 }
 
-int CMapGen::AddEmbeddedImage(const char* pImageName, int Width, int Height)
+int CMapGen::AddEmbeddedImage(const char *pImageName, int Width, int Height)
 {
 	CImageInfo img;
 	CImageInfo *pImg = &img;
@@ -273,7 +273,7 @@ int CMapGen::AddEmbeddedImage(const char* pImageName, int Width, int Height)
 	return m_NumImages-1;
 }
 
-int CMapGen::AddExternalImage(const char* pImageName, int Width, int Height)
+int CMapGen::AddExternalImage(const char *pImageName, int Width, int Height)
 {
 	CMapItemImage Item;
 	Item.m_Version = 1;
@@ -1230,7 +1230,7 @@ void CMapGen::AddTile(CTile *pTile, const char *LayerName, int Image, vec4 Color
 	m_DataFile.AddItem(MAPITEMTYPE_LAYER, m_NumLayers++, sizeof(CMapItemLayerTilemap), &Item);
 }
 
-bool CMapGen::CreateMap(const char* pFilename)
+bool CMapGen::CreateMap(const char *pFilename)
 {
 	if(!m_DataFile.Open(Storage(), pFilename))
 	{

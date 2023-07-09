@@ -179,8 +179,8 @@ public:
 	virtual void DemoRecorder_HandleAutoStart() = 0;
 	virtual bool DemoRecorder_IsRecording() = 0;
 
-	virtual const char* GetClientLanguage(int ClientID) = 0;
-	virtual void SetClientLanguage(int ClientID, const char* pLanguage) = 0;
+	virtual const char *GetClientLanguage(int ClientID) = 0;
+	virtual void SetClientLanguage(int ClientID, const char *pLanguage) = 0;
 	virtual int* GetIdMap(int ClientID) = 0;
 	virtual void ClearIdMap(int ClientID) = 0;
 	
@@ -213,7 +213,7 @@ public:
 
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) = 0;
 
-	virtual void OnClientConnected(int ClientID) = 0;
+	virtual void OnClientConnected(int ClientID, const char *WorldName) = 0;
 	virtual void OnClientEnter(int ClientID) = 0;
 	virtual void OnClientDrop(int ClientID, const char *pReason) = 0;
 	virtual void OnClientDirectInput(int ClientID, void *pInput) = 0;

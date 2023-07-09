@@ -31,7 +31,7 @@ protected:
 	array<entry> m_Table[TABLESIZE];
 
 protected:
-	HASH hash(const char* pKey) const
+	HASH hash(const char *pKey) const
 	{
 		HASH Hash = 5381;
 		for(; *pKey; pKey++)
@@ -54,7 +54,7 @@ public:
 		Function: add
 			Adds an item to the array.
 	*/
-	T* set(const char* pKey)
+	T* set(const char *pKey)
 	{
 		HASH Hash = hash(pKey);
 		for(int i=0; i<m_Table[Hash].size(); i++)
@@ -72,7 +72,7 @@ public:
 		Function: add
 			Adds an item to the array.
 	*/
-	T* set(const char* pKey, const T& Data)
+	T* set(const char *pKey, const T& Data)
 	{
 		HASH Hash = hash(pKey);
 		for(int i=0; i<m_Table[Hash].size(); i++)
@@ -94,7 +94,7 @@ public:
 		Function: remove
 		 	Remove an element from its key
 	*/
-	void unset(const char* pKey)
+	void unset(const char *pKey)
 	{
 		HASH Hash = hash(pKey);
 		for(int i=0; i<m_Table[Hash].size(); i++)
@@ -112,7 +112,7 @@ public:
 		 	Return a point to the element associated with pKey.
 		 	If the element doesn't exist, the function return 0
 	*/
-	const T* get(const char* pKey) const
+	const T* get(const char *pKey) const
 	{
 		HASH Hash = hash(pKey);
 		for(int i=0; i<m_Table[Hash].size(); i++)
@@ -132,7 +132,7 @@ public:
 			return 0;
 	}
 	
-	const char* get_key(int Id, int SubId) const
+	const char *get_key(int Id, int SubId) const
 	{
 		if(Id >= 0 && Id < TABLESIZE && SubId >= 0 && SubId < m_Table[Id].size())
 			return m_Table[Id][SubId].m_Key.buffer();
@@ -140,7 +140,7 @@ public:
 			return 0;
 	}
 	
-	T* get(const char* pKey)
+	T* get(const char *pKey)
 	{
 		HASH Hash = hash(pKey);
 		for(int i=0; i<m_Table[Hash].size(); i++)
@@ -199,7 +199,7 @@ public:
 			return *this;
 		}
 		T* data() { return m_pHashTable->get(m_Id, m_SubId); }
-		const char* key() const { return m_pHashTable->get_key(m_Id, m_SubId); }
+		const char *key() const { return m_pHashTable->get_key(m_Id, m_SubId); }
 		bool operator==(const iterator& Iter2) const { return (Iter2.m_pHashTable == m_pHashTable) && (Iter2.m_Id == m_Id) && (Iter2.m_SubId == m_SubId); }
 		bool operator!=(const iterator& Iter2) const { return (Iter2.m_pHashTable != m_pHashTable) || (Iter2.m_Id != m_Id) || (Iter2.m_SubId != m_SubId); }
 	};

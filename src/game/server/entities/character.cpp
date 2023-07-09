@@ -942,7 +942,7 @@ void CCharacter::DoBotActions()
 	CCharacter *pClosestChr = FindTarget(m_Pos, 480.0f);
 	if(pClosestChr)
 	{
-		if(pClosestChr != pOldTarget)
+		if(pClosestChr != pOldTarget && !pOldTarget)
 		{
 			m_Botinfo.m_Target = pClosestChr->GetCID();
 			m_Botinfo.m_LastTargetPos = pClosestChr->m_Pos;

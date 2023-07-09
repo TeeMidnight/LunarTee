@@ -362,7 +362,7 @@ public:
 		return !fs_remove(GetPath(Type, pFilename, aBuffer, sizeof(aBuffer)));
 	}
 
-	virtual bool RenameFile(const char* pOldFilename, const char* pNewFilename, int Type)
+	virtual bool RenameFile(const char *pOldFilename, const char *pNewFilename, int Type)
 	{
 		if(Type < 0 || Type >= m_NumPaths)
 			return false;

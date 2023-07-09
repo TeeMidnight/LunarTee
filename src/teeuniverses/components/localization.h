@@ -15,9 +15,9 @@
 
 struct CLocalizableString
 {
-	const char* m_pText;
+	const char *m_pText;
 	
-	CLocalizableString(const char* pText) :
+	CLocalizableString(const char *pText) :
 		m_pText(pText)
 	{ }
 };
@@ -67,15 +67,15 @@ public:
 
 	public:
 		CLanguage();
-		CLanguage(const char* pName, const char* pFilename, const char* pParentFilename);
+		CLanguage(const char *pName, const char *pFilename, const char *pParentFilename);
 		~CLanguage();
 		
-		inline const char* GetParentFilename() const { return m_aParentFilename; }
-		inline const char* GetFilename() const { return m_aFilename; }
-		inline const char* GetName() const { return m_aName; }
+		inline const char *GetParentFilename() const { return m_aParentFilename; }
+		inline const char *GetFilename() const { return m_aFilename; }
+		inline const char *GetName() const { return m_aName; }
 		inline bool IsLoaded() const { return m_Loaded; }
 		bool Load(CLocalization* pLocalization, class CStorage* pStorage);
-		const char* Localize(const char* pKey) const;
+		const char *Localize(const char *pKey) const;
 	};
 	
 	enum
@@ -92,25 +92,25 @@ public:
 	array<CLanguage*> m_pLanguages;
 
 protected:
-	const char* LocalizeWithDepth(const char* pLanguageCode, const char* pText, int Depth);
+	const char *LocalizeWithDepth(const char *pLanguageCode, const char *pText, int Depth);
 public:
 
 	CLocalization(class CStorage* pStorage);
 
 	virtual ~CLocalization();
 	
-	virtual bool InitConfig(int argc, const char** argv);
+	virtual bool InitConfig(int argc, const char ** argv);
 	virtual bool Init();
 
 	//localize
-	const char* Localize(const char* pLanguageCode, const char* pText);
+	const char *Localize(const char *pLanguageCode, const char *pText);
 	
 	//format
-	void Format_V(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, va_list VarArgs);
-	void Format(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, ...);
+	void Format_V(dynamic_string& Buffer, const char *pLanguageCode, const char *pText, va_list VarArgs);
+	void Format(dynamic_string& Buffer, const char *pLanguageCode, const char *pText, ...);
 	//localize, format
-	void Format_VL(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, va_list VarArgs);
-	void Format_L(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, ...);
+	void Format_VL(dynamic_string& Buffer, const char *pLanguageCode, const char *pText, va_list VarArgs);
+	void Format_L(dynamic_string& Buffer, const char *pLanguageCode, const char *pText, ...);
 };
 
 #endif

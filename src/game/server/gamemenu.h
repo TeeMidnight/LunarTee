@@ -9,7 +9,7 @@ class CMenu
 	class CGameContext *m_pGameServer;
 	CGameContext *GameServer() const { return m_pGameServer; }
 
-	const char* Localize(const char* pText) const;
+	const char *Localize(const char *pText) const;
     char m_aLanguageCode[16];
 
     array<std::string> m_DataTemp;

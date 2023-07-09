@@ -120,7 +120,7 @@ public:
 	~CGameContext();
 
 	void Clear();
-	CGameWorld *CreateNewWorld(IMap *pMap);
+	CGameWorld *CreateNewWorld(IMap *pMap, const char *WorldName);
 
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
@@ -164,6 +164,7 @@ public:
 	int FindWorldIDWithWorld(CGameWorld *pGameWorld) const;
 	CGameWorld *FindWorldWithClientID(int ClientID) const;
 	CGameWorld *FindWorldWithMap(IMap *pMap);
+	CGameWorld *FindWorldWithName(const char *WorldName);
 
 	// helper functions
 	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount, CClientMask Mask = CClientMask().set());
@@ -186,7 +187,7 @@ public:
 	void SendMenuChat(int To, const char *pText);
 	void SendMenuChat_Localization(int To, const char *pText, ...);
 	// network
-	void SendMotd(int To, const char* pText);
+	void SendMotd(int To, const char *pText);
 	void SendChatTarget(int To, const char *pText);
 	void SendChatTarget_Localization(int To, const char *pText, ...);
 	void SendChat(int ClientID, int Team, const char *pText);
@@ -196,7 +197,7 @@ public:
 	void SendBroadcast_Localization(const char *pText, int ClientID, ...);
 	void SetClientLanguage(int ClientID, const char *pLanguage);
 
-	const char* Localize(const char *pLanguageCode, const char* pText) const;
+	const char *Localize(const char *pLanguageCode, const char *pText) const;
 
 
 
@@ -219,7 +220,7 @@ public:
 
 	void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) override;
 
-	void OnClientConnected(int ClientID) override;
+	void OnClientConnected(int ClientID, const char *WorldName) override;
 	void OnClientEnter(int ClientID) override;
 	void OnClientDrop(int ClientID, const char *pReason) override;
 	void OnClientDirectInput(int ClientID, void *pInput) override;

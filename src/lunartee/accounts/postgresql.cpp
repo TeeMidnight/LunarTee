@@ -13,10 +13,10 @@ using namespace pqxx;
 static LOCK SQLLock = 0;
 CGameContext *m_pGameServer;
 CGameContext *GameServer() { return m_pGameServer; }
-static const char* m_Database;
-static const char* m_UserName;
-static const char* m_Password;
-static const char* m_IP;
+static const char *m_Database;
+static const char *m_UserName;
+static const char *m_Password;
+static const char *m_IP;
 static int m_Port;
 
 CPostgresql::CPostgresql(CGameContext *pGameServer)
@@ -52,10 +52,11 @@ static void InitThread(void *pUser)
 			char Buf[2048];
 			str_format(Buf, sizeof(Buf),
 			"CREATE TABLE IF NOT EXISTS lt_PlayerAccount "
-			"(UserID  serial 	  NOT NULL, "
+			"(UserID  serial      NOT NULL, "
 			"Username VARCHAR(%d) NOT NULL, "
 			"Nickname VARCHAR(%d) NOT NULL, "
 			"Password VARCHAR(%d) NOT NULL, "
+			"WorldName VARCHAR(128) NOT NULL, "
 			"Language VARCHAR(16) NOT NULL DEFAULT 'en', "
 			"Level BIGINT DEFAULT 0);", MAX_ACCOUNTS_NAME_LENTH, MAX_NAME_LENGTH, MAX_ACCOUNTS_PASSWORD_LENTH);
 			Work.exec(Buf);
@@ -92,6 +93,8 @@ static void Register(void *pUser)
 	lock_wait(SQLLock);
 
 	CTempAccountsData *pData = (CTempAccountsData *)pUser;
+
+	int ClientID = pData->ClientID;
 	try 
 	{
 		// Create connection
@@ -107,8 +110,6 @@ static void Register(void *pUser)
 			char Buf[2048];
 			str_format(Buf, sizeof(Buf), "SELECT * FROM lt_PlayerAccount WHERE Username='%s';", pData->Name);
 			work Work(Connection);
-
-			int ClientID = pData->ClientID;
 				
 			/* Execute SQL query */
 			result Result(Work.exec(Buf));
@@ -117,8 +118,13 @@ static void Register(void *pUser)
 				GameServer()->SendChatTarget(ClientID, _("This account already exists!"));
 			}else
 			{
-				str_format(Buf, sizeof(Buf), "INSERT INTO lt_PlayerAccount(Username, Nickname, Password, Language) VALUES ('%s', '%s', '%s', '%s');", 
-					pData->Name, GameServer()->Server()->ClientName(ClientID), pData->Password, GameServer()->m_apPlayers[pData->ClientID]->GetLanguage());
+				str_format(Buf, sizeof(Buf), 
+					"INSERT INTO lt_PlayerAccount(Username, Nickname, Password, Language, WorldName) "
+					"VALUES ('%s', '%s', '%s', '%s', '%s');", 
+					pData->Name, GameServer()->Server()->ClientName(ClientID), 
+					pData->Password, 
+					GameServer()->m_apPlayers[ClientID]->GetLanguage(),
+					GameServer()->m_apPlayers[ClientID]->GameWorld()->m_aWorldName);
 				
 				Work.exec(Buf);
 				Work.commit();
@@ -135,7 +141,7 @@ static void Register(void *pUser)
 	catch (const std::exception &e)
 	{
 		log_log_color(LEVEL_WARN, LOG_COLOR_WARNING, "Postgresql", "ERROR: SQL connection failed when register (%s)", e.what());
-		m_pGameServer->SendChatTarget_Localization(pData->ClientID, _("Register failed! Please ask server hoster!"));
+		m_pGameServer->SendChatTarget_Localization(ClientID, _("Register failed! Please ask server hoster!"));
 	}
 
 	delete pData;
@@ -158,6 +164,7 @@ static void Login(void *pUser)
 	lock_wait(SQLLock);
 
 	CTempAccountsData *pData = (CTempAccountsData *) pUser;
+	int ClientID = pData->ClientID;
 	try 
 	{
 		// Create connection
@@ -179,27 +186,27 @@ static void Login(void *pUser)
 			Work.commit();
 			if(Result.size())
 			{
-				const char *pNickName = Result.begin()["Nickname"].as<std::string>().c_str();
-				if(str_comp(pNickName, GameServer()->Server()->ClientName(pData->ClientID)) == 0)
+				const char *pNickName = Result.begin()["Nickname"].as<const char*>();
+				if(str_comp(pNickName, GameServer()->Server()->ClientName(ClientID)) == 0)
 				{
-					if(str_comp(Result.begin()["Password"].as<std::string>().c_str(), pData->Password) == 0)
+					if(str_comp(Result.begin()["Password"].as<const char*>(), pData->Password) == 0)
 					{
-						GameServer()->m_apPlayers[pData->ClientID]->Login(Result.begin()["UserID"].as<int>());
-						GameServer()->m_apPlayers[pData->ClientID]->SetLanguage(Result.begin()["Language"].as<std::string>().c_str());
-						GameServer()->SendChatTarget_Localization(pData->ClientID, _("You're login now!"));
+						GameServer()->m_apPlayers[ClientID]->Login(Result.begin()["UserID"].as<int>());
+						GameServer()->m_apPlayers[ClientID]->SetLanguage(Result.begin()["Language"].as<const char*>());
+						GameServer()->SendChatTarget_Localization(ClientID, _("You're login now!"));
 						
-						GameServer()->Postgresql()->CreateSyncItemThread(pData->ClientID);
+						GameServer()->Postgresql()->CreateSyncItemThread(ClientID);
 					}else
 					{
-						GameServer()->SendChatTarget_Localization(pData->ClientID, _("Wrong password!"));
+						GameServer()->SendChatTarget_Localization(ClientID, _("Wrong password!"));
 					}
 				}else
 				{
-					GameServer()->SendChatTarget_Localization(pData->ClientID, _("Wrong player nickname!"));
+					GameServer()->SendChatTarget_Localization(ClientID, _("Wrong player nickname!"));
 				}
 			}else
 			{
-				GameServer()->SendChatTarget_Localization(pData->ClientID, _("This account doesn't exists!"));
+				GameServer()->SendChatTarget_Localization(ClientID, _("This account doesn't exists!"));
 			}
 			Connection.disconnect();
 		}
@@ -207,7 +214,7 @@ static void Login(void *pUser)
 	catch (const std::exception &e)
 	{
 		log_log_color(LEVEL_WARN, LOG_COLOR_WARNING, "Postgresql", "ERROR: SQL connection failed when login (%s)", e.what());
-		m_pGameServer->SendChatTarget_Localization(pData->ClientID, _("Login failed! Please ask server hoster!"));
+		m_pGameServer->SendChatTarget_Localization(ClientID, _("Login failed! Please ask server hoster!"));
 	}
 
 	delete pData;
@@ -321,7 +328,9 @@ static void SyncItem(void *pUser)
 				{
 					for(result::const_iterator i = Result.begin(); i != Result.end(); ++i)
 					{
-						GameServer()->Item()->SetInvItemNum(i["ItemName"].as<std::string>().c_str(), i["ItemNum"].as<int>(), pData->ClientID, false);
+						GameServer()->Item()->SetInvItemNum(i["ItemName"].as<const char*>(), 
+							i["ItemNum"].as<int>(), pData->ClientID, 
+							false);
 					}
 				}
 				Connection.disconnect();
@@ -443,7 +452,7 @@ static void UpdateLanguage(void *pUser)
 	lock_unlock(SQLLock);
 }
 
-void CPostgresql::CreateUpdateLanguageThread(int ClientID, const char* pLanguage)
+void CPostgresql::CreateUpdateLanguageThread(int ClientID, const char *pLanguage)
 {
 	CTempLanguageData *Temp = new CTempLanguageData();
 	Temp->UserID = GameServer()->m_apPlayers[ClientID] ? GameServer()->m_apPlayers[ClientID]->GetUserID() : -1;

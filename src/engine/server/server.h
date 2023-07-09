@@ -283,8 +283,8 @@ class CCache
 
 	char *GetMapName(CMapData *pMapData);
 
-	int LoadMap(const char* pMapName);
-	int GenerateMap(const char* pMapName);
+	int LoadMap(const char *pMapName);
+	int GenerateMap(const char *pMapName);
 	void CreateMapThread(const char *pMapName);
 
 	bool m_MainMapLoaded;
@@ -312,8 +312,8 @@ class CCache
 	void SnapSetStaticsize(int ItemType, int Size);
 	
 public:
-	const char* GetClientLanguage(int ClientID) override;
-	void SetClientLanguage(int ClientID, const char* pLanguage) override;
+	const char *GetClientLanguage(int ClientID) override;
+	void SetClientLanguage(int ClientID, const char *pLanguage) override;
 	int* GetIdMap(int ClientID) override;
 	void ClearIdMap(int ClientID) override;
 	void RegenerateMap() override;

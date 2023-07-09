@@ -421,12 +421,12 @@ void CPlayer::TryRespawn()
 	GameServer()->CreatePlayerSpawn(SpawnPos);
 }
 
-const char* CPlayer::GetLanguage()
+const char *CPlayer::GetLanguage()
 {
 	return m_aLanguage;
 }
 
-void CPlayer::SetLanguage(const char* pLanguage)
+void CPlayer::SetLanguage(const char *pLanguage)
 {
 	str_copy(m_aLanguage, pLanguage, sizeof(m_aLanguage));
 }

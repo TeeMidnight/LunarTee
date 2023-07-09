@@ -19,7 +19,7 @@ public:
 	void CreateSyncItemThread(int ClientID);
 	void CreateClearItemThread(int ClientID);
 
-	void CreateUpdateLanguageThread(int ClientID, const char* pLanguage);
+	void CreateUpdateLanguageThread(int ClientID, const char *pLanguage);
 };
 
 struct CTempLanguageData

@@ -12,7 +12,7 @@ CMenu::CMenu(CGameContext *pGameServer) :
     }
 }
 
-const char* CMenu::Localize(const char* pText) const
+const char *CMenu::Localize(const char *pText) const
 {
 	return GameServer()->Localize(m_aLanguageCode, pText);
 }
@@ -142,7 +142,7 @@ void CMenu::ShowMenu(int ClientID, int Line)
             if(j >= m_DataTemp.size())
                 j = 0;
 
-            const char* Buffer = m_DataTemp[j].c_str();
+            const char *Buffer = m_DataTemp[j].c_str();
             if(i == 4)
                 MenuBuffer.append("[");
             MenuBuffer.append(Localize(Buffer));
@@ -164,7 +164,7 @@ void CMenu::ShowMenu(int ClientID, int Line)
         int j = 0;
         for(int i = 0;i < m_DataTemp.size(); i++)
         {
-            const char* Buffer = m_DataTemp[j].c_str();
+            const char *Buffer = m_DataTemp[j].c_str();
             if(j == Line)
                 MenuBuffer.append("[");
             else MenuBuffer.append(" ");
@@ -296,8 +296,8 @@ void CMenu::UseOptions(int ClientID)
     {
         for(int i = 0; i< GameServer()->Server()->Localization()->m_pLanguages.size(); i++)
         {
-            const char* pLanguageName = GameServer()->Server()->Localization()->m_pLanguages[i]->GetName();
-            const char* pLanguage = GameServer()->Server()->Localization()->m_pLanguages[i]->GetFilename();
+            const char *pLanguageName = GameServer()->Server()->Localization()->m_pLanguages[i]->GetName();
+            const char *pLanguage = GameServer()->Server()->Localization()->m_pLanguages[i]->GetFilename();
             if(str_comp(m_apOptions[OptionID]->m_aName, pLanguageName) == 0)
             {
                 pPlayer->SetLanguage(pLanguage);

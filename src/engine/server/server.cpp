@@ -288,12 +288,12 @@ void CServer::CClient::Reset()
 	// str_copy(m_aLanguage, g_Config.m_SvDefaultLanguage, sizeof(m_aLanguage));
 }
 
-const char* CServer::GetClientLanguage(int ClientID)
+const char *CServer::GetClientLanguage(int ClientID)
 {
 	return m_aClients[ClientID].m_aLanguage;
 }
 
-void CServer::SetClientLanguage(int ClientID, const char* pLanguage)
+void CServer::SetClientLanguage(int ClientID, const char *pLanguage)
 {
 	str_copy(m_aClients[ClientID].m_aLanguage, pLanguage, sizeof(m_aClients[ClientID].m_aLanguage));
 }
@@ -968,7 +968,7 @@ void CServer::SendMap(int ClientID)
 	CMapData *pMapData = m_aClients[ClientID].m_pMapData;
 
 	char aBuf[256];
-	const char* MapName = GetMapName(pMapData);
+	const char *MapName = GetMapName(pMapData);
 	str_format(aBuf, sizeof(aBuf), "Sending ClientID %d Map '%s'", ClientID, MapName);
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Multimap", aBuf);
 
@@ -1198,7 +1198,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 
 				m_aClients[ClientID].m_State = CClient::STATE_READY;
-				GameServer()->OnClientConnected(ClientID);
+				GameServer()->OnClientConnected(ClientID, m_aClients[ClientID].m_pMapData->m_aCurrentMap);
 			}
 			SendConnectionReady(ClientID);
 		}
@@ -2001,7 +2001,7 @@ int CServer::GenerateMap(const char *pMapName)
 	return 1;
 }
 
-void CServer::CreateMapThread(const char* pMapName)
+void CServer::CreateMapThread(const char *pMapName)
 {
 	char aBuf[256];
 	str_copy(aBuf, pMapName);

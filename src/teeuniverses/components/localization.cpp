@@ -20,7 +20,7 @@ CLocalization::CLanguage::CLanguage() :
 	m_aParentFilename[0] = 0;
 }
 
-CLocalization::CLanguage::CLanguage(const char* pName, const char* pFilename, const char* pParentFilename) :
+CLocalization::CLanguage::CLanguage(const char *pName, const char *pFilename, const char *pParentFilename) :
 	m_Loaded(false),
 	m_Direction(CLocalization::DIRECTION_LTR)
 {
@@ -61,7 +61,7 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pSto
 	bool isEndOfFile = false;
 
 	CEntry* pEntry = 0;
-	const char* pKey;
+	const char *pKey;
 
 	while(!isEndOfFile)
 	{
@@ -103,7 +103,7 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pSto
 		}
 		else if(pEntry && str_comp_nocase_num(FileLine, MsgStrKey, sizeof(MsgStrKey) - 1) == 0)
 		{
-			const char* pValue = FileLine+sizeof(MsgStrKey);
+			const char *pValue = FileLine+sizeof(MsgStrKey);
 			int Length = str_length(pValue)+1;
 			char aBuf[Length];
 			
@@ -129,7 +129,7 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pSto
 	return true;
 }
 
-const char* CLocalization::CLanguage::Localize(const char* pText) const
+const char *CLocalization::CLanguage::Localize(const char *pText) const
 {	
 	const CEntry* pEntry = m_Translations.get(pText);
 	if(!pEntry)
@@ -153,7 +153,7 @@ CLocalization::~CLocalization()
 }
 
 /* BEGIN EDIT *********************************************************/
-bool CLocalization::InitConfig(int argc, const char** argv)
+bool CLocalization::InitConfig(int argc, const char ** argv)
 {
 	return true;
 }
@@ -179,9 +179,9 @@ bool CLocalization::Init()
 			const json_value *pCurrent = json_array_get(rStart, i);
 
 			CLanguage*& pLanguage = m_pLanguages.increment();
-			const char* Name = json_string_get(json_object_get(pCurrent, "name"));
-			const char* File = json_string_get(json_object_get(pCurrent, "file"));
-			const char* Parent = json_string_get(json_object_get(pCurrent, "parent"));
+			const char *Name = json_string_get(json_object_get(pCurrent, "name"));
+			const char *File = json_string_get(json_object_get(pCurrent, "file"));
+			const char *Parent = json_string_get(json_object_get(pCurrent, "parent"));
 
 			pLanguage = new CLanguage(Name, File, Parent);
 				
@@ -197,7 +197,7 @@ bool CLocalization::Init()
 	return true;
 }
 
-const char* CLocalization::LocalizeWithDepth(const char* pLanguageCode, const char* pText, int Depth)
+const char *CLocalization::LocalizeWithDepth(const char *pLanguageCode, const char *pText, int Depth)
 {
 	CLanguage* pLanguage = m_pMainLanguage;
 	if(pLanguageCode)
@@ -218,7 +218,7 @@ const char* CLocalization::LocalizeWithDepth(const char* pLanguageCode, const ch
 	if(!pLanguage->IsLoaded())
 		pLanguage->Load(this, Storage());
 	
-	const char* pResult = pLanguage->Localize(pText);
+	const char *pResult = pLanguage->Localize(pText);
 	if(pResult)
 		return pResult;
 	else if(pLanguage->GetParentFilename()[0] && Depth < 4)
@@ -227,7 +227,7 @@ const char* CLocalization::LocalizeWithDepth(const char* pLanguageCode, const ch
 		return pText;
 }
 
-const char* CLocalization::Localize(const char* pLanguageCode, const char* pText)
+const char *CLocalization::Localize(const char *pLanguageCode, const char *pText)
 {
 	return LocalizeWithDepth(pLanguageCode, pText, 0);
 }
@@ -237,7 +237,7 @@ static char* format_integer_with_commas(char commas, int64_t n)
 	char _number_array[64] = { '\0' };
 	str_format(_number_array, sizeof(_number_array), "%ld", n); // %ld
 
-	const char* _number_pointer = _number_array;
+	const char *_number_pointer = _number_array;
 	int _number_of_digits = 0;
 	while (*(_number_pointer + _number_of_digits++));
 	--_number_of_digits;
@@ -270,7 +270,7 @@ static char* format_integer_with_commas(char commas, int64_t n)
 	return _formatted_number;
 }
 
-void CLocalization::Format_V(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, va_list VarArgs)
+void CLocalization::Format_V(dynamic_string& Buffer, const char *pLanguageCode, const char *pText, va_list VarArgs)
 {
 	CLanguage* pLanguage = m_pMainLanguage;	
 	if(pLanguageCode)
@@ -310,13 +310,13 @@ void CLocalization::Format_V(dynamic_string& Buffer, const char* pLanguageCode, 
 			// we get data from an argument parsing arguments
 			if(str_comp_num("%s", pText + ParamTypeStart, 2) == 0) // string
 			{
-				const char* pVarArgValue = va_arg(VarArgsIter, const char*);
+				const char *pVarArgValue = va_arg(VarArgsIter, const char *);
 				BufferIter = Buffer.append_at(BufferIter, pVarArgValue);
 			}
 			else if(str_comp_num("%t", pText + ParamTypeStart, 2) == 0) // localize string
 			{
-				const char* pVarArgValue = va_arg(VarArgsIter, const char*);
-				const char* pTranslatedValue = pLanguage->Localize(pVarArgValue);
+				const char *pVarArgValue = va_arg(VarArgsIter, const char *);
+				const char *pTranslatedValue = pLanguage->Localize(pVarArgValue);
 				BufferIter = Buffer.append_at(BufferIter, (pTranslatedValue ? pTranslatedValue : pVarArgValue));
 			}
 			else if(str_comp_num("%d", pText + ParamTypeStart, 2) == 0) // intiger
@@ -364,7 +364,7 @@ void CLocalization::Format_V(dynamic_string& Buffer, const char* pLanguageCode, 
 	}
 }
 
-void CLocalization::Format(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, ...)
+void CLocalization::Format(dynamic_string& Buffer, const char *pLanguageCode, const char *pText, ...)
 {
 	va_list VarArgs;
 	va_start(VarArgs, pText);
@@ -374,14 +374,14 @@ void CLocalization::Format(dynamic_string& Buffer, const char* pLanguageCode, co
 	va_end(VarArgs);
 }
 
-void CLocalization::Format_VL(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, va_list VarArgs)
+void CLocalization::Format_VL(dynamic_string& Buffer, const char *pLanguageCode, const char *pText, va_list VarArgs)
 {
-	const char* pLocalText = Localize(pLanguageCode, pText);
+	const char *pLocalText = Localize(pLanguageCode, pText);
 	
 	Format_V(Buffer, pLanguageCode, pLocalText, VarArgs);
 }
 
-void CLocalization::Format_L(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, ...)
+void CLocalization::Format_L(dynamic_string& Buffer, const char *pLanguageCode, const char *pText, ...)
 {
 	va_list VarArgs;
 	va_start(VarArgs, pText);
