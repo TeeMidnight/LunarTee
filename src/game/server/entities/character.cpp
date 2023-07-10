@@ -437,7 +437,7 @@ void CCharacter::HandleEvents()
 	}
 
 	if(Collision()->IsCollision(m_Pos.x, m_Pos.y, m_ProximityRadius/3.f, CCollision::COLFLAG_MOONCENTER) 
-		&& m_pPlayer->IsBot())
+		&& m_pPlayer->IsBot() && (!Pickable() && m_pPlayer->m_BotData.m_AI))
 	{
 		Die(GetCID(), WEAPON_WORLD);
 	}

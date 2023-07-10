@@ -214,5 +214,19 @@
                 "num": 10
             }
         ]
+    },
+    "Charcoal": {
+        "give": [
+            {
+                "name": "Charcoal",
+                "num": 2
+            }
+        ],
+        "need": [
+            {
+                "name": "Wood",
+                "num": 4
+            }
+        ]
     }
 }
