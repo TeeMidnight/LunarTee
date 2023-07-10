@@ -2229,7 +2229,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		}
 		else if(m_apPlayers[i]->GameWorld() == m_apPlayers[ClientID]->GameWorld())
 		{
-			Dist[Dist.size()-1].first = length_squared(m_apPlayers[ClientID]->m_ViewPos - m_apPlayers[i]->m_ViewPos);
+			Dist[Dist.size()-1].first = minimum(3000.f, length_squared(m_apPlayers[ClientID]->m_ViewPos - m_apPlayers[i]->m_ViewPos));
 		}
 		else
 		{
