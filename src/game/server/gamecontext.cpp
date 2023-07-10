@@ -2233,7 +2233,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		}
 		else
 		{
-			Dist[Dist.size()-1].first = 3e5;
+			Dist[Dist.size()-1].first = 3e3;
 		}
 	}
 
