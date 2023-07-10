@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LunarTee 0.1.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-05 18:35+0800\n"
+"POT-Creation-Date: 2023-07-10 10:53+0800\n"
 "PO-Revision-Date: 2023-07-05 15:28+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,9 +16,6 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-
-msgid "You got %t x%d"
-msgstr "你得到了%tx%d"
 
 msgid "Vote aborted"
 msgstr "投票取消"
@@ -212,6 +209,9 @@ msgstr "给予"
 msgid "Info"
 msgstr "提示"
 
+msgid "Pickable"
+msgstr "可拾取"
+
 #, c-format
 msgid "'%s' is going to check the world"
 msgstr "'%s' 要去查看世界"
@@ -243,6 +243,9 @@ msgstr "账号不存在!"
 
 msgid "Login failed! Please ask server hoster!"
 msgstr "登录失败! 请询问服务器开设者!"
+
+msgid "You got %t x%d"
+msgstr "你得到了%tx%d"
 
 msgid "No such item!"
 msgstr "没有此物品!"

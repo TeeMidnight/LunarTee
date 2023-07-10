@@ -60,7 +60,7 @@ class CGameContext : public IGameServer
 	CTuningParams m_Tuning;
 	CMenu *m_pMenu;
 	CItemCore *m_pItem;
-	CPostgresql *m_pPostgresql;
+	CSql *m_pPostgresql;
 
 	static void ConsoleOutputCallback_Chat(const char *pLine, void *pUser);
 
@@ -113,7 +113,7 @@ public:
 	class IConsole *Console() { return m_pConsole; }
 	CTuningParams *Tuning() { return &m_Tuning; }
 	CMenu *Menu() { return m_pMenu; }
-	CPostgresql *Postgresql() { return m_pPostgresql; }
+	CSql *Postgresql() { return m_pPostgresql; }
 	class CItemCore *Item() { return m_pItem; }
 
 	CGameContext();

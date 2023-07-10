@@ -10,7 +10,6 @@
 #include <mutex>
 #include <bitset>
 
-#include "pickup.h"
 #include "character.h"
 
 //input count
@@ -73,6 +72,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 		m_ActiveWeapon = LT_WEAPON_HAMMER;
 		m_LastWeapon = LT_WEAPON_HAMMER;
 	}
+	mem_zero(&m_Botinfo, sizeof(CBotInfo));
+
 	m_QueuedWeapon = -1;
 
 	m_FreezeStartTick = 0;
@@ -548,9 +549,11 @@ void CCharacter::TickDefered()
 {
 	// advance the dummy
 	{
-		m_ReckoningCore.Init(&GameWorld()->m_Core, Collision());
-		m_ReckoningCore.Tick(false, m_pPlayer->GetNextTuningParams());
-		m_ReckoningCore.Move(m_pPlayer->GetNextTuningParams());
+		CGameWorld TempWorld;
+		TempWorld.m_Core.m_Tuning.m_Gravity = 0.5f;
+		m_ReckoningCore.Init(&TempWorld.m_Core, Collision());
+		m_ReckoningCore.Tick(false, &TempWorld.m_Core.m_Tuning);
+		m_ReckoningCore.Move(&TempWorld.m_Core.m_Tuning);
 		m_ReckoningCore.Quantize();
 	}
 
@@ -781,11 +784,24 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			}
 		}
 
-		// create pickup
-		if(m_pPlayer->IsBot() && pFrom && !pFrom->IsBot())
-			GameServer()->m_pController->CreatePickup(m_Pos, m_Core.m_Vel, GameWorld(), m_pPlayer->m_BotData);
+		if(m_pPlayer->IsBot())
+		{
+			// create pickup
+			if(Pickable() && (GameServer()->GetPlayer(From) && !GameServer()->GetPlayer(From)->IsBot())&& Weapon == WEAPON_HAMMER)
+			{
+				GameServer()->m_pController->GiveDrop(From, m_pPlayer->m_BotData);	
+				Die(From, Weapon);
+			}
 
-		Die(From, Weapon);
+
+			if(!m_Botinfo.m_Pickable)
+			{
+				m_Health = 0;
+
+				ResetInput();
+				m_Botinfo.m_Pickable = true;
+			}
+		}else Die(From, Weapon);
 
 		return false;
 	}
@@ -838,6 +854,9 @@ void CCharacter::Snap(int SnappingClient)
 	}
 
 	pCharacter->m_Emote = m_EmoteType;
+
+	if(Pickable())
+		pCharacter->m_Emote = EMOTE_PAIN;
 
 	pCharacter->m_AmmoCount = 0;
 	pCharacter->m_Health = 0;
@@ -932,7 +951,9 @@ void CCharacter::DoBotActions()
 	if(!m_pPlayer->m_BotData.m_AI)
 		return;
 
-	if(!(GameServer()->GetOneWorldPlayerNum(GameWorld()) - GameServer()->GetBotNum(GameWorld())))
+	if(!NeedActive())
+		return;
+	if(Pickable())
 		return;
 
 	CCharacter *pOldTarget = GameServer()->GetPlayerChar(m_Botinfo.m_Target);
@@ -978,10 +999,10 @@ void CCharacter::DoBotActions()
 	if(pTarget)
 	{
 		// Reset random angle
-		if(abs(m_Botinfo.m_LastTargetPos.y - pTarget->m_Pos.y) > 1.0f)
+		if(abs(m_Botinfo.m_LastTargetPos.y - pTarget->m_Pos.y) > 1.0f || abs(m_Botinfo.m_LastTargetPos.x - pTarget->m_Pos.x) > 1.0f)
 		{
-			m_Botinfo.m_RandomPos.x = random_int(-8, 8);
-			m_Botinfo.m_RandomPos.y = random_int(-8, 8);
+			m_Botinfo.m_RandomPos.x = random_int(-12.f, 12.);
+			m_Botinfo.m_RandomPos.y = random_int(-12.f, 12.f);
 		}else
 		{
 			m_Botinfo.m_RandomPos = vec2(0, 0);
@@ -1050,8 +1071,6 @@ void CCharacter::DoBotActions()
 				m_ActiveWeapon = WEAPON_GUN;
 				m_Input.m_Fire = 1;
 				m_LatestInput.m_Fire = 1;
-				m_Botinfo.m_RandomPos.x = random_int(-16, 16);
-				m_Botinfo.m_RandomPos.y = random_int(-16, 16);
 			}
 		}
 		
@@ -1061,15 +1080,11 @@ void CCharacter::DoBotActions()
 			if(!Collision()->IntersectLine(pTarget->m_Pos, m_Pos, NULL, NULL) && ((m_Core.m_HookedPlayer == pTarget->GetCID() && distance(pTarget->m_Pos, m_Pos) > 96.0f) || (distance(pTarget->m_Pos, m_Pos) > 320.0f && distance(pTarget->m_Pos, m_Pos) < 380.0f)))
 			{
 				m_Input.m_Hook = 1;
-				m_Botinfo.m_RandomPos.x = random_int(-8, 8);
-				m_Botinfo.m_RandomPos.y = random_int(-8, 8);
 				if(pBotData->m_Gun)
 				{
 					m_ActiveWeapon = WEAPON_GUN;
 					m_Input.m_Fire = 1;
 					m_LatestInput.m_Fire = 1;
-					m_Botinfo.m_RandomPos.x = random_int(-16, 16);
-					m_Botinfo.m_RandomPos.y = random_int(-16, 16);
 				}
 			}else
 			{
@@ -1155,6 +1170,9 @@ CCharacter *CCharacter::FindTarget(vec2 Pos, float Radius)
 			if(p->GetPlayer() && p->GetPlayer()->IsBot() && (!p->GetPlayer()->m_BotData.m_AI || (str_comp(m_pPlayer->m_BotData.m_aName, p->GetPlayer()->m_BotData.m_aName) == 0)))
 				continue;
 
+			if(p->Pickable())
+				continue;
+
 			if(Collision()->IntersectLine(m_Pos, p->m_Pos, 0x0, 0x0))
 				continue;
 			if(Len < (pClosest ? distance(m_Pos, pClosest->m_Pos) : (Radius * 2)))
@@ -1173,6 +1191,18 @@ bool CCharacter::CheckPos(vec2 CheckPos)
 		Collision()->GetCollisionAt(CheckPos.x-m_ProximityRadius/3.f,CheckPos.y)&CCollision::COLFLAG_SOLID)
 	{
 		return true;
+	}
+	return false;
+}
+
+bool CCharacter::NeedActive()
+{
+	for(auto &Player : GameServer()->m_apPlayers)
+	{
+		if(!Player)
+			continue;
+		if(distance(Player->m_ViewPos, m_Pos) < 1500.0f)
+			return true;
 	}
 	return false;
 }

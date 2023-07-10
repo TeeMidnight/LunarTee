@@ -134,7 +134,7 @@ public:
 	void OnCreateBot();
 	void InitBotData();
 	CBotData RandomBotData();
-	void CreatePickup(vec2 Pos, vec2 Dir, CGameWorld *pGameWorld, CBotData BotData);
+	void GiveDrop(int GiveID, CBotData BotData);
 
 	std::vector<CBotData> m_vBotDatas;
 	bool m_BotDataInit;

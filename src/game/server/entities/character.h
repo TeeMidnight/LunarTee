@@ -163,8 +163,10 @@ public:
 	void SetReloadTimer(int ReloadTimer) { m_ReloadTimer = ReloadTimer;}
 
 /*** Bot ***/
-	struct
-	{
+	struct CBotInfo
+	{	
+		bool m_Pickable;
+
 		int m_Target;
 		int m_Direction;
 		int m_NextDirectionTick;
@@ -173,11 +175,14 @@ public:
 		vec2 m_LastPos;
 		vec2 m_LastTargetPos;
 		vec2 m_RandomPos;
-	} m_Botinfo;
+	};
+	CBotInfo m_Botinfo;
+
 	void DoBotActions();
 	CCharacter *FindTarget(vec2 Pos, float Radius);
-	int CheckBotInRadius(float Radius);
+	bool Pickable() { return m_Botinfo.m_Pickable; }
 	bool CheckPos(vec2 CheckPos);
+	bool NeedActive();
 /*** Bot End ***/
 
 };

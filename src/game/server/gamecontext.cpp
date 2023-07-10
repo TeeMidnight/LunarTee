@@ -1992,7 +1992,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pMenu = new CMenu(this);
 	m_pItem = new CItemCore(this);
 
-	m_pPostgresql = new CPostgresql(this);
+	m_pPostgresql = new CSql(this);
 	Postgresql()->Init();
 
 	// reset everything here

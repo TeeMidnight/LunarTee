@@ -53,6 +53,10 @@ CMapGen::CMapGen(IStorage *pStorage, IConsole* pConsole, CServer *pServer) :
 {
 	m_MainImageID = 0;
 	m_MainRules = 0;
+
+	m_UnhookableRules = 0;
+	m_BackgroundRules = 0;
+
 	m_pBackGroundTiles = 0;
 	m_pGameTiles = 0;
 	m_pDoodadsTiles = 0;
@@ -347,7 +351,7 @@ void CMapGen::GenerateGameLayer()
 
 		for(int x = 0;x < Width; x ++)
 		{
-			int GenerateHeight = clamp(perlin.octave2D_01((x * 0.01), 0, 4), (double)0.f, (double)0.9f) * Height - 1;
+			int GenerateHeight = maximum(1, (int) (clamp(perlin.octave2D_01((x * 0.01), 0, 4), (double)0.f, (double)0.9f) * Height - 1));
 			for(int y = 0;y < GenerateHeight; y ++)
 			{
 				m_pGameTiles[y*Width+x].m_Index = TILE_AIR;
@@ -652,6 +656,9 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 
 void CMapGen::GenerateMap()
 {
+	int Width = g_Config.m_SvGeneratedMapWidth;
+	int Height = g_Config.m_SvGeneratedMapHeight;
+
 	// save version
 	{
 		CMapItemVersion Item;
@@ -700,6 +707,7 @@ void CMapGen::GenerateMap()
 		StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), "Backgroundtiles");
 
 		int ImageID = AddEmbeddedImage("spacetiles", 1024, 1024);
+		Proceed(m_pBackGroundTiles, m_BackgroundRules, Width, Height);
 		AddTile(m_pBackGroundTiles, "BackgroundTiles", ImageID, vec4(155, 155, 155, 255));
 		
 		m_DataFile.AddItem(MAPITEMTYPE_GROUP, m_NumGroups++, sizeof(Item), &Item);
@@ -775,20 +783,6 @@ void CMapGen::Proceed(CTile *pTiles, int ConfigID, int Width, int Height)
 	for(size_t h = 0; h < pConf->m_vRuns.size(); ++h)
 	{
 		CRun *pRun = &pConf->m_vRuns[h];
-
-		if(pRun->m_AutomapCopy)
-		{
-			for(int y = 0; y < Height; y++)
-			{
-				for(int x = 0; x < Width; x++)
-				{
-					CTile *pIn = &pTiles[y * Width + x];
-					CTile *pOut = &pTiles[y * Width + x];
-					pOut->m_Index = pIn->m_Index;
-					pOut->m_Flags = pIn->m_Flags;
-				}
-			}
-		}
 
 		// auto map
 		for(int y = 0; y < Height; y++)
@@ -1244,6 +1238,7 @@ bool CMapGen::CreateMap(const char *pFilename)
 	m_MainRules = LoadRules("grass_main_moon");
 
 	m_UnhookableRules = LoadRules("generic_unhookable");
+	m_BackgroundRules = LoadRules("spacetiles");
 	
 	GenerateMap();
 	

@@ -196,7 +196,12 @@ void CPlayer::Snap(int SnappingClient)
 
 	const char *pLanguage = GameServer()->m_apPlayers[SnappingClient] ? GameServer()->m_apPlayers[SnappingClient]->m_aLanguage : "en";
 
-	StrToInts(&pClientInfo->m_Name0, 4, IsBot() ? GameServer()->Localize(pLanguage, m_BotData.m_aName) : Server()->ClientName(m_ClientID));
+	const char *pPlayerName = IsBot() ? GameServer()->Localize(pLanguage, m_BotData.m_aName) : Server()->ClientName(m_ClientID);
+
+	if(m_pCharacter && m_pCharacter->Pickable())
+		pPlayerName = GameServer()->Localize(pLanguage, _("Pickable"));
+
+	StrToInts(&pClientInfo->m_Name0, 4, pPlayerName);
 	
 	std::string Buffer;
 	Buffer.append(std::to_string(m_pCharacter ? (int)(m_pCharacter->GetHealth() / (float)m_pCharacter->GetMaxHealth() * 100) : 0));

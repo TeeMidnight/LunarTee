@@ -158,6 +158,7 @@ void CItemCore::AddInvItemNum(const char *ItemName, int Num, int ClientID, bool 
 
 		m_aInventories[ClientID].m_Datas.add(Data);
 	}
+	GameServer()->SendChatTarget_Localization(ClientID, _("You got %t x%d"), ItemName, Num);
 	GameServer()->Postgresql()->CreateUpdateItemThread(ClientID, ItemName, DatabaseNum);
 }
 
@@ -191,8 +192,4 @@ void CItemCore::SetInvItemNum(const char *ItemName, int Num, int ClientID, bool 
 void CItemCore::ClearInv(int ClientID, bool Database)
 {
 	m_aInventories[ClientID].m_Datas.clear();
-	if(Database)
-	{
-		GameServer()->Postgresql()->CreateClearItemThread(ClientID);
-	}
 }

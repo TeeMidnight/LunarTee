@@ -42,6 +42,7 @@ public:
 	int m_MainRules;
 
 	int m_UnhookableRules;
+	int m_BackgroundRules;
 
 	bool m_HookableReady;
 	bool m_UnhookableReady;

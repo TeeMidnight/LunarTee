@@ -6,8 +6,6 @@
 
 #include <generated/protocol.h>
 
-#include "entities/pickup.h"
-
 #include "gamecontroller.h"
 #include "gamecontext.h"
 
@@ -436,7 +434,7 @@ void CGameController::ShowInventory(int ClientID)
 		vBuffers.push_back(std::pair<std::string, int>(TempBuffer, pData->m_Datas[i].m_Num));
 	}
 
-	std::nth_element(&vBuffers[0], &vBuffers[vBuffers.size()/2], &vBuffers[vBuffers.size()]);
+	std::nth_element(&vBuffers[0], &vBuffers[vBuffers.size()/2], &vBuffers[vBuffers.size()], ItemCompare);
 
 	for(auto &Item : vBuffers)
 	{
@@ -548,17 +546,17 @@ CBotData CGameController::RandomBotData()
 	return Data;
 }	
 
-void CGameController::CreatePickup(vec2 Pos, vec2 Dir, CGameWorld *pGameWorld, CBotData BotData)
+void CGameController::GiveDrop(int GiveID, CBotData BotData)
 {
 	for(unsigned i = 0;i < BotData.m_vDrops.size();i++)
 	{
 		if(random_int(1, 100) <= BotData.m_vDrops[i].m_DropProba)
 		{
-			int PickupNum = random_int(BotData.m_vDrops[i].m_MinNum, BotData.m_vDrops[i].m_MaxNum);
-			if(PickupNum == 0)
+			int Num = random_int(BotData.m_vDrops[i].m_MinNum, BotData.m_vDrops[i].m_MaxNum);
+			if(Num == 0)
 				continue;
 			const char *pName = BotData.m_vDrops[i].m_ItemName;
-			new CPickup(pGameWorld, Pos, normalize(Dir), pName, PickupNum);
+			GameServer()->Item()->AddInvItemNum(pName, Num, GiveID);
 		}
 	}
 }
