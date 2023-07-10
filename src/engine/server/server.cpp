@@ -1755,7 +1755,7 @@ void CServer::UpdateRegisterServerInfo()
 	str_format(aInfo, sizeof(aInfo),
 		"{"
 		"\"max_clients\":%d,"
-		"\"MAX_CLIENTS\":%d,"
+		"\"max_players\":%d,"
 		"\"passworded\":%s,"
 		"\"game_type\":\"%s\","
 		"\"name\":\"%s\","
