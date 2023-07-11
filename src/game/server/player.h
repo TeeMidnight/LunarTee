@@ -121,6 +121,8 @@ private:
 
 	int m_UserID;
 
+	bool m_ShowClientID; // Show clientID in scoreboard
+
 	void HandleTuningParams(); //This function will send the new parameters if needed
 
 public:

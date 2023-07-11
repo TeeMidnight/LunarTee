@@ -75,6 +75,8 @@ void CPlayer::Reset()
 
 	m_UserID = 0;
 
+	m_ShowClientID = 0;
+
 	if(IsBot())
 	{
 		BotInit();
@@ -197,10 +199,13 @@ void CPlayer::PostTick()
 	{
 		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+			if(GameServer()->m_apPlayers[i])
 				m_aActLatency[i] = GameServer()->m_apPlayers[i]->m_Latency.m_Min;
 		}
 	}
+
+	if((Server()->Tick() % (int)(Server()->TickSpeed() * 1.5)) == 0)
+		m_ShowClientID = !m_ShowClientID;
 
 	if(m_Team == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW)
 	{
@@ -240,6 +245,16 @@ void CPlayer::Snap(int SnappingClient)
 			pClan = GameServer()->Localize(pLanguage, _("Pickable"));
 		}
 	}
+	else if(GameServer()->m_apPlayers[SnappingClient] && 
+		GameServer()->m_apPlayers[SnappingClient]->m_ShowClientID && 
+		GameServer()->m_apPlayers[SnappingClient]->m_Authed &&
+		(GameServer()->m_apPlayers[SnappingClient]->m_PlayerFlags & PLAYERFLAG_SCOREBOARD))
+	{
+		std::string Buffer;
+		Buffer.append("Client: ");
+		Buffer.append(std::to_string(m_ClientID));
+		pClan = Buffer.c_str();
+	}
 
 	StrToInts(&pClientInfo->m_Clan0, 3, pClan);
 
@@ -258,7 +273,7 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
 	pPlayerInfo->m_ClientID = id;
 	pPlayerInfo->m_Score = m_Score;
-	pPlayerInfo->m_Team = IsBot() ? 2 : m_Team; // do not snap bot in scoreboard
+	pPlayerInfo->m_Team = IsBot() ? 2 : (m_ClientID == SnappingClient ? m_Team : 0); // do not snap bot and spectator in scoreboard
 	pPlayerInfo->m_Local = 0;
 	
 	if (m_ClientID == SnappingClient)
@@ -285,7 +300,7 @@ void CPlayer::Snap(int SnappingClient)
 			return;
 
 		int SpectatorID = m_SpectatorID;
-		if(!Server()->Translate(m_SpectatorID, m_ClientID))
+		if(m_SpectatorID != SPEC_FREEVIEW && !Server()->Translate(m_SpectatorID, m_ClientID))
 			return;
 
 		pSpectatorInfo->m_SpectatorID = SpectatorID;
