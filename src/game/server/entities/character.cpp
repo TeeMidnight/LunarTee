@@ -489,20 +489,6 @@ void CCharacter::HandleStats()
 		return;
 	if(m_pPlayer->IsBot())
 		return;
-
-	const char *pLanguage = m_pPlayer->GetLanguage();
-
-	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "\n\n%s: %d/%d\n", 
-		GameServer()->Localize(pLanguage, _("Health")), m_Health, m_MaxHealth);
-
-	if(m_aWeapons[m_ActiveWeapon].m_Ammo >= 0)
-	{
-		str_format(aBuf, sizeof(aBuf), "%s%s: %d\n", aBuf, 
-			GameServer()->Localize(pLanguage, _("Ammo")), m_aWeapons[m_ActiveWeapon].m_Ammo);
-	}
-	
-	GameServer()->SendBroadcast(aBuf, GetCID());
 }
 
 void CCharacter::SyncWeapon()
@@ -537,8 +523,6 @@ void CCharacter::OnWeaponFire(int Weapon)
 	if(m_pPlayer->IsBot())
 		return;
 
-	HandleStats();
-
 	if(g_Weapons.m_aWeapons[Weapon]->GetAmmoName()[0])
 		GameServer()->Item()->AddInvItemNum(g_Weapons.m_aWeapons[Weapon]->GetAmmoName(), -1, GetCID());
 }
@@ -553,9 +537,6 @@ void CCharacter::Tick()
 
 	if(!m_Alive)
 		return;
-
-	if((Server()->Tick() % Server()->TickSpeed()) == 0)
-		HandleStats();
 
 	UpdateTuning();
 
@@ -734,8 +715,6 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
-	HandleStats();
-
 	CPlayer *pFrom = GameServer()->GetPlayer(From);
 	if(pFrom && pFrom->IsBot() && m_pPlayer->IsBot() && !pFrom->m_BotData.m_TeamDamage && str_comp(pFrom->m_BotData.m_aName, m_pPlayer->m_BotData.m_aName) == 0)
 		return false;

@@ -42,7 +42,6 @@ void CPlayer::Reset()
 	m_Sit = 0;
 
 	m_SpectatorID = SPEC_FREEVIEW;
-	m_RealSpectatorID = SPEC_FREEVIEW;
 	
 	m_LastVoteCall = Server()->Tick();
 	m_LastVoteTry = Server()->Tick();
@@ -186,13 +185,9 @@ void CPlayer::PostTick()
 
 	if(m_Team == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW)
 	{
-		int RealSpectatorID = m_RealSpectatorID;
-		if(Server()->Translate(RealSpectatorID, m_ClientID))
-			m_SpectatorID = RealSpectatorID;
-
 		// update view pos for spectators
-		if(GameServer()->m_apPlayers[m_RealSpectatorID])
-			m_ViewPos = GameServer()->m_apPlayers[m_RealSpectatorID]->m_ViewPos;
+		if(GameServer()->m_apPlayers[m_SpectatorID])
+			m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;
 	}
 }
 
@@ -275,7 +270,11 @@ void CPlayer::Snap(int SnappingClient)
 		if(!pSpectatorInfo)
 			return;
 
-		pSpectatorInfo->m_SpectatorID = m_SpectatorID;
+		int SpectatorID = m_SpectatorID;
+		if(!Server()->Translate(m_SpectatorID, m_ClientID))
+			return;
+
+		pSpectatorInfo->m_SpectatorID = SpectatorID;
 		pSpectatorInfo->m_X = m_ViewPos.x;
 		pSpectatorInfo->m_Y = m_ViewPos.y;
 	}
@@ -429,9 +428,8 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 		// update spectator modes
 		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_RealSpectatorID == m_ClientID)
+			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_SpectatorID == m_ClientID)
 			{
-				GameServer()->m_apPlayers[i]->m_RealSpectatorID = SPEC_FREEVIEW;
 				GameServer()->m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
 			}
 		}

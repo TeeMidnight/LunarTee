@@ -798,9 +798,8 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 	// update spectator modes
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
-		if(m_apPlayers[i] && m_apPlayers[i]->m_RealSpectatorID == ClientID)
+		if(m_apPlayers[i] && m_apPlayers[i]->m_SpectatorID == ClientID)
 		{
-			m_apPlayers[i]->m_RealSpectatorID = SPEC_FREEVIEW;
 			m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
 		}
 	}
@@ -1108,13 +1107,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(g_Config.m_SvSpamprotection && pPlayer->m_LastSetSpectatorMode && pPlayer->m_LastSetSpectatorMode+Server()->TickSpeed()*3 > Server()->Tick())
 				return;
 
-			int TranslateID = pMsg->m_SpectatorID;
-
 			if(pMsg->m_SpectatorID != SPEC_FREEVIEW)
 				if (!Server()->ReverseTranslate(pMsg->m_SpectatorID, ClientID))
 					return;
 
-			if(pPlayer->GetTeam() != TEAM_SPECTATORS || pPlayer->m_RealSpectatorID == pMsg->m_SpectatorID || ClientID == pMsg->m_SpectatorID)
+			if(pPlayer->GetTeam() != TEAM_SPECTATORS || pPlayer->m_SpectatorID == pMsg->m_SpectatorID || ClientID == pMsg->m_SpectatorID)
 				return;
 
 			if(pMsg->m_SpectatorID >= MAX_CLIENTS)
@@ -1125,8 +1122,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				SendChatTarget_Localization(ClientID, _("Invalid spectator id %d used"), pMsg->m_SpectatorID);
 			else
 			{
-				pPlayer->m_SpectatorID = TranslateID;
-				pPlayer->m_RealSpectatorID = pMsg->m_SpectatorID;
+				pPlayer->m_SpectatorID = pMsg->m_SpectatorID;
 			}
 		}
 		else if (MsgID == NETMSGTYPE_CL_CHANGEINFO)
