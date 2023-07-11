@@ -556,7 +556,7 @@ void CGameController::GiveDrop(int GiveID, CBotData BotData)
 			if(Num == 0)
 				continue;
 			const char *pName = BotData.m_vDrops[i].m_ItemName;
-			GameServer()->Item()->AddInvItemNum(pName, Num, GiveID);
+			GameServer()->Item()->AddInvItemNum(pName, Num, GiveID, true, true);
 		}
 	}
 }

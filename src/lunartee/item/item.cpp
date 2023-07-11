@@ -135,7 +135,7 @@ int CItemCore::GetInvItemNum(const char *ItemName, int ClientID)
 	return 0;
 }
 
-void CItemCore::AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database)
+void CItemCore::AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database, bool SendChat)
 {
 	bool Added = false;
 	int DatabaseNum = Num;
@@ -158,7 +158,17 @@ void CItemCore::AddInvItemNum(const char *ItemName, int Num, int ClientID, bool 
 
 		m_aInventories[ClientID].m_Datas.add(Data);
 	}
-	GameServer()->SendChatTarget_Localization(ClientID, _("You got %t x%d"), ItemName, Num);
+	if(SendChat)
+	{
+		if(Num > 0)
+		{
+			GameServer()->SendChatTarget_Localization(ClientID, _("You got %t x%d"), ItemName, Num);
+		}
+		else if(Num < 0)
+		{
+			GameServer()->SendChatTarget_Localization(ClientID, _("You lost %t x%d"), ItemName, -Num);
+		}
+	}
 	GameServer()->Postgresql()->CreateUpdateItemThread(ClientID, ItemName, DatabaseNum);
 }
 

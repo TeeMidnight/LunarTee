@@ -26,7 +26,7 @@ public:
     CItemData *GetItemData(const char *Name);
     CInventory *GetInventory(int ClientID);
     int GetInvItemNum(const char *ItemName, int ClientID);
-    void AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true);
+    void AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true, bool SendChat = false);
     void SetInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true);
     void ClearInv(int ClientID, bool Database = true);
 };
