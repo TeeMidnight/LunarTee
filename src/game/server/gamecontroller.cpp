@@ -485,14 +485,14 @@ static void InitBotDataThread(void *pUser)
 			CBotData Data;
 			str_copy(Data.m_aName, json_string_get(json_object_get(pCurrent, "name")));
 			str_copy(Data.m_SkinName, json_string_get(json_object_get(pCurrent, "skin")));
-			if(json_object_get(pCurrent, "body_color") != &json_value_none && json_object_get(pCurrent, "feet_color") != &json_value_none)
+			if(json_object_get(pCurrent, "color_body") != &json_value_none && json_object_get(pCurrent, "color_feet") != &json_value_none)
 			{
-				Data.m_BodyColor = json_int_get(json_object_get(pCurrent, "body_color"));
-				Data.m_FeetColor = json_int_get(json_object_get(pCurrent, "feet_color"));
+				Data.m_ColorBody = json_int_get(json_object_get(pCurrent, "color_body"));
+				Data.m_ColorFeet = json_int_get(json_object_get(pCurrent, "color_feet"));
 			}else
 			{
-				Data.m_BodyColor = -1;
-				Data.m_FeetColor = -1;
+				Data.m_ColorBody = -1;
+				Data.m_ColorFeet = -1;
 			}
 			Data.m_Health = json_int_get(json_object_get(pCurrent, "health"));
 			Data.m_AttackProba = json_int_get(json_object_get(pCurrent, "attack_proba"));

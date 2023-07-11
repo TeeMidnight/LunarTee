@@ -23,8 +23,8 @@ public:
     char m_SkinName[64];
 
     int m_Health;
-    int m_BodyColor;
-    int m_FeetColor;
+    int m_ColorBody;
+    int m_ColorFeet;
     int m_AttackProba;
     int m_SpawnProba;
     bool m_AI;

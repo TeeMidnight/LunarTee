@@ -73,10 +73,29 @@ void CPlayer::Reset()
 		Server()->ClearIdMap(m_ClientID);
 	}
 
-	if(IsBot())
-		Respawn();
-
 	m_UserID = 0;
+
+	if(IsBot())
+	{
+		BotInit();
+	}
+}
+
+void CPlayer::BotInit()
+{
+	if(m_BotData.m_ColorBody > -1 && m_BotData.m_ColorFeet > -1)
+	{
+		m_TeeInfos.m_UseCustomColor = true;
+		m_TeeInfos.m_ColorBody = m_BotData.m_ColorBody;
+		m_TeeInfos.m_ColorFeet = m_BotData.m_ColorFeet;
+	}else
+	{
+		m_TeeInfos.m_UseCustomColor = false;
+	}
+
+	str_copy(m_TeeInfos.m_SkinName, m_BotData.m_SkinName);
+	
+	Respawn();
 }
 
 void CPlayer::HandleTuningParams()
@@ -207,38 +226,30 @@ void CPlayer::Snap(int SnappingClient)
 
 	StrToInts(&pClientInfo->m_Name0, 4, pPlayerName);
 	
+	const char* pClan = Server()->ClientClan(m_ClientID);
+
 	if(m_pCharacter && IsBot())
 	{
 		std::string Buffer;
 		Buffer.append(std::to_string((int)(m_pCharacter->GetHealth() / (float)m_pCharacter->GetMaxHealth() * 100)));
 		Buffer.append("%");
-		StrToInts(&pClientInfo->m_Clan0, 3, Buffer.c_str());
+		pClan = Buffer.c_str();
 
 		if(m_pCharacter->Pickable())
 		{
-			StrToInts(&pClientInfo->m_Clan0, 3, GameServer()->Localize(pLanguage, _("Pickable")));
+			pClan = GameServer()->Localize(pLanguage, _("Pickable"));
 		}
-	}else
-	{
-		StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
 	}
+
+	StrToInts(&pClientInfo->m_Clan0, 3, pClan);
 
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
-	// TODO:rewrite the bot skin select
-	StrToInts(&pClientInfo->m_Skin0, 6, IsBot() ? m_BotData.m_SkinName : m_TeeInfos.m_SkinName);
+	
+	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
 
-	if(IsBot())
-	{
-		pClientInfo->m_UseCustomColor = (m_BotData.m_BodyColor > -1 && m_BotData.m_FeetColor > -1);
-		pClientInfo->m_ColorBody = m_BotData.m_BodyColor;
-		pClientInfo->m_ColorFeet = m_BotData.m_FeetColor;
-	}
-	else 
-	{
-		pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
-		pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
-		pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
-	}
+	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
+	pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
+	pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
 
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(CNetObj_PlayerInfo)));
 	if(!pPlayerInfo)
@@ -247,8 +258,11 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
 	pPlayerInfo->m_ClientID = id;
 	pPlayerInfo->m_Score = m_Score;
-	pPlayerInfo->m_Team = IsBot() ? 2 : m_Team; // do not snap bot in scorebroad
-	pPlayerInfo->m_Local = (m_ClientID == SnappingClient);
+	pPlayerInfo->m_Team = IsBot() ? 2 : m_Team; // do not snap bot in scoreboard
+	pPlayerInfo->m_Local = 0;
+	
+	if (m_ClientID == SnappingClient)
+		pPlayerInfo->m_Local = 1;
 
 	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, id, sizeof(CNetObj_DDNetPlayer)));
 	if(!pDDNetPlayer)

@@ -2,7 +2,8 @@
     {
         "AI": false,
         "attack_proba": 0,
-        "body_color": -1,
+        "color_body": -1,
+        "color_feet": -1,
         "drops": [
             {
                 "maxnum": 4,
@@ -11,7 +12,6 @@
                 "proba": 100
             }
         ],
-        "feet_color": -1,
         "gun": false,
         "hammer": false,
         "health": 10,
@@ -24,7 +24,8 @@
     {
         "AI": false,
         "attack_proba": 0,
-        "body_color": 0,
+        "color_body": 0,
+        "color_feet": 0,
         "drops": [
             {
                 "maxnum": 4,
@@ -51,7 +52,6 @@
                 "proba": 25
             }
         ],
-        "feet_color": 0,
         "gun": false,
         "hammer": false,
         "health": 20,
@@ -64,7 +64,8 @@
     {
         "AI": true,
         "attack_proba": 20,
-        "body_color": 16777215,
+        "color_body": 16777215,
+        "color_feet": 16777215,
         "drops": [
             {
                 "maxnum": 3,
@@ -73,7 +74,6 @@
                 "proba": 100
             }
         ],
-        "feet_color": 16777215,
         "gun": false,
         "hammer": true,
         "health": 20,
@@ -86,7 +86,8 @@
     {
         "AI": true,
         "attack_proba": 0,
-        "body_color": 16777215,
+        "color_body": 16777215,
+        "color_feet": 16777215,
         "drops": [
             {
                 "maxnum": 3,
@@ -101,7 +102,6 @@
                 "proba": 20
             }
         ],
-        "feet_color": 16777215,
         "gun": false,
         "hammer": false,
         "health": 20,

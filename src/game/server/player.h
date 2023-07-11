@@ -15,6 +15,7 @@ public:
 	~CPlayer();
 
 	void Reset();
+	void BotInit();
 
 	void TryRespawn();
 	void Respawn();
