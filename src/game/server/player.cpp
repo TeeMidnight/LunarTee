@@ -27,6 +27,10 @@ CPlayer::~CPlayer()
 
 void CPlayer::Reset()
 {
+	mem_zero(&m_TeeInfos, sizeof(CTeeInfo));
+	mem_zero(&m_Latency, sizeof(m_Latency));
+	mem_zero(&m_LastTarget, sizeof(CNetObj_PlayerInput));
+
 	m_pCharacter = 0;
 
 	m_Menu = 0;
@@ -38,6 +42,7 @@ void CPlayer::Reset()
 	m_Sit = 0;
 
 	m_SpectatorID = SPEC_FREEVIEW;
+	m_RealSpectatorID = SPEC_FREEVIEW;
 	
 	m_LastVoteCall = Server()->Tick();
 	m_LastVoteTry = Server()->Tick();
@@ -179,9 +184,16 @@ void CPlayer::PostTick()
 		}
 	}
 
-	// update view pos for spectators
-	if(m_Team == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW && GameServer()->m_apPlayers[m_SpectatorID])
-		m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;
+	if(m_Team == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW)
+	{
+		int RealSpectatorID = m_RealSpectatorID;
+		if(Server()->Translate(RealSpectatorID, m_ClientID))
+			m_SpectatorID = RealSpectatorID;
+
+		// update view pos for spectators
+		if(GameServer()->m_apPlayers[m_RealSpectatorID])
+			m_ViewPos = GameServer()->m_apPlayers[m_RealSpectatorID]->m_ViewPos;
+	}
 }
 
 void CPlayer::Snap(int SnappingClient)
@@ -198,23 +210,31 @@ void CPlayer::Snap(int SnappingClient)
 
 	const char *pPlayerName = IsBot() ? GameServer()->Localize(pLanguage, m_BotData.m_aName) : Server()->ClientName(m_ClientID);
 
-	if(m_pCharacter && m_pCharacter->Pickable())
-		pPlayerName = GameServer()->Localize(pLanguage, _("Pickable"));
-
 	StrToInts(&pClientInfo->m_Name0, 4, pPlayerName);
 	
-	std::string Buffer;
-	Buffer.append(std::to_string(m_pCharacter ? (int)(m_pCharacter->GetHealth() / (float)m_pCharacter->GetMaxHealth() * 100) : 0));
-	Buffer.append("%");
-	StrToInts(&pClientInfo->m_Clan0, 3, Buffer.c_str());
+	if(m_pCharacter && IsBot())
+	{
+		std::string Buffer;
+		Buffer.append(std::to_string((int)(m_pCharacter->GetHealth() / (float)m_pCharacter->GetMaxHealth() * 100)));
+		Buffer.append("%");
+		StrToInts(&pClientInfo->m_Clan0, 3, Buffer.c_str());
+
+		if(m_pCharacter->Pickable())
+		{
+			StrToInts(&pClientInfo->m_Clan0, 3, GameServer()->Localize(pLanguage, _("Pickable")));
+		}
+	}else
+	{
+		StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
+	}
 
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	// TODO:rewrite the bot skin select
 	StrToInts(&pClientInfo->m_Skin0, 6, IsBot() ? m_BotData.m_SkinName : m_TeeInfos.m_SkinName);
 
-	if(IsBot() && m_BotData.m_BodyColor > -1 && m_BotData.m_FeetColor > -1)
+	if(IsBot())
 	{
-		pClientInfo->m_UseCustomColor = 1;
+		pClientInfo->m_UseCustomColor = (m_BotData.m_BodyColor > -1 && m_BotData.m_FeetColor > -1);
 		pClientInfo->m_ColorBody = m_BotData.m_BodyColor;
 		pClientInfo->m_ColorFeet = m_BotData.m_FeetColor;
 	}
@@ -224,6 +244,7 @@ void CPlayer::Snap(int SnappingClient)
 		pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
 		pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
 	}
+
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(CNetObj_PlayerInfo)));
 	if(!pPlayerInfo)
 		return;
@@ -408,8 +429,11 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 		// update spectator modes
 		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_SpectatorID == m_ClientID)
+			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_RealSpectatorID == m_ClientID)
+			{
+				GameServer()->m_apPlayers[i]->m_RealSpectatorID = SPEC_FREEVIEW;
 				GameServer()->m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
+			}
 		}
 	}
 }

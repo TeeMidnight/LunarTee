@@ -44,6 +44,7 @@ public:
 	void HandleNinja();
 	void HandleEvents();
 	void HandleInput();
+	void HandleStats();
 
 	void SyncWeapon();
 	void SyncHealth();

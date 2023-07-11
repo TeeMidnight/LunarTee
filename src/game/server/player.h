@@ -50,6 +50,7 @@ public:
 
 	// used for spectator mode
 	int m_SpectatorID;
+	int m_RealSpectatorID;
 
 	bool m_IsReady;
 
