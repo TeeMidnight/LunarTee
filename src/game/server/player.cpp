@@ -300,7 +300,7 @@ void CPlayer::Snap(int SnappingClient)
 			return;
 
 		int SpectatorID = m_SpectatorID;
-		if(m_SpectatorID != SPEC_FREEVIEW && !Server()->Translate(m_SpectatorID, m_ClientID))
+		if(m_SpectatorID != SPEC_FREEVIEW && !Server()->Translate(SpectatorID, m_ClientID))
 			return;
 
 		pSpectatorInfo->m_SpectatorID = SpectatorID;
