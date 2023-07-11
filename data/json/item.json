@@ -1,4 +1,18 @@
 {
+    "Charcoal": {
+        "give": [
+            {
+                "name": "Charcoal",
+                "num": 2
+            }
+        ],
+        "need": [
+            {
+                "name": "Wood",
+                "num": 4
+            }
+        ]
+    },
     "Eggshell": {
         "give": [
             {
@@ -81,7 +95,7 @@
             },
             {
                 "name": "Gunpowder",
-                "num": 30
+                "num": 20
             }
         ]
     },
@@ -117,7 +131,7 @@
             },
             {
                 "name": "Gunpowder",
-                "num": 5
+                "num": 2
             }
         ]
     },
@@ -207,25 +221,11 @@
         "need": [
             {
                 "name": "Empty Ammo",
-                "num": 120
+                "num": 30
             },
             {
                 "name": "Gunpowder",
-                "num": 10
-            }
-        ]
-    },
-    "Charcoal": {
-        "give": [
-            {
-                "name": "Charcoal",
-                "num": 2
-            }
-        ],
-        "need": [
-            {
-                "name": "Wood",
-                "num": 4
+                "num": 5
             }
         ]
     }
