@@ -28,29 +28,31 @@ CEntity::~CEntity()
 	Server()->SnapFreeID(m_ID);
 }
 
-int CEntity::NetworkClipped(int SnappingClient)
+bool CEntity::NetworkClipped(int SnappingClient)
 {
 	return NetworkClipped(SnappingClient, m_Pos);
 }
 
-int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos)
+bool CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos)
 {
-	if(SnappingClient == -1 && GameWorld() == &GameServer()->m_vWorlds[0])
-		return 0;
+	return ::NetworkClipped(GameWorld(), SnappingClient, CheckPos);
+}
 
-	CPlayer *pPlayer = GameServer()->m_apPlayers[SnappingClient];
-	if(pPlayer->GameWorld() != GameWorld())
+bool NetworkClipped(CGameWorld *pGameworld, int SnappingClient, vec2 CheckPos)
+{
+	if(SnappingClient == -1)
+		return false;
+	
+	if(pGameworld->GameServer()->m_apPlayers[SnappingClient]->GameWorld() != pGameworld)
 		return 1;
 
-	float dx = pPlayer->m_ViewPos.x-CheckPos.x;
-	float dy = pPlayer->m_ViewPos.y-CheckPos.y;
+	float dx = pGameworld->GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x - CheckPos.x;
+	float dy = pGameworld->GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.y - CheckPos.y;
 
 	if(absolute(dx) > 1000.0f || absolute(dy) > 800.0f)
-		return 1;
+		return true;
 
-	if(distance(pPlayer->m_ViewPos, CheckPos) > 1100.0f)
-		return 1;
-	return 0;
+	return false;
 }
 
 bool CEntity::GameLayerClipped(vec2 CheckPos)

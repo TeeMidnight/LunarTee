@@ -156,12 +156,15 @@ public:
 	*/
 	void Tick();
 
+	void SnapSpawnPoint(int SnappingClient);
+
 	void InitSpawnPos();
 
 	int CheckBotInRadius(vec2 Pos, float Radius);
 
 	bool GetSpawnPos(bool IsBot, vec2& SpawnPos);
 	std::vector<vec2> m_vSpawnPoints[2];
+	std::vector<int> m_vSpawnPointsID;
 };
 
 #endif

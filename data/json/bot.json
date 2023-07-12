@@ -6,8 +6,8 @@
         "color_feet": -1,
         "drops": [
             {
-                "maxnum": 4,
-                "minnum": 2,
+                "maxnum": 2,
+                "minnum": 1,
                 "name": "Wood",
                 "proba": 100
             }
@@ -28,8 +28,8 @@
         "color_feet": 0,
         "drops": [
             {
-                "maxnum": 4,
-                "minnum": 2,
+                "maxnum": 2,
+                "minnum": 1,
                 "name": "Stone",
                 "proba": 100
             },
