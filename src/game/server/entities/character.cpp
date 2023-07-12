@@ -1098,8 +1098,8 @@ void CCharacter::DoBotActions()
 
 		if(!pBotData->m_Hammer && !pBotData->m_Gun)
 		{
-			m_Input.m_TargetX = m_Botinfo.m_Direction;
-			m_Input.m_TargetY = 0;
+			m_Input.m_TargetX = -m_Input.m_TargetX;
+			m_Input.m_TargetY = -m_Input.m_TargetY;
 		}
 
 		m_LatestInput.m_TargetX = m_Input.m_TargetX;
