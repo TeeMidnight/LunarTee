@@ -801,8 +801,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 				Die(From, Weapon);
 			}
 
-
-			if(!m_Botinfo.m_Pickable)
+			if(!Pickable())
 			{
 				m_Health = 0;
 

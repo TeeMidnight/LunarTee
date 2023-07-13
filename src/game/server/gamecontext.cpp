@@ -39,6 +39,9 @@ void CGameContext::Construct(int Resetting)
 	m_Resetting = 0;
 	m_pServer = 0;
 
+	m_BiggestBotID = MAX_CLIENTS-1;
+	m_FirstFreeBotID = MAX_CLIENTS;
+
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		m_apPlayers[i] = 0;
 
@@ -2141,12 +2144,51 @@ void CGameContext::OnBotDead(int ClientID)
 			m_vpBotPlayers.erase(m_vpBotPlayers.begin() + i);
 		}
 	}
+
 	m_VoteUpdate = true;
+
+	UpdateBot();
 }
 
-void CGameContext::CreateBot(int ClientID, CGameWorld *pGameWorld, CBotData BotPower)
+void CGameContext::UpdateBot()
 {
-	m_vpBotPlayers.push_back(new CPlayer(pGameWorld, ClientID, 0, BotPower));
+	bool BotIDs[m_BiggestBotID-MAX_CLIENTS+1];
+	mem_zero(BotIDs, sizeof(BotIDs));
+	
+	for(int i = 0; i < (int) m_vpBotPlayers.size(); i ++)
+	{
+		BotIDs[m_vpBotPlayers[i]->GetCID() - MAX_CLIENTS] = true;
+	}
+
+	int FirstFree = -1;
+	int Biggest = -1;
+	for(int i = 0; i < m_BiggestBotID-MAX_CLIENTS+1; i ++)
+	{
+		if(BotIDs[i])
+		{
+			Biggest = i;
+		}else if(FirstFree == -1)
+		{
+			FirstFree = i + 1;
+		}
+	}
+
+	if(FirstFree == -1)
+	{
+		m_FirstFreeBotID = MAX_CLIENTS + Biggest + 1;
+		m_BiggestBotID = MAX_CLIENTS + Biggest + 1;
+	}else
+	{
+		m_FirstFreeBotID = MAX_CLIENTS + FirstFree;
+		m_BiggestBotID = MAX_CLIENTS + Biggest;
+	}
+}
+
+void CGameContext::CreateBot(CGameWorld *pGameWorld, CBotData BotPower)
+{
+	m_vpBotPlayers.push_back(new CPlayer(pGameWorld, m_FirstFreeBotID, 0, BotPower));
+
+	UpdateBot();
 }
 
 void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)

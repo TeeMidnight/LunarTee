@@ -457,7 +457,7 @@ void CGameController::OnCreateBot()
 			if(GameServer()->GetBotWithCID((MAX_CLIENTS + 96 * i) + j))
 				continue;
 			CBotData Data = RandomBotData();
-			GameServer()->CreateBot((MAX_CLIENTS + 96 * i) + j, &GameServer()->m_vWorlds[i], Data);
+			GameServer()->CreateBot(&GameServer()->m_vWorlds[i], Data);
 		}
 	}
 }

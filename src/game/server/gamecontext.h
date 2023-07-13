@@ -245,12 +245,17 @@ public:
 	void MakeItem(int ClientID, const char *pItemName);
 
 	int GetPlayerNum() const;
+
 	//Bot Start
+	int m_BiggestBotID;
+	int m_FirstFreeBotID;
+
 	CPlayer *GetBotWithCID(int ClientID);
 	int GetBotNum(CGameWorld *pGameWorld) const;
 	int GetBotNum() const;
+	void UpdateBot();
 	void OnBotDead(int ClientID);
-	void CreateBot(int ClientID, CGameWorld *pGameWorld, CBotData BotPower);
+	void CreateBot(CGameWorld *pGameWorld, CBotData BotPower);
 	//Bot END
 
 	void UpdatePlayerMaps(int ClientID);
