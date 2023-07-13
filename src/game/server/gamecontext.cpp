@@ -1977,6 +1977,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("about", "", CFGFLAG_CHAT, ConAbout, this, "Show information about the mod");
 	Console()->Register("language", "?s", CFGFLAG_CHAT, ConLanguage, this, "change language");
 
+	Console()->Register("top5", "", CFGFLAG_CHAT, ConMenu, this, "show menu"); // This command in DDNet is default bind in key 'b'
 	Console()->Register("menu", "", CFGFLAG_CHAT, ConMenu, this, "show menu");
 	Console()->Register("emote", "s?i", CFGFLAG_CHAT, ConEmote, this, "change emote");
 
