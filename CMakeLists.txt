@@ -537,7 +537,7 @@ if(LOCALIZE)
       add_custom_command(
         TARGET update-po-files
         # BYPRODUCTS ${PO_LANG_FILE}
-        COMMAND msgmerge --update --backup=off --lang=${PO_LANG_FILE} --no-fuzzy --width=200 ${PO_LANG_FILE} ${PO_TEMPlATE}
+        COMMAND msgmerge --update --backup=off --lang=${PO_LANG} --no-fuzzy --width=200 ${PO_LANG_FILE} ${PO_TEMPlATE}
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         DEPENDS ${PO_TEMPlATE}
       )
