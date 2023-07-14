@@ -512,8 +512,8 @@ static void InitBotDataThread(void *pUser)
 					CBotDropData DropData;
 					str_copy(DropData.m_ItemName, json_string_get(json_object_get(pCurrentA, "name")));
 					DropData.m_DropProba = json_int_get(json_object_get(pCurrentA, "proba"));
-					DropData.m_MinNum = json_int_get(json_object_get(pCurrentA, "minnum"));
-					DropData.m_MaxNum = json_int_get(json_object_get(pCurrentA, "maxnum"));
+					DropData.m_MinNum = json_int_get(json_object_get(pCurrentA, "min"));
+					DropData.m_MaxNum = json_int_get(json_object_get(pCurrentA, "max"));
 					Data.m_vDrops.push_back(DropData);
 				}
 			}
