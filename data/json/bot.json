@@ -18,7 +18,7 @@
         "hook": false,
         "name": "Shrub",
         "skin": "greensward",
-        "spawn_proba": 60,
+        "spawn_proba": 40,
         "teamdamage": false
     },
     {
@@ -63,7 +63,7 @@
     },
     {
         "AI": true,
-        "attack_proba": 20,
+        "attack_proba": 10,
         "color_body": 16777215,
         "color_feet": 16777215,
         "drops": [
@@ -76,7 +76,7 @@
         ],
         "gun": false,
         "hammer": true,
-        "health": 20,
+        "health": 16,
         "hook": false,
         "name": "Bear",
         "skin": "brownbear",
@@ -104,11 +104,11 @@
         ],
         "gun": false,
         "hammer": false,
-        "health": 20,
+        "health": 8,
         "hook": false,
         "name": "Chicken",
         "skin": "cootbird",
-        "spawn_proba": 60,
+        "spawn_proba": 30,
         "teamdamage": false
     }
 ]
