@@ -1,10 +1,8 @@
 #ifndef __SHARED_LOCALIZATION__
 #define __SHARED_LOCALIZATION__
 
-/* BEGIN EDIT *********************************************************/
 #include <teeuniverses/tl/hashtable.h>
 #define CStorage IStorage
-/* END EDIT ***********************************************************/
 
 #include <unicode/ucnv.h>
 #include <unicode/numfmt.h>
@@ -22,18 +20,14 @@ struct CLocalizableString
 	{ }
 };
 
-/* BEGIN EDIT *********************************************************/
 #define _(TEXT) TEXT
 #define _C(CONTEXT, TEXT) TEXT
-/* END EDIT ***********************************************************/
 
-/* BEGIN EDIT *********************************************************/
 class CLocalization
 {
 private:
 	class CStorage* m_pStorage;
 	inline class CStorage* Storage() { return m_pStorage; }
-/* END EDIT ***********************************************************/
 public:
 
 	class CLanguage

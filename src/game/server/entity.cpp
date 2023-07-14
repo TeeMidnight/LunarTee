@@ -44,7 +44,7 @@ bool NetworkClipped(CGameWorld *pGameworld, int SnappingClient, vec2 CheckPos)
 		return false;
 	
 	if(pGameworld->GameServer()->m_apPlayers[SnappingClient]->GameWorld() != pGameworld)
-		return 1;
+		return true;
 
 	float dx = pGameworld->GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x - CheckPos.x;
 	float dy = pGameworld->GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.y - CheckPos.y;

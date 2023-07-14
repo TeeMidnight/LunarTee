@@ -1,15 +1,11 @@
 // Thanks kurosio
 #include "localization.h"
 
-/* BEGIN EDIT *********************************************************/
 #include <engine/shared/json.h>
 #include <engine/shared/config.h>
 #include <engine/storage.h>
 #include <unicode/ushape.h>
 #include <unicode/ubidi.h>
-/* END EDIT ***********************************************************/
-
-/* LANGUAGE ***********************************************************/
 
 CLocalization::CLanguage::CLanguage() :
 	m_Loaded(false),
@@ -44,9 +40,7 @@ CLocalization::CLanguage::~CLanguage()
 	}
 }
 
-/* BEGIN EDIT *********************************************************/
 bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pStorage)
-/* END EDIT ***********************************************************/
 {
 	// read file data into buffer
 	char aBuf[256];
@@ -144,7 +138,6 @@ CLocalization::CLocalization(class CStorage* pStorage) :
 {
 	
 }
-/* END EDIT ***********************************************************/
 
 CLocalization::~CLocalization()
 {
@@ -152,13 +145,10 @@ CLocalization::~CLocalization()
 		delete m_pLanguages[i];
 }
 
-/* BEGIN EDIT *********************************************************/
 bool CLocalization::InitConfig(int argc, const char ** argv)
 {
 	return true;
 }
-
-/* END EDIT ***********************************************************/
 
 bool CLocalization::Init()
 {
