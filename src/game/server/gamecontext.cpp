@@ -39,7 +39,7 @@ void CGameContext::Construct(int Resetting)
 	m_Resetting = 0;
 	m_pServer = 0;
 
-	m_BiggestBotID = MAX_CLIENTS-1;
+	m_BiggestBotID = MAX_CLIENTS;
 	m_FirstFreeBotID = MAX_CLIENTS;
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
