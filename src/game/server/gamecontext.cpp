@@ -2192,11 +2192,11 @@ void CGameContext::UpdateBot()
 	}
 }
 
-void CGameContext::CreateBot(CGameWorld *pGameWorld, CBotData BotPower)
+void CGameContext::CreateBot(CGameWorld *pGameWorld, CBotData BotData)
 {
 	UpdateBot();
 
-	m_vpBotPlayers.push_back(new CPlayer(pGameWorld, m_FirstFreeBotID, 0, BotPower));
+	m_vpBotPlayers.push_back(new CPlayer(pGameWorld, m_FirstFreeBotID, 0, BotData));
 }
 
 void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)

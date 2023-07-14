@@ -255,7 +255,7 @@ public:
 	int GetBotNum() const;
 	void UpdateBot();
 	void OnBotDead(int ClientID);
-	void CreateBot(CGameWorld *pGameWorld, CBotData BotPower);
+	void CreateBot(CGameWorld *pGameWorld, CBotData BotData);
 	//Bot END
 
 	void UpdatePlayerMaps(int ClientID);
