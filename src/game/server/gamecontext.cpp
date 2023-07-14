@@ -39,7 +39,7 @@ void CGameContext::Construct(int Resetting)
 	m_Resetting = 0;
 	m_pServer = 0;
 
-	m_BiggestBotID = MAX_CLIENTS;
+	m_BiggestBotID = -1;
 	m_FirstFreeBotID = MAX_CLIENTS;
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -2146,14 +2146,22 @@ void CGameContext::OnBotDead(int ClientID)
 	}
 
 	m_VoteUpdate = true;
-
-	UpdateBot();
 }
 
 void CGameContext::UpdateBot()
 {
+	if(m_BiggestBotID < MAX_CLIENTS) // do not to update when create first bot
+	{
+		m_BiggestBotID = m_FirstFreeBotID;
+		return;
+	}
+
 	bool BotIDs[m_BiggestBotID-MAX_CLIENTS+1];
-	mem_zero(BotIDs, sizeof(BotIDs));
+	
+	for(int i = 0; i < m_BiggestBotID-MAX_CLIENTS+1; i ++)
+	{
+		BotIDs[i] = false;
+	}
 	
 	for(int i = 0; i < (int) m_vpBotPlayers.size(); i ++)
 	{
@@ -2169,7 +2177,7 @@ void CGameContext::UpdateBot()
 			Biggest = i;
 		}else if(FirstFree == -1)
 		{
-			FirstFree = i + 1;
+			FirstFree = i;
 		}
 	}
 
@@ -2186,9 +2194,9 @@ void CGameContext::UpdateBot()
 
 void CGameContext::CreateBot(CGameWorld *pGameWorld, CBotData BotPower)
 {
-	m_vpBotPlayers.push_back(new CPlayer(pGameWorld, m_FirstFreeBotID, 0, BotPower));
-
 	UpdateBot();
+
+	m_vpBotPlayers.push_back(new CPlayer(pGameWorld, m_FirstFreeBotID, 0, BotPower));
 }
 
 void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)
