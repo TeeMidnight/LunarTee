@@ -1069,13 +1069,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(pPlayer->GetTeam() == pMsg->m_Team || (g_Config.m_SvSpamprotection && pPlayer->m_LastSetTeam && pPlayer->m_LastSetTeam+Server()->TickSpeed()*3 > Server()->Tick()))
 				return;
 
-			if(pPlayer->GetTeam() != TEAM_SPECTATORS)
-			{
-				pPlayer->m_LastSetTeam = Server()->Tick();
-				SendBroadcast_Localization(_("Save your hope"), ClientID);
-				return;
-			}
-
 			if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
 			{
 				m_VoteUpdate = true;
@@ -1107,7 +1100,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			CNetMsg_Cl_SetSpectatorMode *pMsg = (CNetMsg_Cl_SetSpectatorMode *)pRawMsg;
 
-			if(g_Config.m_SvSpamprotection && pPlayer->m_LastSetSpectatorMode && pPlayer->m_LastSetSpectatorMode+Server()->TickSpeed()*3 > Server()->Tick())
+			if(g_Config.m_SvSpamprotection && pPlayer->m_LastSetSpectatorMode && pPlayer->m_LastSetSpectatorMode+Server()->TickSpeed()*0.5 > Server()->Tick())
 				return;
 
 			if(pMsg->m_SpectatorID != SPEC_FREEVIEW)

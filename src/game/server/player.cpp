@@ -43,6 +43,8 @@ void CPlayer::Reset()
 
 	m_SpectatorID = SPEC_FREEVIEW;
 	
+	m_PlayerFlags = 0;
+
 	m_LastVoteCall = Server()->Tick();
 	m_LastVoteTry = Server()->Tick();
 	m_LastChat = Server()->Tick();
@@ -378,6 +380,9 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 		// reset input
 		if(m_pCharacter)
 			m_pCharacter->ResetInput();
+		
+		m_PlayerFlags = NewInput->m_PlayerFlags;
+
  		return;
 	}
 
