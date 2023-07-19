@@ -322,7 +322,7 @@ bool CGameWorld::GetSpawnPos(bool IsBot, vec2& SpawnPos)
 	for(int i = 0;i < (int) m_vSpawnPoints[IsBot].size(); i++)
 	{
 		SpawnPos = m_vSpawnPoints[IsBot][random_int(0, m_vSpawnPoints[IsBot].size()-1)];
-		if(!ClosestCharacter(SpawnPos, 128.0f, 0x0))
+		if(!ClosestCharacter(SpawnPos, 48.0f, 0x0))
 		{
 			return true;
 		}
