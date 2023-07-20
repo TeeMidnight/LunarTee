@@ -1187,8 +1187,8 @@ CCharacter *CCharacter::FindTarget(vec2 Pos, float Radius)
 
 bool CCharacter::CheckPos(vec2 CheckPos)
 {
-	if(Collision()->GetCollisionAt(CheckPos.x+m_ProximityRadius/3.f, CheckPos.y)&CCollision::COLFLAG_SOLID ||
-		Collision()->GetCollisionAt(CheckPos.x-m_ProximityRadius/3.f,CheckPos.y)&CCollision::COLFLAG_SOLID)
+	if(Collision()->CheckPoint(CheckPos.x+m_ProximityRadius/3.f, CheckPos.y) ||
+		Collision()->CheckPoint(CheckPos.x-m_ProximityRadius/3.f,CheckPos.y))
 	{
 		return true;
 	}
