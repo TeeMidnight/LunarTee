@@ -2044,7 +2044,7 @@ void CGameContext::OnSnap(int ClientID)
 
 	for(int i = 0; i < (int) m_vpBotPlayers.size(); i ++)
 	{
-		m_vpBotPlayers[i]->Snap(ClientID);
+		m_vpBotPlayers[i]->SnapBot(ClientID);
 	}
 
 	for(int i = 0; i < MAX_CLIENTS; i ++)

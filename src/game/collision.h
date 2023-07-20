@@ -16,13 +16,6 @@ class CCollision
 	int GetTile(int x, int y) const;
 
 public:
-	enum
-	{
-		COLFLAG_SOLID=1<<0,
-		COLFLAG_DEATH=1<<1,
-		COLFLAG_NOHOOK=1<<2,
-		COLFLAG_MOONCENTER=1<<3,
-	};
 
 	CCollision();
 	void Init(class CLayers *pLayers);

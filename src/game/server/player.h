@@ -26,6 +26,7 @@ public:
 	void Tick();
 	void PostTick();
 	void Snap(int SnappingClient);
+	void SnapBot(int SnappingClient);
 
 	void FakeSnap(int SnappingClient);
 	

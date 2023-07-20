@@ -26,32 +26,6 @@ void CCollision::Init(class CLayers *pLayers)
 	m_Width = m_pLayers->GameLayer()->m_Width;
 	m_Height = m_pLayers->GameLayer()->m_Height;
 	m_pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->GameLayer()->m_Data));
-
-	for(int i = 0; i < m_Width*m_Height; i++)
-	{
-		int Index = m_pTiles[i].m_Index;
-
-		if(Index > 128)
-			continue;
-
-		switch(Index)
-		{
-		case TILE_DEATH:
-			m_pTiles[i].m_Index = COLFLAG_DEATH;
-			break;
-		case TILE_SOLID:
-			m_pTiles[i].m_Index = COLFLAG_SOLID;
-			break;
-		case TILE_NOHOOK:
-			m_pTiles[i].m_Index = COLFLAG_SOLID|COLFLAG_NOHOOK;
-			break;
-		case TILE_MOONCENTER:
-			m_pTiles[i].m_Index = COLFLAG_MOONCENTER;
-			break;
-		default:
-			m_pTiles[i].m_Index = 0;
-		}
-	}
 }
 
 int CCollision::GetTile(int x, int y) const
@@ -64,13 +38,14 @@ int CCollision::GetTile(int x, int y) const
 
 bool CCollision::IsTileSolid(int x, int y) const
 {
-	return GetTile(x, y)&COLFLAG_SOLID;
+	int Tile = GetTile(x, y);
+	return (Tile == TILE_SOLID || Tile == TILE_NOHOOK);
 }
 
 bool CCollision::IsCollision(float x, float y, float Radius, int Flag) const
 {
-	return (GetTile(round(x+Radius), round(y+Radius))&Flag) || (GetTile(round(x+Radius), round(y-Radius))&Flag) || 
-		(GetTile(round(x-Radius), round(y+Radius))&Flag) || (GetTile(round(x-Radius), round(y-Radius))&Flag);
+	return (GetTile(round(x+Radius), round(y+Radius)) == Flag) || (GetTile(round(x+Radius), round(y-Radius)) == Flag) || 
+		(GetTile(round(x-Radius), round(y+Radius)) == Flag) || (GetTile(round(x-Radius), round(y-Radius)) == Flag);
 }
 
 // TODO: rewrite this smarter!

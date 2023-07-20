@@ -227,27 +227,9 @@ void CPlayer::Snap(int SnappingClient)
 	if(!pClientInfo)
 		return;
 
-	const char *pLanguage = GameServer()->m_apPlayers[SnappingClient] ? GameServer()->m_apPlayers[SnappingClient]->m_aLanguage : "en";
-
-	const char *pPlayerName = IsBot() ? GameServer()->Localize(pLanguage, m_BotData.m_aName) : Server()->ClientName(m_ClientID);
-
-	StrToInts(&pClientInfo->m_Name0, 4, pPlayerName);
-	
 	const char* pClan = Server()->ClientClan(m_ClientID);
 
-	if(m_pCharacter && IsBot())
-	{
-		std::string Buffer;
-		Buffer.append(std::to_string((int)(m_pCharacter->GetHealth() / (float)m_pCharacter->GetMaxHealth() * 100)));
-		Buffer.append("%");
-		pClan = Buffer.c_str();
-
-		if(m_pCharacter->Pickable())
-		{
-			pClan = GameServer()->Localize(pLanguage, _("Pickable"));
-		}
-	}
-	else if(GameServer()->m_apPlayers[SnappingClient] && 
+	if(GameServer()->m_apPlayers[SnappingClient] && 
 		GameServer()->m_apPlayers[SnappingClient]->m_ShowClientID && 
 		GameServer()->m_apPlayers[SnappingClient]->m_Authed &&
 		(GameServer()->m_apPlayers[SnappingClient]->m_PlayerFlags & PLAYERFLAG_SCOREBOARD))
@@ -258,11 +240,10 @@ void CPlayer::Snap(int SnappingClient)
 		pClan = Buffer.c_str();
 	}
 
-	StrToInts(&pClientInfo->m_Clan0, 3, pClan);
-
-	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
-	
+	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
+	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
+	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
 	pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
@@ -275,7 +256,7 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
 	pPlayerInfo->m_ClientID = id;
 	pPlayerInfo->m_Score = m_Score;
-	pPlayerInfo->m_Team = IsBot() ? 2 : (m_ClientID == SnappingClient ? m_Team : 0); // do not snap bot and spectator in scoreboard
+	pPlayerInfo->m_Team = (m_ClientID == SnappingClient ? m_Team : 0); // do not snap bot and spectator in scoreboard
 	pPlayerInfo->m_Local = 0;
 	
 	if (m_ClientID == SnappingClient)
@@ -309,6 +290,58 @@ void CPlayer::Snap(int SnappingClient)
 		pSpectatorInfo->m_X = m_ViewPos.x;
 		pSpectatorInfo->m_Y = m_ViewPos.y;
 	}
+}
+
+void CPlayer::SnapBot(int SnappingClient)
+{
+	int id = m_ClientID;
+	if(!Server()->Translate(id, SnappingClient))
+		return;
+	
+	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, id, sizeof(CNetObj_ClientInfo)));
+	if(!pClientInfo)
+		return;
+
+	const char *pLanguage = GameServer()->m_apPlayers[SnappingClient] ? GameServer()->m_apPlayers[SnappingClient]->m_aLanguage : "en";
+	const char* pClan = Server()->ClientClan(m_ClientID);
+
+	if(m_pCharacter)
+	{
+		std::string Buffer;
+		Buffer.append(std::to_string((int)(m_pCharacter->GetHealth() / (float)m_pCharacter->GetMaxHealth() * 100)));
+		Buffer.append("%");
+		pClan = Buffer.c_str();
+
+		if(m_pCharacter->Pickable())
+		{
+			pClan = GameServer()->Localize(pLanguage, _("Pickable"));
+		}
+	}
+
+	StrToInts(&pClientInfo->m_Name0, 4, GameServer()->Localize(pLanguage, m_BotData.m_aName));
+	StrToInts(&pClientInfo->m_Clan0, 3, pClan);
+	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
+	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
+
+	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
+	pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
+	pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
+
+	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(CNetObj_PlayerInfo)));
+	if(!pPlayerInfo)
+		return;
+
+	pPlayerInfo->m_Latency = 0;
+	pPlayerInfo->m_ClientID = id;
+	pPlayerInfo->m_Score = m_Score;
+	pPlayerInfo->m_Team = 2; // do not snap bot and spectator in scoreboard
+	pPlayerInfo->m_Local = 0;
+	
+	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, id, sizeof(CNetObj_DDNetPlayer)));
+	if(!pDDNetPlayer)
+		return;
+	pDDNetPlayer->m_AuthLevel = 0;
+	pDDNetPlayer->m_Flags = 0;
 }
 
 void CPlayer::FakeSnap(int SnappingClient)
