@@ -294,15 +294,16 @@ void CGameWorld::InitSpawnPos()
 		{
 			int Index = pTiles[y*pTileMap->m_Width+x].m_Index;
 
-			if(Index&CCollision::COLFLAG_SOLID || Index&CCollision::COLFLAG_DEATH) 
+			if(Index == TILE_SOLID || Index == TILE_NOHOOK || Index == TILE_DEATH) 
 				continue;
 
 			int GroudIndex = pTiles[(y+1)*pTileMap->m_Width+x].m_Index;
 			int UndergroudIndex = pTiles[(y+2)*pTileMap->m_Width+x].m_Index;
-			if(!(GroudIndex&CCollision::COLFLAG_SOLID || GroudIndex&CCollision::COLFLAG_DEATH) && UndergroudIndex&CCollision::COLFLAG_SOLID)
+			if(!(GroudIndex == TILE_SOLID || GroudIndex == TILE_NOHOOK || GroudIndex == TILE_DEATH) 
+				&& (UndergroudIndex == TILE_SOLID || UndergroudIndex == TILE_NOHOOK))
 			{
 				vec2 Pos(x*32.0f+16.0f, y*32.0f+16.0f);
-				if(Index&CCollision::COLFLAG_MOONCENTER)
+				if(Index == TILE_MOONCENTER)
 				{
 					m_vSpawnPoints[0].push_back(Pos);
 					for(int i = 0; i < s_SpawnPointLaserNum; i ++)

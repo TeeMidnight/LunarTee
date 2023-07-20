@@ -227,7 +227,7 @@ void CPlayer::Snap(int SnappingClient)
 	if(!pClientInfo)
 		return;
 
-	const char* pClan = Server()->ClientClan(m_ClientID);
+	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
 
 	if(GameServer()->m_apPlayers[SnappingClient] && 
 		GameServer()->m_apPlayers[SnappingClient]->m_ShowClientID && 
@@ -237,11 +237,11 @@ void CPlayer::Snap(int SnappingClient)
 		std::string Buffer;
 		Buffer.append("Client: ");
 		Buffer.append(std::to_string(m_ClientID));
-		pClan = Buffer.c_str();
+
+		StrToInts(&pClientInfo->m_Clan0, 3, Buffer.c_str());
 	}
 
 	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
-	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 
