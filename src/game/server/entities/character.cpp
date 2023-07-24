@@ -900,6 +900,9 @@ void CCharacter::Snap(int SnappingClient)
 		case WEAPON_NINJA: pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_NINJA; break;
 	}
 
+	if(!m_pPlayer->GetNextTuningParams()->m_PlayerCollision)
+		pDDNetCharacter->m_Flags |= CHARACTERFLAG_COLLISION_DISABLED;
+		
 	pDDNetCharacter->m_NinjaActivationTick = Server()->Tick();
 
 	pDDNetCharacter->m_FreezeStart = 0;
