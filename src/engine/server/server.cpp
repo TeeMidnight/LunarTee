@@ -535,6 +535,7 @@ bool CServer::GetClientInfo(int ClientID, CClientInfo *pInfo) const
 
 	if(m_aClients[ClientID].m_State == CClient::STATE_INGAME)
 	{
+		pInfo->m_Authed = m_aClients[ClientID].m_Authed;
 		pInfo->m_pName = m_aClients[ClientID].m_aName;
 		pInfo->m_Latency = m_aClients[ClientID].m_Latency;
 		pInfo->m_GotDDNetVersion = m_aClients[ClientID].m_DDNetVersionSettled;

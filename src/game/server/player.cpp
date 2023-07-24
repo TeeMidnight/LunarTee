@@ -265,12 +265,14 @@ void CPlayer::Snap(int SnappingClient)
 	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, id, sizeof(CNetObj_DDNetPlayer)));
 	if(!pDDNetPlayer)
 		return;
+	pDDNetPlayer->m_AuthLevel = 0;
+	pDDNetPlayer->m_Flags = 0;
+
 	if(!IsBot())
 	{
 		IServer::CClientInfo Info;
 		Server()->GetClientInfo(m_ClientID, &Info);
 		pDDNetPlayer->m_AuthLevel = Info.m_Authed;
-		pDDNetPlayer->m_Flags = 0;
 	}
 
 	if(m_Sit)
