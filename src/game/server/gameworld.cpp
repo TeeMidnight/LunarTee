@@ -9,8 +9,6 @@
 #include <utility>
 #include <engine/shared/config.h>
 
-static int s_SpawnPointLaserNum = 8;
-
 //////////////////////////////////////////////////
 // game world
 //////////////////////////////////////////////////
@@ -136,26 +134,23 @@ void CGameWorld::Snap(int SnappingClient)
 
 void CGameWorld::SnapSpawnPoint(int SnappingClient)
 {
-	float AngleStep = 2.0f * pi / s_SpawnPointLaserNum;
 	for(int i = 0; i < (int) m_vSpawnPoints[0].size(); i ++)
 	{
 		if(NetworkClipped(this, SnappingClient, m_vSpawnPoints[0][i]))
 			continue;
-		for(int j = 0; j < s_SpawnPointLaserNum; j ++)
-		{
-			vec2 Pos = m_vSpawnPoints[0][i] + vec2(16.f * cos(AngleStep*j), 16.f * sin(AngleStep*j));
-			vec2 NextPos = m_vSpawnPoints[0][i] + vec2(16.f * cos(AngleStep*(j+1)), 16.f * sin(AngleStep*(j+1)));
 
-			CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_vSpawnPointsID[i * s_SpawnPointLaserNum + j], sizeof(CNetObj_Laser)));
-			if(!pObj)
-				return;
+		vec2 Pos = m_vSpawnPoints[0][i];
 
-			pObj->m_X = (int)Pos.x;
-			pObj->m_Y = (int)Pos.y;
-			pObj->m_FromX = (int)NextPos.x;
-			pObj->m_FromY = (int)NextPos.y;
-			pObj->m_StartTick = Server()->Tick();
-		}
+		CNetObj_Projectile *pObj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_vSpawnPointsID[i], sizeof(CNetObj_Projectile)));
+		if(!pObj)
+			return;
+
+		pObj->m_X = (int)Pos.x;
+		pObj->m_Y = (int)Pos.y;
+		pObj->m_Type = WEAPON_RIFLE;
+		pObj->m_VelX = 0;
+		pObj->m_VelY = 0;
+		pObj->m_StartTick = Server()->Tick();
 	}
 }
 
@@ -306,8 +301,8 @@ void CGameWorld::InitSpawnPos()
 				if(Index == TILE_MOONCENTER)
 				{
 					m_vSpawnPoints[0].push_back(Pos);
-					for(int i = 0; i < s_SpawnPointLaserNum; i ++)
-						m_vSpawnPointsID.push_back(Server()->SnapNewID());
+					int ID = Server()->SnapNewID();
+					m_vSpawnPointsID.push_back(ID);
 				}
 				else 
 				{

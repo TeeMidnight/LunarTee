@@ -2448,7 +2448,6 @@ void CServer::SnapFreeID(int ID)
 	m_IDPool.FreeID(ID);
 }
 
-
 void *CServer::SnapNewItem(int Type, int ID, int Size)
 {
 	dbg_assert(ID >= 0 && ID <=0xffff, "incorrect id");
@@ -2567,8 +2566,9 @@ int main(int argc, const char **argv) // ignore_convention
 	pEngine->SetAdditionalLogger(pServerLogger);
 
 	// run the server
-	log_log_color(LEVEL_INFO, LOG_COLOR_INFO, "server", "starting...");
+	log_log_color(LEVEL_INFO, LOG_COLOR_INFO, "server", "Starting...");
 	pServer->Run();
+	log_log_color(LEVEL_INFO, LOG_COLOR_SUCCESS, "server", "Server shutdown");
 
 	pServerLogger->OnServerDeletion();
 	// free

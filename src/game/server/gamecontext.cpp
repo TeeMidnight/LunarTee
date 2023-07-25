@@ -122,20 +122,19 @@ int CGameContext::FindWorldIDWithWorld(CGameWorld *pGameWorld) const
 
 CGameWorld *CGameContext::CreateNewWorld(IMap *pMap, const char *WorldName)
 {
-	CGameWorld GameWorld;
+	m_vWorlds.push_back(CGameWorld());
+	int ID = m_vWorlds.size() - 1;
 
-	GameWorld.SetGameServer(this);
+	m_vWorlds[ID].SetGameServer(this);
 
-	GameWorld.Layers()->Init(pMap);
-	GameWorld.Collision()->Init(GameWorld.Layers());
+	m_vWorlds[ID].Layers()->Init(pMap);
+	m_vWorlds[ID].Collision()->Init(m_vWorlds[ID].Layers());
 
-	GameWorld.InitSpawnPos();
+	m_vWorlds[ID].InitSpawnPos();
 
-	str_copy(GameWorld.m_aWorldName, WorldName);
+	str_copy(m_vWorlds[ID].m_aWorldName, WorldName);
 
-	m_vWorlds.push_back(GameWorld);
-
-	return &m_vWorlds[m_vWorlds.size() - 1];
+	return &m_vWorlds[ID];
 }
 
 class CCharacter *CGameContext::GetPlayerChar(int ClientID)
