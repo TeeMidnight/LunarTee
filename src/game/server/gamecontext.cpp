@@ -72,6 +72,8 @@ CGameContext::~CGameContext()
 		delete m_apPlayers[i];
 	for(auto &pPlayer : m_vpBotPlayers)
 		delete pPlayer;
+	for(auto &pWorld : m_vpWorlds)
+		delete pWorld;
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
 
@@ -106,9 +108,9 @@ void CGameContext::Clear()
 
 int CGameContext::FindWorldIDWithWorld(CGameWorld *pGameWorld) const
 {
-	for(int i = 0; i < (int) m_vWorlds.size(); i ++)
+	for(int i = 0; i < (int) m_vpWorlds.size(); i ++)
 	{
-		if(&m_vWorlds[i] == pGameWorld)
+		if(m_vpWorlds[i] == pGameWorld)
 		{
 			return i;
 		}
@@ -119,19 +121,19 @@ int CGameContext::FindWorldIDWithWorld(CGameWorld *pGameWorld) const
 
 CGameWorld *CGameContext::CreateNewWorld(IMap *pMap, const char *WorldName)
 {
-	m_vWorlds.push_back(CGameWorld());
-	int ID = m_vWorlds.size() - 1;
+	m_vpWorlds.push_back(new CGameWorld());
+	int ID = m_vpWorlds.size() - 1;
 
-	m_vWorlds[ID].SetGameServer(this);
+	m_vpWorlds[ID]->SetGameServer(this);
 
-	m_vWorlds[ID].Layers()->Init(pMap);
-	m_vWorlds[ID].Collision()->Init(m_vWorlds[ID].Layers());
+	m_vpWorlds[ID]->Layers()->Init(pMap);
+	m_vpWorlds[ID]->Collision()->Init(m_vpWorlds[ID]->Layers());
 
-	m_vWorlds[ID].InitSpawnPos();
+	m_vpWorlds[ID]->InitSpawnPos();
 
-	str_copy(m_vWorlds[ID].m_aWorldName, WorldName);
+	str_copy(m_vpWorlds[ID]->m_aWorldName, WorldName);
 
-	return &m_vWorlds[ID];
+	return m_vpWorlds[ID];
 }
 
 class CCharacter *CGameContext::GetPlayerChar(int ClientID)
@@ -165,41 +167,41 @@ CGameWorld *CGameContext::FindWorldWithClientID(int ClientID) const
 	if(m_apPlayers[ClientID])
 		return m_apPlayers[ClientID]->GameWorld();
 
-	return 0x0;
+	return nullptr;
 }
 
 CGameWorld *CGameContext::FindWorldWithMap(IMap *pMap)
 {
-	if(m_vWorlds.size() == 0)
-		return 0x0;
+	if(m_vpWorlds.size() == 0)
+		return nullptr;
 		
-	auto i = std::find_if(m_vWorlds.begin(), m_vWorlds.end(), 
-		[pMap](CGameWorld GameWorld)
+	auto i = std::find_if(m_vpWorlds.begin(), m_vpWorlds.end(), 
+		[pMap](CGameWorld *pGameWorld)
 		{
-			return GameWorld.Layers()->Map() == pMap;
+			return pGameWorld->Layers()->Map() == pMap;
 		});
 
-	if(i != m_vWorlds.end())
-		return &(*i);
+	if(i != m_vpWorlds.end())
+		return *i;
 	
-	return 0x0;
+	return nullptr;
 }
 
 CGameWorld *CGameContext::FindWorldWithName(const char *WorldName)
 {
-	if(m_vWorlds.size() == 0)
-		return 0x0;
+	if(m_vpWorlds.size() == 0)
+		return nullptr;
 
-	auto i = std::find_if(m_vWorlds.begin(), m_vWorlds.end(), 
-		[WorldName](CGameWorld GameWorld)
+	auto i = std::find_if(m_vpWorlds.begin(), m_vpWorlds.end(), 
+		[WorldName](CGameWorld *pGameWorld)
 		{
-			return !str_comp(GameWorld.m_aWorldName, WorldName);
+			return !str_comp(pGameWorld->m_aWorldName, WorldName);
 		});
 
-	if(i != m_vWorlds.end())
-		return &(*i);
+	if(i != m_vpWorlds.end())
+		return *i;
 	
-	return 0x0;
+	return nullptr;
 }
 
 void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, CClientMask Mask)
@@ -613,10 +615,10 @@ void CGameContext::OnTick()
 		}
 	}
 
-	for(int i = 0; i < (int) m_vWorlds.size(); i ++)
+	for(int i = 0; i < (int) m_vpWorlds.size(); i ++)
 	{
-		m_vWorlds[i].m_Core.m_Tuning = m_Tuning;
-		m_vWorlds[i].Tick();
+		m_vpWorlds[i]->m_Core.m_Tuning = m_Tuning;
+		m_vpWorlds[i]->Tick();
 	}
 	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();
@@ -740,7 +742,14 @@ void CGameContext::OnClientConnected(int ClientID, const char *WorldName)
 	if(!pGameWorld)
 		pGameWorld = CreateNewWorld(Server()->GetClientMap(ClientID), WorldName);
 
-	m_apPlayers[ClientID] = new CPlayer(pGameWorld, ClientID, TEAM_SPECTATORS);
+	if(m_apPlayers[ClientID])
+	{
+		m_apPlayers[ClientID]->SetGameWorld(pGameWorld);
+		m_apPlayers[ClientID]->Reset();
+	}	
+	else 
+		m_apPlayers[ClientID] = new CPlayer(pGameWorld, ClientID, TEAM_SPECTATORS);
+	
 
 	// send active vote
 	if(m_VoteCloseTime)
@@ -759,7 +768,7 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 	AbortVoteKickOnDisconnect(ClientID);
 	m_apPlayers[ClientID]->OnDisconnect(pReason);
 	delete m_apPlayers[ClientID];
-	m_apPlayers[ClientID] = 0;
+	m_apPlayers[ClientID] = nullptr;
 
 	Item()->ClearInv(ClientID, false);
 
@@ -1495,9 +1504,7 @@ void CGameContext::ConNextWorld(IConsole::IResult *pResult, void *pUserData)
 		MapID = 0;
 
 	pSelf->m_apPlayers[ClientID]->KillCharacter();
-	
-	delete pSelf->m_apPlayers[ClientID];
-	pSelf->m_apPlayers[ClientID] = 0;
+	pSelf->m_apPlayers[ClientID]->m_LoadingMap = true;
 	
 	pSelf->Server()->ChangeClientMap(ClientID, MapID);
 }
@@ -1852,8 +1859,8 @@ void CGameContext::OnSnap(int ClientID)
 
 	if(!m_apPlayers[ClientID])
 	{
-		for(int i = 0; i < (int) m_vWorlds.size(); i ++)
-			m_vWorlds[i].Snap(ClientID);
+		for(int i = 0; i < (int) m_vpWorlds.size(); i ++)
+			m_vpWorlds[i]->Snap(ClientID);
 	}
 	else
 	{

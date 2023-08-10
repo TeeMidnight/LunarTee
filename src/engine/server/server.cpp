@@ -1943,6 +1943,14 @@ void CServer::RegenerateMap()
 
 int CServer::LoadMap(const char *pMapName)
 {
+	for(auto MapData : m_vMapDatas)
+	{
+		if(str_comp(MapData.m_aCurrentMap, pMapName) == 0)
+		{
+			return 0;
+		}
+	}
+
 	m_MapReload = false;
 	//DATAFILE *df;
 	char aBuf[512];
@@ -1995,7 +2003,7 @@ int CServer::GenerateMap(const char *pMapName)
 	str_format(aBuf, sizeof(aBuf), "generated_map/%s.map", pMapName);
 	
 	Storage()->GetCompletePath(IStorage::TYPE_SAVE, aBuf, aFullPath, sizeof(aFullPath));
-	if(fs_is_file(aFullPath) && g_Config.m_SvGeneratedMap)
+	if(!fs_is_file(aFullPath) || (fs_is_file(aFullPath) && g_Config.m_SvGeneratedMap))
 	{
 		if(!MapGen.CreateMap(aBuf))
 			return 0;

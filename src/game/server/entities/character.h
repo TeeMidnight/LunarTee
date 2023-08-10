@@ -19,12 +19,12 @@ enum
 
 class CCharacter : public CEntity
 {
+	MACRO_ALLOC_HEAP()
 public:
 	//character's size
 	static const int ms_PhysSize = 28.0f;
 
 	CCharacter(CGameWorld *pWorld);
-	~CCharacter();
 	
 	void DestroyChar();
 

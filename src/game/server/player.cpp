@@ -15,6 +15,8 @@ CPlayer::CPlayer(CGameWorld *pGameWorld, int ClientID, int Team, CBotData BotDat
 	m_Team = Team;
 	m_BotData = BotData;
 
+	m_UserID = 0;
+
 	Reset();
 }
 
@@ -22,7 +24,7 @@ CPlayer::~CPlayer()
 {
 	if(m_pCharacter)
 		delete m_pCharacter;
-	m_pCharacter = 0;
+	m_pCharacter = nullptr;
 }
 
 void CPlayer::Reset()
@@ -31,7 +33,7 @@ void CPlayer::Reset()
 	mem_zero(&m_Latency, sizeof(m_Latency));
 	mem_zero(&m_LastTarget, sizeof(CNetObj_PlayerInput));
 
-	m_pCharacter = 0;
+	m_pCharacter = nullptr;
 	m_Sit = 0;
 
 	m_SpectatorID = SPEC_FREEVIEW;
@@ -58,6 +60,7 @@ void CPlayer::Reset()
 
 	m_Authed = IServer::AUTHED_NO;
 	m_IsReady = false;
+	m_LoadingMap = false;
 
 	m_PrevTuningParams = GameWorld()->m_Core.m_Tuning;
 	m_NextTuningParams = m_PrevTuningParams;
@@ -67,8 +70,6 @@ void CPlayer::Reset()
 		SetLanguage(Server()->GetClientLanguage(m_ClientID));
 		Server()->ClearIdMap(m_ClientID);
 	}
-
-	m_UserID = 0;
 
 	m_ShowClientID = 0;
 
@@ -112,6 +113,9 @@ void CPlayer::HandleTuningParams()
 
 void CPlayer::Tick()
 {
+	if(m_LoadingMap)
+		return;
+
 	if(!IsBot())
 	{
 		if(!Server()->ClientIngame(m_ClientID))
@@ -151,7 +155,7 @@ void CPlayer::Tick()
 		else
 		{
 			delete m_pCharacter;
-			m_pCharacter = 0;
+			m_pCharacter = nullptr;
 		}
 	}
 	else if(m_Spawning && m_RespawnTick <= Server()->Tick() && m_Team != TEAM_SPECTATORS)
@@ -162,6 +166,8 @@ void CPlayer::Tick()
 
 void CPlayer::PostTick()
 {
+	if(m_LoadingMap)
+		return;
 	// update latency value
 	if(!IsBot() && m_PlayerFlags&PLAYERFLAG_SCOREBOARD)
 	{
@@ -417,7 +423,7 @@ void CPlayer::KillCharacter(int Weapon)
 	{
 		m_pCharacter->Die(m_ClientID, Weapon);
 		delete m_pCharacter;
-		m_pCharacter = 0;
+		m_pCharacter = nullptr;
 	}
 }
 
@@ -473,6 +479,9 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 
 void CPlayer::TryRespawn()
 {
+	if(m_Team == TEAM_SPECTATORS)
+		return;
+
 	vec2 SpawnPos;
 	if(!GameWorld()->GetSpawnPos(IsBot(), SpawnPos))
 		return;

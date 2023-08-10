@@ -48,10 +48,6 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	m_Armor = 0;
 }
 
-CCharacter::~CCharacter()
-{
-}
-
 void CCharacter::Reset()
 {
 	DestroyChar();
@@ -105,9 +101,12 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 void CCharacter::DestroyChar()
 {
+	dbg_msg("yee", "destroy %d", GetCID());
 	m_Alive = false;
 	GameWorld()->m_Core.DeleteCharacter(&m_Core);
 	GameWorld()->DestroyEntity(this);
+	if(m_pPlayer->IsBot())
+		GameServer()->OnBotDead(GetCID());
 }
 
 void CCharacter::SetWeapon(int W)
@@ -927,7 +926,10 @@ void CCharacter::DoBotActions()
 		return;
 
 	if(!NeedActive())
+	{
+		mem_zero(&m_Botinfo, sizeof(CBotInfo));
 		return;
+	}
 	if(Pickable())
 		return;
 

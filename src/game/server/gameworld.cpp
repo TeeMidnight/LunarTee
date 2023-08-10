@@ -259,7 +259,7 @@ CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotTh
 
 	for(int i = 0;i < (int) vpEnts.size(); i ++)
  	{
-		auto p = (CCharacter *) vpEnts[i];
+		CCharacter *p = (CCharacter *) vpEnts[i];
 
 		if(p == pNotThis)
 			continue;

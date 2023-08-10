@@ -119,7 +119,7 @@ public:
 	std::vector<CPlayer*> m_vpBotPlayers;
 
 	CGameController *m_pController;
-	std::vector<CGameWorld> m_vWorlds;
+	std::vector<CGameWorld*> m_vpWorlds;
 
 	// helper functions
 	class CCharacter *GetPlayerChar(int ClientID);

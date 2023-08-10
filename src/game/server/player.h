@@ -100,6 +100,8 @@ public:
 
 	int m_Authed;
 
+	bool m_LoadingMap;
+
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
@@ -115,9 +117,6 @@ private:
 	int m_Team;
 
 	char m_aLanguage[16];
-
-	bool m_Menu;
-	int m_MenuPage;
 	int m_Emote;
 
 	int m_UserID;

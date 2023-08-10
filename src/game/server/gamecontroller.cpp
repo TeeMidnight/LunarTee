@@ -61,10 +61,6 @@ void CGameController::EndRound()
 
 void CGameController::ResetGame()
 {
-	for(int i = 0;i < (int) GameServer()->m_vWorlds.size(); i ++)
-	{
-		GameServer()->m_vWorlds[i].m_ResetRequested = true;
-	}
 }
 
 const char *CGameController::GetTeamName(int Team)
@@ -404,14 +400,16 @@ bool ItemCompare(std::pair<std::string, int> a, std::pair<std::string, int> b)
 
 void CGameController::OnCreateBot()
 {
-	for(int i = 0; i < (int) GameServer()->m_vWorlds.size(); i ++)
+	for(int i = 0; i < (int) GameServer()->m_vpWorlds.size(); i ++)
 	{
-		for(int j = 0; j < 96; j ++)
+		int NeedSpawn = GameServer()->m_vpWorlds[i]->Collision()->GetWidth()/16;
+		int BotNum = GameServer()->GetBotNum(GameServer()->m_vpWorlds[i]);
+		while(BotNum < NeedSpawn)
 		{	
-			if(GameServer()->GetBotNum(&GameServer()->m_vWorlds[i]) >= 96)
-				continue;
 			CBotData Data = RandomBotData();
-			GameServer()->CreateBot(&GameServer()->m_vWorlds[i], Data);
+			GameServer()->CreateBot(GameServer()->m_vpWorlds[i], Data);
+
+			BotNum ++;
 		}
 	}
 }
