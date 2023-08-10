@@ -1979,26 +1979,29 @@ int CServer::LoadMap(const char *pMapName)
 
 int CServer::GenerateMap(const char *pMapName)
 {
+	CMapGen MapGen(Storage(), Console(), this);
+
+	char aMapDir[256];
+	str_format(aMapDir, sizeof(aMapDir), "generated_map");
+
+	char aFullPath[512];
+	Storage()->GetCompletePath(IStorage::TYPE_SAVE, aMapDir, aFullPath, sizeof(aFullPath));
+	if(fs_makedir(aFullPath) != 0)
 	{
-		CMapGen MapGen(Storage(), Console(), this);
-
-		char aMapDir[256];
-		str_format(aMapDir, sizeof(aMapDir), "generated_map");
-
-		char aFullPath[512];
-		Storage()->GetCompletePath(IStorage::TYPE_SAVE, aMapDir, aFullPath, sizeof(aFullPath));
-		if(fs_makedir(aFullPath) != 0)
-		{
-			log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "mapgen", "Can't create the directory '%s'", aMapDir);
-		}
-		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "generated_map/%s.map", pMapName);
-		
+		log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "mapgen", "Can't create the directory '%s'", aMapDir);
+	}
+	
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "generated_map/%s.map", pMapName);
+	
+	Storage()->GetCompletePath(IStorage::TYPE_SAVE, aBuf, aFullPath, sizeof(aFullPath));
+	if(fs_is_file(aFullPath) && g_Config.m_SvGeneratedMap)
+	{
 		if(!MapGen.CreateMap(aBuf))
 			return 0;
-		
-		LoadMap(pMapName);
 	}
+	LoadMap(pMapName);
+	
 	return 1;
 }
 
@@ -2230,12 +2233,12 @@ int CServer::Run()
 
 	m_pRegister->OnShutdown();
 	
-	for(int i = 0; i < (int) m_vMapDatas.size(); i ++)
+	for(auto &Data : m_vMapDatas)
 	{
-		m_vMapDatas[i].m_pMap->Unload();
+		Data.m_pMap->Unload();
 
-		if(m_vMapDatas[i].m_pCurrentMapData)
-			free(m_vMapDatas[i].m_pCurrentMapData);
+		if(Data.m_pCurrentMapData)
+			free(Data.m_pCurrentMapData);
 	}
 	return 0;
 }

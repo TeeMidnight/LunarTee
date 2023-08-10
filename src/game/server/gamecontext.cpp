@@ -19,7 +19,7 @@
 #include <engine/server/crypt.h>
 
 #include <lunartee/item/item.h>
-#include <lunartee/item/make.h>
+#include <lunartee/item/craft.h>
 
 #include "gamecontroller.h"
 #include "gamecontext.h"
@@ -70,8 +70,8 @@ CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		delete m_apPlayers[i];
-	for(int i = 0; i < (int) m_vpBotPlayers.size(); i++)
-		delete m_vpBotPlayers[i];
+	for(auto &pPlayer : m_vpBotPlayers)
+		delete pPlayer;
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
 
@@ -170,26 +170,34 @@ CGameWorld *CGameContext::FindWorldWithClientID(int ClientID) const
 
 CGameWorld *CGameContext::FindWorldWithMap(IMap *pMap)
 {
-	for(int i = 0; i < (int) m_vWorlds.size(); i ++)
-	{
-		if(m_vWorlds[i].Layers()->Map() == pMap)
+	if(m_vWorlds.size() == 0)
+		return 0x0;
+		
+	auto i = std::find_if(m_vWorlds.begin(), m_vWorlds.end(), 
+		[pMap](CGameWorld GameWorld)
 		{
-			return &m_vWorlds[i];
-		}
-	}
+			return GameWorld.Layers()->Map() == pMap;
+		});
+
+	if(i != m_vWorlds.end())
+		return &(*i);
 	
 	return 0x0;
 }
 
 CGameWorld *CGameContext::FindWorldWithName(const char *WorldName)
 {
-	for(int i = 0; i < (int) m_vWorlds.size(); i ++)
-	{
-		if(str_comp(m_vWorlds[i].m_aWorldName, WorldName) == 0)
+	if(m_vWorlds.size() == 0)
+		return 0x0;
+
+	auto i = std::find_if(m_vWorlds.begin(), m_vWorlds.end(), 
+		[WorldName](CGameWorld GameWorld)
 		{
-			return &m_vWorlds[i];
-		}
-	}
+			return !str_comp(GameWorld.m_aWorldName, WorldName);
+		});
+
+	if(i != m_vWorlds.end())
+		return &(*i);
 	
 	return 0x0;
 }
@@ -316,42 +324,6 @@ void CGameContext::CreateSoundGlobal(int Sound, int Target)
 			Flag |= MSGFLAG_NORECORD;
 		Server()->SendPackMsg(&Msg, Flag, Target);
 	}
-}
-
-void CGameContext::SendMenuChat(int To, const char *pText)
-{
-	if(To < 0)
-	{
-		for(int i = 0;i < MAX_CLIENTS;i ++)
-		{
-			m_pMenu->AddMenuChat(i, pText);
-		}
-	}
-	else m_pMenu->AddMenuChat(To, pText);
-}
-
-void CGameContext::SendMenuChat_Localization(int To, const char *pText, ...)
-{
-	int Start = (To < 0 ? 0 : To);
-	int End = (To < 0 ? MAX_CLIENTS : To+1);
-	
-	dynamic_string Buffer;
-	
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-	
-	for(int i = Start; i < End; i++)
-	{
-		if(m_apPlayers[i])
-		{
-			Buffer.clear();
-			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
-			
-			m_pMenu->AddMenuChat(i, Buffer.buffer());
-		}
-	}
-	
-	va_end(VarArgs);
 }
 
 void CGameContext::SendMotd(int To, const char *pText)
@@ -567,7 +539,6 @@ void CGameContext::SendVoteStatus(int ClientID, int Total, int Yes, int No)
 	Msg.m_Pass = Total - (Yes+No);
 
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-
 }
 
 void CGameContext::AbortVoteKickOnDisconnect(int ClientID)
@@ -899,6 +870,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(g_Config.m_SvSpamprotection && pPlayer->m_LastVoteTry && pPlayer->m_LastVoteTry+Server()->TickSpeed()*3 > Server()->Tick())
 				return;
 
+			CNetMsg_Cl_CallVote *pMsg = (CNetMsg_Cl_CallVote *)pRawMsg;
+			
+			if(Menu()->UseOptions(pMsg->m_pValue, pMsg->m_pReason, ClientID))
+				return;
+
 			int64_t Now = Server()->Tick();
 			pPlayer->m_LastVoteTry = Now;
 			if(pPlayer->GetTeam() == TEAM_SPECTATORS)
@@ -923,7 +899,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			char aDesc[VOTE_DESC_LENGTH] = {0};
 			char aCmd[VOTE_CMD_LENGTH] = {0};
-			CNetMsg_Cl_CallVote *pMsg = (CNetMsg_Cl_CallVote *)pRawMsg;
 			const char *pReason = pMsg->m_pReason[0] ? pMsg->m_pReason : "No reason given";
 
 			if(str_comp_nocase(pMsg->m_pType, "option") == 0)
@@ -1184,75 +1159,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			m_pController->OnPlayerInfoChange(pPlayer);
 
 			// send vote options
-			CNetMsg_Sv_VoteClearOptions ClearMsg;
-			Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
-
-			CNetMsg_Sv_VoteOptionListAdd OptionMsg;
-			int NumOptions = 0;
-			OptionMsg.m_pDescription0 = "";
-			OptionMsg.m_pDescription1 = "";
-			OptionMsg.m_pDescription2 = "";
-			OptionMsg.m_pDescription3 = "";
-			OptionMsg.m_pDescription4 = "";
-			OptionMsg.m_pDescription5 = "";
-			OptionMsg.m_pDescription6 = "";
-			OptionMsg.m_pDescription7 = "";
-			OptionMsg.m_pDescription8 = "";
-			OptionMsg.m_pDescription9 = "";
-			OptionMsg.m_pDescription10 = "";
-			OptionMsg.m_pDescription11 = "";
-			OptionMsg.m_pDescription12 = "";
-			OptionMsg.m_pDescription13 = "";
-			OptionMsg.m_pDescription14 = "";
-			CVoteOptionServer *pCurrent = m_pVoteOptionFirst;
-			while(pCurrent)
-			{
-				switch(NumOptions++)
-				{
-				case 0: OptionMsg.m_pDescription0 = pCurrent->m_aDescription; break;
-				case 1: OptionMsg.m_pDescription1 = pCurrent->m_aDescription; break;
-				case 2: OptionMsg.m_pDescription2 = pCurrent->m_aDescription; break;
-				case 3: OptionMsg.m_pDescription3 = pCurrent->m_aDescription; break;
-				case 4: OptionMsg.m_pDescription4 = pCurrent->m_aDescription; break;
-				case 5: OptionMsg.m_pDescription5 = pCurrent->m_aDescription; break;
-				case 6: OptionMsg.m_pDescription6 = pCurrent->m_aDescription; break;
-				case 7: OptionMsg.m_pDescription7 = pCurrent->m_aDescription; break;
-				case 8: OptionMsg.m_pDescription8 = pCurrent->m_aDescription; break;
-				case 9: OptionMsg.m_pDescription9 = pCurrent->m_aDescription; break;
-				case 10: OptionMsg.m_pDescription10 = pCurrent->m_aDescription; break;
-				case 11: OptionMsg.m_pDescription11 = pCurrent->m_aDescription; break;
-				case 12: OptionMsg.m_pDescription12 = pCurrent->m_aDescription; break;
-				case 13: OptionMsg.m_pDescription13 = pCurrent->m_aDescription; break;
-				case 14:
-					{
-						OptionMsg.m_pDescription14 = pCurrent->m_aDescription;
-						OptionMsg.m_NumOptions = NumOptions;
-						Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
-						OptionMsg = CNetMsg_Sv_VoteOptionListAdd();
-						NumOptions = 0;
-						OptionMsg.m_pDescription1 = "";
-						OptionMsg.m_pDescription2 = "";
-						OptionMsg.m_pDescription3 = "";
-						OptionMsg.m_pDescription4 = "";
-						OptionMsg.m_pDescription5 = "";
-						OptionMsg.m_pDescription6 = "";
-						OptionMsg.m_pDescription7 = "";
-						OptionMsg.m_pDescription8 = "";
-						OptionMsg.m_pDescription9 = "";
-						OptionMsg.m_pDescription10 = "";
-						OptionMsg.m_pDescription11 = "";
-						OptionMsg.m_pDescription12 = "";
-						OptionMsg.m_pDescription13 = "";
-						OptionMsg.m_pDescription14 = "";
-					}
-				}
-				pCurrent = pCurrent->m_pNext;
-			}
-			if(NumOptions > 0)
-			{
-				OptionMsg.m_NumOptions = NumOptions;
-				Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
-			}
+			Menu()->GetMenuPage("MAIN")->m_pfnCallback(ClientID, "SHOW", "", 
+				Menu()->GetMenuPage("MAIN")->m_pUserData);
 			
 			// send fake tuning
 			SendFakeTuningParams(ClientID);
@@ -1546,8 +1454,6 @@ void CGameContext::ConClearVotes(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = (CGameContext *)pUserData;
 
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "cleared votes");
-	CNetMsg_Sv_VoteClearOptions VoteClearOptionsMsg;
-	pSelf->Server()->SendPackMsg(&VoteClearOptionsMsg, MSGFLAG_VITAL, -1);
 	pSelf->m_pVoteOptionHeap->Reset();
 	pSelf->m_pVoteOptionFirst = 0;
 	pSelf->m_pVoteOptionLast = 0;
@@ -1689,21 +1595,6 @@ void CGameContext::ConLanguage(IConsole::IResult *pResult, void *pUserData)
 	return;
 }
 
-void CGameContext::ConMenu(IConsole::IResult *pResult, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
-	
-	int ClientID = pResult->GetClientID();
-	CPlayer *pPlayer = pSelf->m_apPlayers[ClientID];
-
-	if(pPlayer)
-	{
-		if(pPlayer->GetMenuStatus())// opening menu
-			pSelf->m_apPlayers[ClientID]->CloseMenu();
-		else pSelf->m_apPlayers[ClientID]->OpenMenu();
-	}
-}
-
 void CGameContext::ConEmote(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
@@ -1825,50 +1716,6 @@ void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
 	pSelf->Postgresql()->CreateLoginThread(Username, aHash, ClientID);
 }
 
-void CGameContext::MenuMotd(int ClientID, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
-	const char *pLanguage = !pSelf->m_apPlayers[ClientID] ? "en" : pSelf->m_apPlayers[ClientID]->GetLanguage();
-
-	if(g_Config.m_SvMotd[0])
-		pSelf->SendMotd(ClientID, g_Config.m_SvMotd);
-	else
-		pSelf->SendMotd(ClientID, pSelf->Localize(pLanguage, _("The server doesn't have any motd")));
-}
-
-void CGameContext::MenuInventory(int ClientID, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
-
-	pSelf->m_pController->ShowInventory(ClientID);
-}
-
-void CGameContext::MenuLanguage(int ClientID, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
-
-	pSelf->m_apPlayers[ClientID]->SetMenuPage(MENUPAGE_LANGUAGE);
-}
-
-void CGameContext::MenuItem(int ClientID, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
-
-	pSelf->m_apPlayers[ClientID]->SetMenuPage(MENUPAGE_ITEM);
-}
-
-void CGameContext::MenuSit(int ClientID, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
-
-	CPlayer *pPlayer = pSelf->m_apPlayers[ClientID];
-
-	if(pPlayer)
-	{
-		pPlayer->m_Sit = !pPlayer->m_Sit;
-	}
-}
-
 void CGameContext::SetClientLanguage(int ClientID, const char *pLanguage)
 {
 	Server()->SetClientLanguage(ClientID, pLanguage);
@@ -1914,13 +1761,6 @@ void CGameContext::ConsoleOutputCallback_Chat(const char *pLine, void *pUser)
 
 void CGameContext::OnMenuOptionsInit()
 {
-	Menu()->RegisterLanguage();
-
-	Menu()->Register(_("Server Motd"), MENUPAGE_MAIN, MenuMotd, this, true);
-	Menu()->Register(_("Player Inventory"), MENUPAGE_MAIN, MenuInventory, this, true);
-	Menu()->Register(_("Change Language"), MENUPAGE_MAIN, MenuLanguage, this, false);
-	Menu()->Register(_("Make Item"), MENUPAGE_MAIN, MenuItem, this, false);
-	Menu()->Register(_("Sit/Stand"), MENUPAGE_MAIN, MenuSit, this, false);
 }
 
 void CGameContext::OnConsoleInit()
@@ -1953,7 +1793,6 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("about", "", CFGFLAG_CHAT, ConAbout, this, "Show information about the mod");
 	Console()->Register("language", "?s", CFGFLAG_CHAT, ConLanguage, this, "change language");
 
-	Console()->Register("menu", "", CFGFLAG_CHAT, ConMenu, this, "show menu");
 	Console()->Register("emote", "s?i", CFGFLAG_CHAT, ConEmote, this, "change emote");
 
 	Console()->Register("register", "?s?s", CFGFLAG_CHAT, ConRegister, this, "register");
@@ -2065,9 +1904,9 @@ const char *CGameContext::NetVersion() { return GAME_NETVERSION; }
 
 IGameServer *CreateGameServer() { return new CGameContext; }
 
-void CGameContext::MakeItem(int ClientID, const char *pItemName)
+void CGameContext::CraftItem(int ClientID, const char *pItemName)
 {
-	Item()->Make()->MakeItem(pItemName, ClientID);
+	Item()->Craft()->CraftItem(pItemName, ClientID);
 }
 
 int CGameContext::GetPlayerNum() const

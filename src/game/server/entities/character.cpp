@@ -225,54 +225,35 @@ void CCharacter::HandleWeaponSwitch()
 	int Next = CountInput(m_LatestPrevInput.m_NextWeapon, m_LatestInput.m_NextWeapon).m_Presses;
 	int Prev = CountInput(m_LatestPrevInput.m_PrevWeapon, m_LatestInput.m_PrevWeapon).m_Presses;
 
-	if(m_pPlayer->GetMenuStatus())
+	if(Next < 128) // make sure we only try sane stuff
 	{
-		if(Next && Next < 128) // make sure we only try sane stuff
+		while(Next) // Next Weapon selection
 		{
-			m_pPlayer->m_MenuLine++;
-			m_pPlayer->m_MenuNeedUpdate = 1;
-			m_pPlayer->m_MenuCloseTick = MENU_CLOSETICK;
-		}
-
-		if(Prev && Prev < 128) // make sure we only try sane stuff
-		{
-			m_pPlayer->m_MenuLine--;
-			m_pPlayer->m_MenuNeedUpdate = 1;
-			m_pPlayer->m_MenuCloseTick = MENU_CLOSETICK;
+			WantedWeapon = (WantedWeapon+1)%NUM_LUNARTEE_WEAPONS;
+			if(m_aWeapons[WantedWeapon].m_Got)
+				Next--;
 		}
 	}
-	else
+
+	if(Prev < 128) // make sure we only try sane stuff
 	{
-		if(Next < 128) // make sure we only try sane stuff
+		while(Prev) // Prev Weapon selection
 		{
-			while(Next) // Next Weapon selection
-			{
-				WantedWeapon = (WantedWeapon+1)%NUM_LUNARTEE_WEAPONS;
-				if(m_aWeapons[WantedWeapon].m_Got)
-					Next--;
-			}
+			WantedWeapon = (WantedWeapon-1)<0?NUM_LUNARTEE_WEAPONS-1:WantedWeapon-1;
+			if(m_aWeapons[WantedWeapon].m_Got)
+				Prev--;
 		}
-
-		if(Prev < 128) // make sure we only try sane stuff
-		{
-			while(Prev) // Prev Weapon selection
-			{
-				WantedWeapon = (WantedWeapon-1)<0?NUM_LUNARTEE_WEAPONS-1:WantedWeapon-1;
-				if(m_aWeapons[WantedWeapon].m_Got)
-					Prev--;
-			}
-		}
-
-		// Direct Weapon selection
-		if(m_LatestInput.m_WantedWeapon)
-			WantedWeapon = m_Input.m_WantedWeapon-1;
-
-		// check for insane values
-		if(WantedWeapon >= 0 && WantedWeapon < NUM_LUNARTEE_WEAPONS && WantedWeapon != m_ActiveWeapon && m_aWeapons[WantedWeapon].m_Got)
-			m_QueuedWeapon = WantedWeapon;
-
-		DoWeaponSwitch();
 	}
+
+	// Direct Weapon selection
+	if(m_LatestInput.m_WantedWeapon)
+		WantedWeapon = m_Input.m_WantedWeapon-1;
+
+	// check for insane values
+	if(WantedWeapon >= 0 && WantedWeapon < NUM_LUNARTEE_WEAPONS && WantedWeapon != m_ActiveWeapon && m_aWeapons[WantedWeapon].m_Got)
+		m_QueuedWeapon = WantedWeapon;
+
+	DoWeaponSwitch();
 }
 
 void CCharacter::FireWeapon()
@@ -304,12 +285,6 @@ void CCharacter::FireWeapon()
 
 	if(!WillFire)
 		return;
-	
-	if(m_pPlayer->GetMenuStatus())
-	{
-		GameServer()->CreateSoundGlobal(SOUND_WEAPON_NOAMMO, GetCID());
-		return;
-	}
 
 	// check for ammo
 	if(!m_aWeapons[m_ActiveWeapon].m_Ammo && !m_pPlayer->IsBot())
@@ -685,9 +660,6 @@ void CCharacter::Die(int Killer, int Weapon)
 			Killer, Server()->ClientName(Killer),
 			m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial);
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
-		
-		// close menu
-		m_pPlayer->CloseMenu();
 	}
 		
 	// send the kill message

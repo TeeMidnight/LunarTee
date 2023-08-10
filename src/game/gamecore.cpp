@@ -58,11 +58,14 @@ float VelocityRamp(float Value, float Start, float Range, float Curvature)
 
 CCharacterCore *CWorldCore::FindCharacter(int ClientID)
 {
-	for(int i = 0;i < (int) m_apCharacters.size();i ++)
-	{	
-		if(m_apCharacters[i]->m_ClientID == ClientID)
-			return m_apCharacters[i];
-	}
+	auto i = std::find_if(m_apCharacters.begin(), m_apCharacters.end(), 
+		[ClientID](CCharacterCore *pCore)
+		{
+			return pCore->m_ClientID == ClientID;
+		});
+
+	if(i != m_apCharacters.end())
+		return *i;
 	return 0x0;
 }
 
@@ -263,9 +266,8 @@ void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
 		if(m_pWorld && pTuningParams->m_PlayerHooking)
 		{
 			float Distance = 0.0f;
-			for(int i = 0; i < (int) m_pWorld->m_apCharacters.size(); i++)
+			for(auto &pCharCore : m_pWorld->m_apCharacters)
 			{
-				CCharacterCore *pCharCore = m_pWorld->m_apCharacters[i];
 				if(!pCharCore || pCharCore == this)
 					continue;
 
@@ -360,9 +362,8 @@ void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
 
 	if(m_pWorld)
 	{
-		for(int i = 0; i < (int) m_pWorld->m_apCharacters.size(); i++)
+		for(auto &pCharCore : m_pWorld->m_apCharacters)
 		{
-			CCharacterCore *pCharCore = m_pWorld->m_apCharacters[i];
 			if(!pCharCore)
 				continue;
 
@@ -433,9 +434,8 @@ void CCharacterCore::Move(const CTuningParams* pTuningParams)
 		{
 			float a = i/Distance;
 			vec2 Pos = mix(m_Pos, NewPos, a);
-			for(int p = 0; p < (int) m_pWorld->m_apCharacters.size(); p++)
+			for(auto &pCharCore : m_pWorld->m_apCharacters)
 			{
-				CCharacterCore *pCharCore = m_pWorld->m_apCharacters[p];
 				if(!pCharCore || pCharCore == this)
 					continue;
 				float D = distance(Pos, pCharCore->m_Pos);

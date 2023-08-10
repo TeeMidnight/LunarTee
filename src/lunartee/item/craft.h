@@ -3,7 +3,7 @@
 
 #include <base/tl/array.h>
 
-class CMakeCore
+class CCraftCore
 {
 	class CItemCore *m_pParent;
 	class CGameContext *GameServer() const;
@@ -11,8 +11,8 @@ class CMakeCore
 	void ReturnItem(class CItemData *Item, int ClientID);
 
 public:
-    CMakeCore(CItemCore *pItem);
-	void MakeItem(const char *pMakeItem, int ClientID);
+    CCraftCore(CItemCore *pItem);
+	void CraftItem(const char *pMakeItem, int ClientID);
 };
 
 #endif

@@ -1,7 +1,7 @@
 
 #include <game/server/gamecontext.h>
 #include <game/server/define.h>
-#include "make.h"
+#include "craft.h"
 #include "item.h"
 #include "item-data.h"
 
@@ -9,23 +9,23 @@
 #include <fstream>
 
 
-CMakeCore::CMakeCore(CItemCore *pItem)
+CCraftCore::CCraftCore(CItemCore *pItem)
 {
 	m_pParent = pItem;
 }
 
-CGameContext *CMakeCore::GameServer() const
+CGameContext *CCraftCore::GameServer() const
 {
 	return m_pParent->GameServer();
 }
 
 // Public Make
-void CMakeCore::MakeItem(const char *pMakeItem, int ClientID)
+void CCraftCore::CraftItem(const char *pMakeItem, int ClientID)
 {
 	CItemData *pItemInfo = m_pParent->GetItemData(pMakeItem);
 	if(!pItemInfo)
 	{
-		GameServer()->SendMenuChat_Localization(ClientID, _("No such item!"));
+		GameServer()->SendChatTarget_Localization(ClientID, _("No such item!"));
 		return;
 	}
 	
@@ -51,7 +51,7 @@ void CMakeCore::MakeItem(const char *pMakeItem, int ClientID)
 
 	if(!Makeable)
 	{
-		GameServer()->SendMenuChat_Localization(ClientID, _("You don't have enough resources"));
+		GameServer()->SendChatTarget_Localization(ClientID, _("You don't have enough resources"));
 		return;
 	}
 
@@ -66,17 +66,17 @@ void CMakeCore::MakeItem(const char *pMakeItem, int ClientID)
 
 	if(!Makeable)
 	{
-		GameServer()->SendMenuChat_Localization(ClientID, _("You had %t"), pMakeItem);
+		GameServer()->SendChatTarget_Localization(ClientID, _("You had %t"), pMakeItem);
 		return;
 	}
 
-	GameServer()->SendMenuChat_Localization(ClientID, _("Making %t..."), pMakeItem);
+	GameServer()->SendChatTarget_Localization(ClientID, _("Making %t..."), pMakeItem);
 
 	ReturnItem(pItemInfo, ClientID);
 	
 }
 
-void CMakeCore::ReturnItem(class CItemData *Item, int ClientID)
+void CCraftCore::ReturnItem(class CItemData *Item, int ClientID)
 {
 	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
 	if(!pPlayer)
@@ -96,12 +96,12 @@ void CMakeCore::ReturnItem(class CItemData *Item, int ClientID)
 			
 		if(std::get<1>(Item->m_Gives.m_vDatas[i]) > 1)
 		{
-			GameServer()->SendMenuChat_Localization(ClientID, _("Make finish, you get %t x%d"), 
+			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get %t x%d"), 
 				std::get<0>(Item->m_Gives.m_vDatas[i]).c_str(), std::get<1>(Item->m_Gives.m_vDatas[i]));
 		}
 		else 
 		{
-			GameServer()->SendMenuChat_Localization(ClientID, _("Make finish, you get %t"), 
+			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get %t"), 
 				std::get<0>(Item->m_Gives.m_vDatas[i]).c_str());
 		}	
 	}

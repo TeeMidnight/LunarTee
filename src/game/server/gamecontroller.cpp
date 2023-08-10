@@ -402,52 +402,6 @@ bool ItemCompare(std::pair<std::string, int> a, std::pair<std::string, int> b)
 	return (a.second > b.second);
 }
 
-void CGameController::ShowInventory(int ClientID)
-{
-	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
-
-	if(!pPlayer)
-		return;
-
-	if(!pPlayer->GetCharacter())
-		return;
-
-	const char *pLanguageCode = pPlayer->GetLanguage();
-
-	CInventory *pData = GameServer()->Item()->GetInventory(ClientID);
-	std::string Buffer;
-	Buffer.clear();
-
-	Buffer.append("===");
-	Buffer.append(GameServer()->Localize(pLanguageCode, _("Inventory")));
-	Buffer.append("===");
-	Buffer.append("\n");
-	
-	std::vector<std::pair<std::string, int>> vBuffers;
-	for(int i = 0; i < pData->m_Datas.size();i ++)
-	{
-		std::string TempBuffer;
-		Buffer.append(GameServer()->Localize(pLanguageCode, pData->m_Datas[i].m_aName));
-		Buffer.append(": ");
-		Buffer.append(format_int64_with_commas(',', pData->m_Datas[i].m_Num));
-		Buffer.append("\n");
-		vBuffers.push_back(std::pair<std::string, int>(TempBuffer, pData->m_Datas[i].m_Num));
-	}
-
-	std::nth_element(&vBuffers[0], &vBuffers[vBuffers.size()/2], &vBuffers[vBuffers.size()], ItemCompare);
-
-	for(auto &Item : vBuffers)
-	{
-		Buffer.append(Item.first);
-	}
-
-	Buffer.append("\n");
-
-	if(!pData->m_Datas.size())
-		Buffer.append(GameServer()->Localize(pLanguageCode, "You don't have any things!"));
-	GameServer()->SendMotd(ClientID, Buffer.c_str());
-}
-
 void CGameController::OnCreateBot()
 {
 	for(int i = 0; i < (int) GameServer()->m_vWorlds.size(); i ++)

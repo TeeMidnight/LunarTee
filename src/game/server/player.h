@@ -134,20 +134,9 @@ public:
 	IServer *Server() const;
 
 	void SetGameWorld(CGameWorld *pGameWorld) { m_pGameWorld = pGameWorld; }
-
-	inline bool GetMenuStatus() const { return m_Menu; }
-	int GetMenuPage() const {return m_MenuPage;}
 	int GetEmote() const {return m_Emote;}
 
 	void SetEmote(int Emote);
-	void OpenMenu();
-	void CloseMenu();
-	void SetMenuPage(int Page);
-
-	int m_MenuLine;
-	int m_MenuCloseTick;
-	bool m_MenuNeedUpdate;
-	const char *m_SelectOption;
 
 	bool m_Sit;
 	// Bot

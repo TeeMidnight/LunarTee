@@ -85,18 +85,10 @@ class CGameContext : public IGameServer
 
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
-	static void ConMenu(IConsole::IResult *pResult, void *pUserData);
 	static void ConEmote(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConRegister(IConsole::IResult *pResult, void *pUserData);
 	static void ConLogin(IConsole::IResult *pResult, void *pUserData);
-
-	static void MenuMotd(int ClientID, void *pUserData);
-	static void MenuInventory(int ClientID, void *pUserData);
-	static void MenuLanguage(int ClientID, void *pUserData);
-	static void MenuItem(int ClientID, void *pUserData);
-	static void MenuSit(int ClientID, void *pUserData);
-
 
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
@@ -183,8 +175,6 @@ public:
 		CHAT_BLUE=1
 	};
 
-	void SendMenuChat(int To, const char *pText);
-	void SendMenuChat_Localization(int To, const char *pText, ...);
 	// network
 	void SendMotd(int To, const char *pText);
 	void SendChatTarget(int To, const char *pText);
@@ -240,8 +230,8 @@ public:
 	int GetOneWorldPlayerNum(CGameWorld *pGameWorld) const;
 	int GetOneWorldPlayerNum(int ClientID) const override;
 
-	// MakeItem
-	void MakeItem(int ClientID, const char *pItemName);
+	// CraftItem
+	void CraftItem(int ClientID, const char *pItemName);
 
 	int GetPlayerNum() const;
 

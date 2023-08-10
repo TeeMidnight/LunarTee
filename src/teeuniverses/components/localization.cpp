@@ -88,30 +88,30 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pSto
 			pKey = FileLine+sizeof(MsgIdKey);
 			if(pKey && pKey[0])
 			{
-				int Length;
-				Length = str_length(pKey)+1;
-				char aBuf[Length];
-				str_copy(aBuf, pKey, Length-1);
-				pEntry = m_Translations.set(aBuf);
+				std::string Buffer(pKey);
+				Buffer.pop_back();
+				pEntry = m_Translations.set(Buffer.c_str());
 			}
 		}
 		else if(pEntry && str_comp_nocase_num(FileLine, MsgStrKey, sizeof(MsgStrKey) - 1) == 0)
 		{
 			const char *pValue = FileLine+sizeof(MsgStrKey);
-			int Length = str_length(pValue)+1;
-			char aBuf[Length];
-			
-			str_copy(aBuf, pValue, Length-1);
-			if(pValue && pValue[0])
+			int Length = str_length(pValue);
+
+			if(Length > 1) // 1 = '"'
 			{
+				std::string Buffer(pValue);
+				Buffer.pop_back();
+				
 				pEntry->m_apVersions = new char[Length];
 
-				str_copy(pEntry->m_apVersions, aBuf, Length);
+				str_copy(pEntry->m_apVersions, Buffer.c_str(), Length);
 			}else
 			{
-				str_copy(aBuf, pKey, Length-1);
+				std::string Buffer(pKey);
+				Buffer.pop_back();
 
-				m_Translations.unset(aBuf);
+				m_Translations.unset(Buffer.c_str());
 			}
 		}
 	}

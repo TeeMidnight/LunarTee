@@ -1,15 +1,17 @@
-#include "lunartee/item/make.h"
+
+#include <lunartee/item/craft.h>
+
 #include "gamecontext.h"
 #include "gamemenu.h"
+
+IServer *CMenu::Server() const { return m_pGameServer->Server(); }
 
 CMenu::CMenu(CGameContext *pGameServer) :
     m_pGameServer(pGameServer)
 {
     str_copy(m_aLanguageCode, "en", sizeof(m_aLanguageCode));
-    for(int i = 0;i < MAX_CLIENTS;i++)
-    {
-        m_aMenuChat[i].m_vChats.clear();
-    }
+
+    RegisterMain();
 }
 
 const char *CMenu::Localize(const char *pText) const
@@ -17,306 +19,172 @@ const char *CMenu::Localize(const char *pText) const
 	return GameServer()->Localize(m_aLanguageCode, pText);
 }
 
-void CMenu::GetData(int Page)
+CMenuOption *CMenu::FindOption(const char *pDesc, int ClientID)
 {
-    m_DataTemp.clear();
-
-    for(int i = 0;i < m_apOptions.size();i ++)
-    {
-        if(m_apOptions[i]->m_Page == Page)
+	auto i = std::find_if(m_vPlayerMenu[ClientID].first.begin(), m_vPlayerMenu[ClientID].first.end(),
+        [pDesc](CMenuOption Option)
         {
-            m_DataTemp.add(m_apOptions[i]->m_aName);
-        }
-    }
-}
+            return !str_comp(Option.m_aOption, pDesc);
+        });
 
-int CMenu::FindOption(const char *pName, int Pages)
-{
-	for(int i = 0;i < m_apOptions.size();i ++)
-	{
-        if(str_comp_nocase(m_apOptions[i]->m_aName, pName) == 0)
-        {
-            if(m_apOptions[i]->m_Page == Pages)
-                return i;
-            else if(Pages != MENUPAGE_MAIN && m_apOptions[i]->m_Page == MENUPAGE_NOTMAIN)
-                return i;
-        }
-	}
-
-	return -1;
-}
-
-void CMenu::Register(const char *pName, int Pages, MenuCallback pfnFunc, void *pUser, bool CloseMenu)
-{
-	int OptionID = FindOption(pName, Pages);
-    if(OptionID > -1)
+    if(i != m_vPlayerMenu[ClientID].first.end())
     {
-        return;
+        return &(*i);
     }
 
-	COptions *pOption = new COptions();
-	
-	pOption->m_pfnCallback = pfnFunc;
-
-	str_copy(pOption->m_aName, pName);
-    pOption->m_OptionType = MENUOPTION_OPTIONS;
-	pOption->m_Page = Pages;
-    pOption->m_pUserData = pUser;
-    pOption->m_CloseMenu = CloseMenu;
-
-    m_apOptions.add(pOption);
+	return 0x0;
 }
 
-void CMenu::RegisterMake(const char *pName)
+CMenuPage *CMenu::GetMenuPage(const char* PageName)
 {
-	COptions *pOption = new COptions;
+    auto i = std::find_if(m_vMenuPages.begin(), m_vMenuPages.end(),
+        [PageName](CMenuPage Page)
+        {
+            return !str_comp(Page.m_aPageName, PageName);
+        });
 
-	str_copy(pOption->m_aName, pName);
-    pOption->m_OptionType = MENUOPTION_ITEMS;
-	pOption->m_pfnCallback = 0;
-    pOption->m_pUserData = GameServer();
-	pOption->m_Page = MENUPAGE_ITEM;
-    pOption->m_CloseMenu = 0;
+    if(i != m_vMenuPages.end())
+    {
+        return &(*i);
+    }
 
-    m_apOptions.add(pOption);
+	return 0x0;
+}
+
+void CMenu::Register(const char* PageName, const char* ParentName, void *pUserData, MenuCallback Callback)
+{
+    m_vMenuPages.push_back(CMenuPage(PageName, ParentName, pUserData, Callback));
+}
+
+void CMenu::RegisterMain()
+{
+    auto Callback = 
+        [](int ClientID, const char* pCmd, const char* pReason, void *pUserData)
+        {
+            CMenu *pThis = (CMenu *) pUserData;
+            
+            if(str_comp(pCmd, "SHOW") == 0)
+            {
+                std::vector<CMenuOption> Options;
+                Options.push_back(CMenuOption(_("Main Menu"), 0, "#### %s ####"));
+
+                Options.push_back(CMenuOption(_("Craft"), "CRAFT"));
+                Options.push_back(CMenuOption(_("Language"), "LANGUAGE"));
+
+                pThis->UpdateMenu(ClientID, Options, "MAIN");
+                return;
+            }else if(str_comp(pCmd, "LANGUAGE") == 0)
+            {
+                pThis->GetMenuPage("LANGUAGE")->m_pfnCallback(ClientID, "SHOW", "", 
+                    pThis->GetMenuPage("LANGUAGE")->m_pUserData);
+            }else if(str_comp(pCmd, "CRAFT") == 0)
+            {
+                pThis->GetMenuPage("CRAFT")->m_pfnCallback(ClientID, "SHOW", "", 
+                    pThis->GetMenuPage("CRAFT")->m_pUserData);
+            }
+        };
+        
+    Register("MAIN", 0, this, Callback);
+
+    RegisterLanguage();
 }
 
 void CMenu::RegisterLanguage()
 {
-    for(int i = 0; i< GameServer()->Server()->Localization()->m_pLanguages.size(); i++)
-    {
-	    COptions *pOption = new COptions;
+    auto Callback = 
+        [](int ClientID, const char* pCmd, const char* pReason, void *pUserData)
+        {
+            CMenu *pThis = (CMenu *) pUserData;
 
-        str_copy(pOption->m_aName, GameServer()->Server()->Localization()->m_pLanguages[i]->GetName());
-        pOption->m_OptionType = MENUOPTION_LANGUAGES;
-        pOption->m_pfnCallback = 0;
-        pOption->m_pUserData = GameServer();
-        pOption->m_Page = MENUPAGE_LANGUAGE;
-        pOption->m_CloseMenu = 0;
+            if(str_comp(pCmd, "SHOW"))
+                pThis->GameServer()->m_apPlayers[ClientID]->SetLanguage(pCmd);
+
+            std::vector<CMenuOption> Options;
+
+            Options.push_back(CMenuOption(_("Language"), 0, "#### %s ####"));
+
+            for(int i = 0; i < pThis->Server()->Localization()->m_pLanguages.size(); i ++)
+            {
+                Options.push_back(CMenuOption(pThis->Server()->Localization()->m_pLanguages[i]->GetName(),
+                    pThis->Server()->Localization()->m_pLanguages[i]->GetFilename()));
+            }
+
+            pThis->UpdateMenu(ClientID, Options, "LANGUAGE");
+        };
+
+    Register("LANGUAGE", "MAIN", this, Callback);
+}
+
+void CMenu::PreviousPage(int ClientID)
+{
+    CMenuPage *pPage = GetMenuPage(m_vPlayerMenu[ClientID].second.m_aParentName);
+
+    if(!pPage)
+        return;
+
+    pPage->m_pfnCallback(ClientID, "SHOW", "", pPage->m_pUserData);
+}
+
+void CMenu::UpdateMenu(int ClientID, std::vector<CMenuOption> Options, const char* PageName)
+{
+    if(!GameServer()->m_apPlayers[ClientID])
+        return;
+
+    // remove options
+    {
+        CNetMsg_Sv_VoteClearOptions Msg;
+	    Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
         
-        m_apOptions.add(pOption);
+        m_vPlayerMenu[ClientID].first.clear();
     }
+    
+    str_copy(m_aLanguageCode, GameServer()->m_apPlayers[ClientID]->GetLanguage());
+
+    auto Page = GetMenuPage(PageName);
+
+    if(Page->m_aParentName[0])
+    {
+        Options.push_back(CMenuOption(_("Previous Page"), "PREPAGE"));
+    }
+
+    // send msg
+    for(unsigned i = 0;i < Options.size(); i ++)
+    {
+        auto &pOption = Options[i];
+
+        dynamic_string Buffer;
+        Server()->Localization()->Format(Buffer, m_aLanguageCode, pOption.m_aFormat, 
+            Localize(pOption.m_aOption));
+
+        str_copy(pOption.m_aOption, Buffer.buffer());
+
+        CNetMsg_Sv_VoteOptionAdd Msg;
+        Msg.m_pDescription = Buffer.buffer();
+        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+    }
+    
+    // append
+    m_vPlayerMenu[ClientID].first = Options;
+    m_vPlayerMenu[ClientID].second = *Page;
 }
 
-void CMenu::ShowMenu(int ClientID, int Line)
+bool CMenu::UseOptions(const char *pDesc, const char *pReason, int ClientID)
 {
-    CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
+    if(!GameServer()->m_apPlayers[ClientID])
+        return false;
+    auto pOption = FindOption(pDesc, ClientID);
+    if(pOption == 0x0)
+        return false;
 
-    if(!pPlayer)
-        return;
-    
-    str_copy(m_aLanguageCode, pPlayer->GetLanguage(), sizeof(m_aLanguageCode));
+    str_copy(m_aLanguageCode, GameServer()->m_apPlayers[ClientID]->GetLanguage());
 
-    std::string MenuBuffer;
-    int Page;
-
-    Page = pPlayer->GetMenuPage();
-
-    GetData(Page);
-    if(!m_DataTemp.size())
-        return;
-        
-    MenuBuffer.append("===");
-    MenuBuffer.append(Localize(_C("Mode's game menu", "Menu")));
-    MenuBuffer.append("===");
-    MenuBuffer.append("\n");
-    if (Line < 0)
+    if(pOption->m_aCmd[0])
     {
-        Line = m_DataTemp.size() + Line%m_DataTemp.size();
+        if(str_comp(pOption->m_aCmd, "PREPAGE") == 0)
+            PreviousPage(ClientID);
+        else 
+            m_vPlayerMenu->second.m_pfnCallback(ClientID, pOption->m_aCmd, pReason, m_vPlayerMenu->second.m_pUserData);
     }
-
-    if (Line >= m_DataTemp.size())
-    {
-        Line = 0 + Line%m_DataTemp.size();
-    }
-
-
-    if(m_DataTemp.size() > 9)
-    {
-        int j = Line;
-        for(int i = 0;i < 9; i++)
-        {
-            if(j < 0)
-                j = m_DataTemp.size()-1;
-
-            if(j >= m_DataTemp.size())
-                j = 0;
-
-            const char *Buffer = m_DataTemp[j].c_str();
-            if(i == 4)
-                MenuBuffer.append("[");
-            MenuBuffer.append(Localize(Buffer));
-            if(i == 4)
-                MenuBuffer.append("]");
-            MenuBuffer.append("\n");
-
-            if(i == 4)
-            {
-                pPlayer->m_SelectOption = Buffer;
-            }
-
-            j++;
-        }
-    }
-    else
-    {
-
-        int j = 0;
-        for(int i = 0;i < m_DataTemp.size(); i++)
-        {
-            const char *Buffer = m_DataTemp[j].c_str();
-            if(j == Line)
-                MenuBuffer.append("[");
-            else MenuBuffer.append(" ");
-            MenuBuffer.append(Localize(Buffer));
-            if(j == Line)
-                MenuBuffer.append("]");
-            MenuBuffer.append("\n");
-
-            if(j == Line)
-            {
-                pPlayer->m_SelectOption = Buffer;
-            }
-
-            j++;
-        }
-    }
-    
-    if(Page == MENUPAGE_MAIN)
-    {
-        MenuBuffer.append(Localize("\n"));
-        MenuBuffer.append(Localize(_("Use <mouse1>(Fire) to use option")));
-    }else
-    {
-        MenuBuffer.append(Localize("\n"));
-        MenuBuffer.append(Localize(_("Use <mouse2>(Hook) to back main menu")));
-    }
-
-    if(Page == MENUPAGE_ITEM)
-    {
-        CItemData *ItemInfo = GameServer()->Item()->GetItemData(pPlayer->m_SelectOption);
-
-        if(ItemInfo)
-        {
-            std::string Buffer;
-            Buffer.clear();
-            // need
-            for(unsigned i = 0; i < ItemInfo->m_Needs.m_vDatas.size();i ++)
-            {
-                if(!std::get<2>(ItemInfo->m_Needs.m_vDatas[i])) // check send chat is enable
-                    continue;
-
-                Buffer.append("\n");
-                Buffer.append(Localize(std::get<0>(ItemInfo->m_Needs.m_vDatas[i]).c_str()));
-                Buffer.append(":");
-                Buffer.append(std::to_string(GameServer()->Item()->GetInvItemNum(std::get<0>(ItemInfo->m_Needs.m_vDatas[i]).c_str(), ClientID)));
-                
-                Buffer.append("/");
-                Buffer.append(std::to_string(std::get<1>(ItemInfo->m_Needs.m_vDatas[i])));   
-            }
-
-            MenuBuffer.append("\n\n");
-            MenuBuffer.append(Localize(_("Need")));
-            MenuBuffer.append(":");
-            MenuBuffer.append(Buffer);
-
-
-            // give
-            Buffer.clear();
-
-            for(unsigned i = 0; i < ItemInfo->m_Gives.m_vDatas.size();i ++)
-            {
-                if(!std::get<2>(ItemInfo->m_Gives.m_vDatas[i])) // check send chat is enable
-                    continue;
-
-                Buffer.append("\n");
-                Buffer.append(Localize(std::get<0>(ItemInfo->m_Gives.m_vDatas[i]).c_str()));
-                Buffer.append("x");
-                Buffer.append(std::to_string(std::get<1>(ItemInfo->m_Gives.m_vDatas[i])));   
-            }
-            
-            MenuBuffer.append("\n\n");
-            MenuBuffer.append(Localize(_("Give")));
-            MenuBuffer.append(":");
-            MenuBuffer.append(Buffer);
-        }
-    }
-
-    // Send menu chat
-    if(m_aMenuChat[ClientID].m_vChats.size())
-    {
-        MenuBuffer.append("\n\n");
-        MenuBuffer.append(Localize(_("Info")));
-        MenuBuffer.append(":");
-    }
-
-    for(auto &Chat : m_aMenuChat[ClientID].m_vChats)
-    {
-        MenuBuffer.append(Chat);
-        m_aMenuChat[ClientID].m_vChats.clear();
-    }
-
-    GameServer()->SendMotd(ClientID, MenuBuffer.c_str());
-}
-
-void CMenu::UseOptions(int ClientID)
-{
-    CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
-
-    if(!pPlayer)
-        return;
-    
-    int OptionID = FindOption(pPlayer->m_SelectOption, pPlayer->GetMenuPage());
-
-    if(OptionID == -1 || OptionID >= m_apOptions.size())
-    {
-        dbg_msg("Menu", "A player use invalid option '%s', Page: %d", pPlayer->m_SelectOption, pPlayer->GetMenuPage());
-        return;
-    }
-    
-    if(m_apOptions[OptionID]->m_CloseMenu)
-    {
-        pPlayer->CloseMenu();
-    }
-    else
-    {
-        ShowMenu(ClientID, pPlayer->m_MenuLine);
-        pPlayer->m_MenuCloseTick = MENU_CLOSETICK;
-    }
-
-    if(m_apOptions[OptionID]->GetOptionType() == MENUOPTION_OPTIONS)
-    {
-        m_apOptions[OptionID]->m_pfnCallback(ClientID, m_apOptions[OptionID]->m_pUserData);
-    }
-    else if(m_apOptions[OptionID]->GetOptionType() == MENUOPTION_ITEMS)
-    {
-        GameServer()->MakeItem(ClientID, m_apOptions[OptionID]->m_aName);
-    }
-    else if(m_apOptions[OptionID]->GetOptionType() == MENUOPTION_LANGUAGES)
-    {
-        for(int i = 0; i< GameServer()->Server()->Localization()->m_pLanguages.size(); i++)
-        {
-            const char *pLanguageName = GameServer()->Server()->Localization()->m_pLanguages[i]->GetName();
-            const char *pLanguage = GameServer()->Server()->Localization()->m_pLanguages[i]->GetFilename();
-            if(str_comp(m_apOptions[OptionID]->m_aName, pLanguageName) == 0)
-            {
-                pPlayer->SetLanguage(pLanguage);
-                break;
-            }
-        }
-        ShowMenu(ClientID, pPlayer->m_MenuLine);
-    }
-}
-
-void CMenu::AddMenuChat(int ClientID, const char *pChat)
-{
-    m_aMenuChat[ClientID].m_vChats.push_back(pChat);
-
-    CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
-
-    if(pPlayer)
-    {
-        ShowMenu(ClientID, pPlayer->m_MenuLine);
-        pPlayer->m_MenuCloseTick = MENU_CLOSETICK;
-    }
+    GameServer()->CreateSoundGlobal(SOUND_WEAPON_NOAMMO, ClientID);
+    return true;
 }

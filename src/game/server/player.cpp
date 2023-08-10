@@ -32,22 +32,15 @@ void CPlayer::Reset()
 	mem_zero(&m_LastTarget, sizeof(CNetObj_PlayerInput));
 
 	m_pCharacter = 0;
-
-	m_Menu = 0;
-	m_MenuCloseTick = 0;
-	m_MenuPage = 0;
-	m_MenuLine = 0;
-	m_MenuNeedUpdate = 0;
-
 	m_Sit = 0;
 
 	m_SpectatorID = SPEC_FREEVIEW;
 	
 	m_PlayerFlags = 0;
 
-	m_LastVoteCall = Server()->Tick();
-	m_LastVoteTry = Server()->Tick();
-	m_LastChat = Server()->Tick();
+	m_LastVoteCall = 0;
+	m_LastVoteTry = 0;
+	m_LastChat = 0;
 	m_LastSetTeam = Server()->Tick();
 	m_LastSetSpectatorMode = Server()->Tick();
 	m_LastChangeInfo = Server()->Tick();
@@ -163,33 +156,6 @@ void CPlayer::Tick()
 	}
 	else if(m_Spawning && m_RespawnTick <= Server()->Tick() && m_Team != TEAM_SPECTATORS)
 		TryRespawn();
-
-	if(m_Menu && !IsBot() && m_pCharacter)
-	{
-		if(m_MenuNeedUpdate)
-		{
-			GameServer()->Menu()->ShowMenu(m_ClientID, m_MenuLine);
-			m_MenuNeedUpdate = 0;
-		}
-
-		if(m_MenuCloseTick)
-		{
-			m_MenuCloseTick--;
-			if(!m_MenuCloseTick)
-				CloseMenu();
-		}
-
-		if(m_pCharacter->GetInput()->m_Fire&1 && !(m_pCharacter->GetPrevInput()->m_Fire&1))
-		{
-			GameServer()->Menu()->UseOptions(m_ClientID);
-		}
-
-		if(m_pCharacter->GetInput()->m_Hook&1 && !(m_pCharacter->GetPrevInput()->m_Hook&1))
-		{
-			m_MenuPage = MENUPAGE_MAIN;
-			m_MenuNeedUpdate = 1;
-		}
-	}
 
 	HandleTuningParams();
 }
@@ -525,28 +491,6 @@ const char *CPlayer::GetLanguage()
 void CPlayer::SetLanguage(const char *pLanguage)
 {
 	str_copy(m_aLanguage, pLanguage, sizeof(m_aLanguage));
-}
-
-void CPlayer::OpenMenu()
-{
-	m_Menu = 1;
-	m_MenuPage = MENUPAGE_MAIN;
-	m_MenuNeedUpdate = 1;
-	m_MenuCloseTick = MENU_CLOSETICK;
-}
-
-void CPlayer::CloseMenu()
-{
-	m_Menu = 0;
-	m_MenuLine = 0;
-	GameServer()->SendMotd(m_ClientID, "");
-}
-
-void CPlayer::SetMenuPage(int Page)
-{
-	m_MenuPage = Page;
-	m_MenuNeedUpdate = 1;
-	m_MenuCloseTick = MENU_CLOSETICK;
 }
 
 void CPlayer::SetEmote(int Emote)

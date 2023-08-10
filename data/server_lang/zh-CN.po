@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LunarTee 0.1.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-19 16:26+0800\n"
+"POT-Creation-Date: 2023-08-10 13:16+0800\n"
 "PO-Revision-Date: 2023-07-05 15:28+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -155,24 +155,6 @@ msgstr "<密码>的长度应当在%d-%d间"
 msgid "Use /login <username> <password>"
 msgstr "请使用/login <用户名> <密码>"
 
-msgid "The server doesn't have any motd"
-msgstr "服务器没有任何公告"
-
-msgid "Server Motd"
-msgstr "服务器公告"
-
-msgid "Player Inventory"
-msgstr "玩家物品栏"
-
-msgid "Change Language"
-msgstr "修改语言"
-
-msgid "Make Item"
-msgstr "制造物品"
-
-msgid "Sit/Stand"
-msgstr "坐下/站起"
-
 msgid "red team"
 msgstr "红队"
 
@@ -185,27 +167,17 @@ msgstr "游戏"
 msgid "spectators"
 msgstr "旁观者"
 
-msgid "Inventory"
-msgstr "物品栏"
+msgid "Main Menu"
+msgstr "主菜单"
 
-msgctxt "Mode's game menu"
-msgid "Menu"
-msgstr "菜单"
+msgid "Craft"
+msgstr "制造"
 
-msgid "Use <mouse1>(Fire) to use option"
-msgstr "<鼠标左键>(开火)使用选项"
+msgid "Language"
+msgstr "语言"
 
-msgid "Use <mouse2>(Hook) to back main menu"
-msgstr "<鼠标右键>(钩子)返回主菜单"
-
-msgid "Need"
-msgstr "需要"
-
-msgid "Give"
-msgstr "给予"
-
-msgid "Info"
-msgstr "提示"
+msgid "Previous Page"
+msgstr "上一页"
 
 msgid "Pickable"
 msgstr "可拾取"
@@ -242,12 +214,6 @@ msgstr "账号不存在!"
 msgid "Login failed! Please ask server hoster!"
 msgstr "登录失败! 请询问服务器开设者!"
 
-msgid "You got %t x%d"
-msgstr "你得到了%tx%d"
-
-msgid "You lost %t x%d"
-msgstr ""
-
 msgid "No such item!"
 msgstr "没有此物品!"
 
@@ -265,6 +231,18 @@ msgstr "制造完成, 你得到了%t x%d"
 
 msgid "Make finish, you get %t"
 msgstr "制造完成, 你得到了%t"
+
+msgid "Craft Menu"
+msgstr "制造菜单"
+
+msgid "Requires"
+msgstr "需要"
+
+msgid "You got %t x%d"
+msgstr "你得到了%tx%d"
+
+msgid "You lost %t x%d"
+msgstr "你失去了%tx%d"
 
 msgctxt "Bot name"
 msgid "Shrub"
@@ -386,5 +364,5 @@ msgctxt "An item"
 msgid "Plasma"
 msgstr "等离子体"
 
-#~ msgid "Save your hope"
-#~ msgstr "保持你的希望"
+#~ msgid "Inventory"
+#~ msgstr "物品栏"

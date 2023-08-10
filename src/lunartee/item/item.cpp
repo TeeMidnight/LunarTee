@@ -5,14 +5,18 @@
 #include <vector>
 
 #include "item.h"
-#include "make.h"
+#include "craft.h"
+
+CMenu *CItemCore::Menu() const { return m_pGameServer->Menu(); }
 
 CItemCore::CItemCore(CGameContext *pGameServer)
 {
     m_pGameServer = pGameServer;
-    m_pMake = new CMakeCore(this);
+    m_pCraft = new CCraftCore(this);
 
 	InitItem();
+
+	RegisterMenu();
 }
 
 void CItemCore::InitItem()
@@ -53,7 +57,6 @@ void CItemCore::InitItem()
 					Need.m_vDatas.push_back(std::make_tuple(Name, Num, SendChat));
 				}
 				pData->m_Needs = Need;
-				GameServer()->Menu()->RegisterMake(pData->m_aName);
 			}
 
 			const json_value *GiveArray = json_object_get(Item, "give");
@@ -75,6 +78,70 @@ void CItemCore::InitItem()
 			}
 		}
 	}
+}
+
+void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, void *pUserData)
+{
+	CItemCore *pThis = (CItemCore *) pUserData;
+
+	if(str_startswith(pCmd, "CRAFT"))
+	{
+		const char* SelectItem = pCmd + 6;
+
+		pThis->GameServer()->CraftItem(ClientID, SelectItem);
+	}
+	else if(str_startswith(pCmd, "SHOW") || str_startswith(pCmd, "LIST"))
+	{
+		const char* SelectItem = pCmd + 5;
+
+		std::vector<CMenuOption> Options;
+
+		Options.push_back(CMenuOption(_("Craft Menu"), 0, "#### %s ####"));
+
+		for(auto Item : pThis->m_vItems)
+		{
+			if(!Item.m_Makeable)
+				continue;
+			
+			char aCmd[VOTE_CMD_LENGTH];
+			char aCmdCraft[VOTE_CMD_LENGTH];
+
+			str_format(aCmd, sizeof(aCmd), "LIST %s", Item.m_aName);
+			str_format(aCmdCraft, sizeof(aCmdCraft), "CRAFT %s", Item.m_aName);
+
+			if(str_comp(SelectItem, Item.m_aName) == 0)
+			{
+				Options.push_back(CMenuOption(Item.m_aName, aCmd, "- %s ▼"));
+				Options.push_back(CMenuOption(_("Requires"), aCmd, "-   %s:"));
+				
+				char aBuf[VOTE_DESC_LENGTH];
+				for(auto Require : Item.m_Needs.m_vDatas)
+				{
+					str_format(aBuf, sizeof(aBuf), "%s x%d (%d)", 
+						pThis->Menu()->Localize(std::get<0>(Require).c_str()),
+						std::get<1>(Require),
+						pThis->GetInvItemNum(std::get<0>(Require).c_str(), ClientID));
+
+					Options.push_back(CMenuOption(aBuf, aCmd, "-   %s"));
+				}
+
+				str_format(aBuf, sizeof(aBuf), "%s %s",
+					pThis->Menu()->Localize(_("Craft")),
+					pThis->Menu()->Localize(SelectItem));
+				Options.push_back(CMenuOption(aBuf, aCmdCraft, "## %s ##"));
+				Options.push_back(CMenuOption("", 0, "%s"));
+			}
+			else 
+				Options.push_back(CMenuOption(Item.m_aName, aCmd, "- %s ▲"));
+		}
+
+		pThis->Menu()->UpdateMenu(ClientID, Options, "CRAFT");
+	}
+}
+
+void CItemCore::RegisterMenu()
+{
+    Menu()->Register("CRAFT", "MAIN", this, MenuCraft);
 }
 
 void CItemCore::InitWeapon()

@@ -1,61 +1,93 @@
 #ifndef GAME_SERVER_GAMEMENU_H
 #define GAME_SERVER_GAMEMENU_H
 
-#include <base/tl/array.h>
+#include <game/voting.h>
+
 #include <string>
+#include <vector>
+
+typedef void (*MenuCallback)(int ClientID, const char* pCmd, const char* pReason, void *pUserData);
+
+class CMenuPage
+{
+public:
+	char m_aPageName[32];
+	char m_aParentName[32];
+	MenuCallback m_pfnCallback;
+
+	void *m_pUserData;
+
+	CMenuPage(const char* Name, const char* ParentName, void *pUserData, MenuCallback Callback)
+	{
+		str_copy(m_aPageName, Name);
+		if(!ParentName || !ParentName[0])
+			m_aParentName[0] = 0;
+		else 
+			str_copy(m_aParentName, ParentName);
+		m_pUserData = pUserData;
+		m_pfnCallback = Callback;
+	}
+	CMenuPage() = default;
+};
+
+class CMenuOption
+{
+public:
+	CMenuOption(const char* pDesc, const char* pCmd = 0, const char* pFormat = "- %s")
+	{
+		str_copy(m_aOption, pDesc);
+
+		if(!pCmd || !pCmd[0])
+			m_aCmd[0] = 0;
+		else
+			str_copy(m_aCmd, pCmd);
+			
+		if(!pFormat || !pFormat[0])
+			str_copy(m_aFormat, "- %s");
+		else
+			str_copy(m_aFormat, pFormat);
+	}
+	CMenuOption() = default;
+
+	char m_aOption[VOTE_DESC_LENGTH];
+	char m_aCmd[VOTE_CMD_LENGTH];
+	char m_aFormat[16];
+};
 
 class CMenu
 {
 	class CGameContext *m_pGameServer;
-	CGameContext *GameServer() const { return m_pGameServer; }
 
-	const char *Localize(const char *pText) const;
     char m_aLanguageCode[16];
 
-    array<std::string> m_DataTemp;
-    
-    void GetData(int Page);
 public:
+	CGameContext *GameServer() const { return m_pGameServer; }
+	IServer *Server() const;
+
     CMenu(CGameContext *pGameServer);
 
-	typedef void (*MenuCallback)(int ClientID, void *pUserData);
+	CMenuPage *GetMenuPage(const char* PageName);
+
+	const char *Localize(const char *pText) const;
 	
-    void Register(const char *pName, int Pages, MenuCallback pfnFunc, void *pUser, bool CloseMenu);
-	void RegisterMake(const char *pName);
+	void Register(const char* PageName, const char* ParentName, void *pUserData, MenuCallback Callback);
+
+	void RegisterMain();
 	void RegisterLanguage();
 
-    void ShowMenu(int ClientID, int Line);
-    void UseOptions(int ClientID);
-
-	void AddMenuChat(int ClientID, const char *pChat);
-
 private:
+	void PreviousPage(int ClientID);
+	CMenuOption *FindOption(const char *pDesc, int ClientID);
 
-    class COptions
-	{
-	public:
-		int m_OptionType;
-		char m_aName[256];
-		int m_Page;
-		bool m_CloseMenu;
+	std::pair<std::vector<CMenuOption>, CMenuPage> m_vPlayerMenu[MAX_CLIENTS];
+	std::vector<CMenuPage> m_vMenuPages;
 
-		MenuCallback m_pfnCallback;
-		void *m_pUserData;
+public:
 
-		int GetOptionType() const {return m_OptionType;}
-	};
+    void UpdateMenu(int ClientID, std::vector<CMenuOption> Options, const char* PageName);
 
-	array<COptions*> m_apOptions;
+    bool UseOptions(const char* pDesc, const char* pReason, int ClientID);
 
-	struct CMenuChat
-	{
-		std::vector<std::string> m_vChats;
-	};
-
-	CMenuChat m_aMenuChat[MAX_CLIENTS];
-	
-
-	int FindOption(const char *pName, int Pages);
 };
 
 #endif

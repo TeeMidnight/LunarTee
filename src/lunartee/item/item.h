@@ -6,20 +6,26 @@
 
 class CItemCore
 {
-    friend class CMakeCore;
+    friend class CCraftCore;
 
     class CGameContext *m_pGameServer;
 	CGameContext *GameServer() const { return m_pGameServer; }
+	class CMenu *Menu() const;
 
-    class CMakeCore *m_pMake;
+    class CCraftCore *m_pCraft;
 
-	std::vector<CItemData> m_vItems;
     CInventory m_aInventories[MAX_CLIENTS];
 
     void InitItem();
+
+    static void MenuCraft(int ClientID, const char* pCmd, const char* pReason, void *pUserData);
+    void RegisterMenu();
+
 public:
+	std::vector<CItemData> m_vItems;
+
     CItemCore(CGameContext *pGameServer);
-    class CMakeCore *Make() const {return m_pMake;}
+    class CCraftCore *Craft() const {return m_pCraft;}
 
     void InitWeapon();
 

@@ -179,14 +179,9 @@ public:
 	void AddCharacter(class CCharacterCore *pChr) { m_apCharacters.push_back(pChr); }
 	void DeleteCharacter(class CCharacterCore *pChr)
 	{
-		for(int i = 0; i < (int) m_apCharacters.size(); i ++)
-		{
-			if(m_apCharacters[i] == pChr)
-			{
-				m_apCharacters.erase(m_apCharacters.begin() + i);
-				break;
-			}
-		}
+		auto i = std::find(m_apCharacters.begin(), m_apCharacters.end(), pChr);
+		if(i != m_apCharacters.end())
+			m_apCharacters.erase(i);
 	}
 
 	class CCharacterCore *FindCharacter(int ClientID);

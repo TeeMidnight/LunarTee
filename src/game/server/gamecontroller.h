@@ -128,8 +128,6 @@ public:
 
 	double GetTime();
 
-	// Inventory
-	void ShowInventory(int ClientID);
 /** Bot **/
 	void OnCreateBot();
 	void InitBotData();
