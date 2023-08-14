@@ -28,6 +28,16 @@ public:
     bool m_Makeable;
     CMakeData m_Gives;
     CMakeData m_Needs;
+
+    CItemData &operator=(const CItemData& Other)
+    {
+        str_copy(m_aName, Other.m_aName);
+        m_Makeable = Other.m_Makeable;
+        m_Gives = Other.m_Gives;
+        m_Needs = Other.m_Needs;
+
+        return *this;
+    }
 };
 
 #endif

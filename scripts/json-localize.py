@@ -29,19 +29,27 @@ if __name__ == '__main__':
         if 'item_ammo' in i:
             print('_C("'  + "An item" + '", "' + str(i['item_ammo']) + '");', file=f, end="\n")
 
-    jsonFileName = "data/json/item.json"
-    jsonFile = open(jsonFileName, "r")
-    data = json.loads(jsonFile.read())
+    def ReadFile(path):
+        jsonFile = open(path, "r")
+        data = json.loads(jsonFile.read())
 
-    for i in data:
-        print('_C("'  + "An item" + '", "' + str(i) + '");', file=f, end="\n")
-        
-        if "need" in data[str(i)]:
-            for j in data[str(i)]['need']:
+        print('_C("'  + "An item" + '", "' + data['name'] + '");', file=f, end="\n")
+            
+        if "need" in data:
+            for j in data['need']:
                 print('_C("'  + "An item" + '", "' + j['name'] + '");', file=f, end="\n")
-        if "give" in data[str(i)]:
-            for j in data[str(i)]['give']:
+        if "give" in data:
+            for j in data['give']:
                 print('_C("'  + "An item" + '", "' + j['name'] + '");', file=f, end="\n")
+
+    for i in os.listdir("data/json/items/"):
+        parentdir = os.path.join("data/json/items/", i)
+        if os.path.isdir(parentdir):
+            print('_C("'  + "An item type" + '", "' + i + '");', file=f, end="\n")
+            for j in os.listdir(parentdir):
+                childdir = os.path.join(parentdir, j)
+                if os.path.isfile(childdir):
+                    ReadFile(childdir)
 
     print('', file=f, end="\n")
     print('#endif', file=f, end="\n")

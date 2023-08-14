@@ -1,7 +1,6 @@
 #ifndef GAME_SERVER_BOTDATA_H
 #define GAME_SERVER_BOTDATA_H
 
-#include <base/tl/array.h>
 #include <base/system.h>
 #include <engine/shared/protocol.h>
 

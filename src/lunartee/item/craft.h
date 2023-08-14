@@ -1,8 +1,6 @@
 #ifndef LUNARTEE_ITEM_MAKE_H
 #define LUNARTEE_ITEM_MAKE_H
 
-#include <base/tl/array.h>
-
 class CCraftCore
 {
 	class CItemCore *m_pParent;

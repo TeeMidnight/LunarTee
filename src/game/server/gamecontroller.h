@@ -14,8 +14,6 @@ typedef unsigned __int64_t uint64_t ;
 #include <stdint.h>
 #endif
 
-#include <base/tl/array.h>
-
 #include "lunartee/weapons-core/weapon.h"
 
 struct WeaponInit;

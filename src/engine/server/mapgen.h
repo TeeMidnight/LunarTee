@@ -1,7 +1,6 @@
 #ifndef ENGINE_SERVER_MAPCONVERTER_H
 #define ENGINE_SERVER_MAPCONVERTER_H
 
-#include <base/tl/array.h>
 #include <base/color.h>
 
 #include <engine/map.h>

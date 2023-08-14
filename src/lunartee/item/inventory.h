@@ -1,8 +1,6 @@
 #ifndef LUNARTEE_INVENTORY_DATA_H
 #define LUNARTEE_INVENTORY_DATA_H
 
-#include <base/tl/array.h>
-
 class CInventoryData
 {
 public:

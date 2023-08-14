@@ -129,7 +129,7 @@ void CMapGen::InitQuad(CQuad* pQuad, vec2 Pos, vec2 Size)
 
 void CMapGen::AddImageQuad(const char *pName, int ImageID, int GridX, int GridY, int X, int Y, int Width, int Height, vec2 Pos, vec2 Size, vec4 Color, int Env)
 {
-	array<CQuad> aQuads;
+	std::vector<CQuad> vQuads;
 	CQuad Quad;
 	
 	float StepX = 1.0f/GridX;
@@ -145,16 +145,16 @@ void CMapGen::AddImageQuad(const char *pName, int ImageID, int GridX, int GridY,
 	Quad.m_aColors[0].g = Quad.m_aColors[1].g = Quad.m_aColors[2].g = Quad.m_aColors[3].g = Color.g*255.0f;
 	Quad.m_aColors[0].b = Quad.m_aColors[1].b = Quad.m_aColors[2].b = Quad.m_aColors[3].b = Color.b*255.0f;
 	Quad.m_aColors[0].a = Quad.m_aColors[1].a = Quad.m_aColors[2].a = Quad.m_aColors[3].a = Color.a*255.0f;
-	aQuads.add(Quad);
+	vQuads.push_back(Quad);
 	
 	CMapItemLayerQuads Item;
 	Item.m_Version = 2;
 	Item.m_Layer.m_Flags = 0;
 	Item.m_Layer.m_Type = LAYERTYPE_QUADS;
 	Item.m_Image = ImageID;
-	Item.m_NumQuads = aQuads.size();
+	Item.m_NumQuads = vQuads.size();
 	StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), pName);
-	Item.m_Data = m_DataFile.AddDataSwapped(aQuads.size()*sizeof(CQuad), aQuads.base_ptr());
+	Item.m_Data = m_DataFile.AddDataSwapped(vQuads.size()*sizeof(CQuad), vQuads.data());
 	
 	m_DataFile.AddItem(MAPITEMTYPE_LAYER, m_NumLayers++, sizeof(Item), &Item);
 }
@@ -443,7 +443,7 @@ void CMapGen::GenerateBackground()
 	Item.m_ClipH = 0;
 	StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), "Quad");
 
-	array<CQuad> aQuads;
+	std::vector<CQuad> vQuads;
 	CQuad Quad;
 	{
 		InitQuad(&Quad, vec2(0, 0), vec2(1600, 1200));
@@ -455,19 +455,19 @@ void CMapGen::GenerateBackground()
 		Quad.m_aColors[2].g = Quad.m_aColors[3].g = 0;
 		Quad.m_aColors[2].b = Quad.m_aColors[3].b = 0;
 		Quad.m_aColors[2].a = Quad.m_aColors[3].a = 255;
-		aQuads.add(Quad);
+		vQuads.push_back(Quad);
 	}
 
 	CMapItemLayerQuads LayerItem;
 
 	LayerItem.m_Image = -1;
-	LayerItem.m_NumQuads = aQuads.size();
+	LayerItem.m_NumQuads = (int)vQuads.size();
 	LayerItem.m_Version = LayerItem.m_Layer.m_Version = 3;
 	LayerItem.m_Layer.m_Flags = 0;
 	LayerItem.m_Layer.m_Type = LAYERTYPE_QUADS;
 
 	StrToInts(LayerItem.m_aName, sizeof(LayerItem.m_aName)/sizeof(int), "Quad");
-	LayerItem.m_Data = m_DataFile.AddDataSwapped(aQuads.size()*sizeof(CQuad), aQuads.base_ptr());
+	LayerItem.m_Data = m_DataFile.AddDataSwapped((int) vQuads.size()*sizeof(CQuad), vQuads.data());
 				
 	m_DataFile.AddItem(MAPITEMTYPE_LAYER, m_NumLayers++, sizeof(LayerItem), &LayerItem);
 		

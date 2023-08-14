@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <new>
 #include <engine/shared/config.h>
-#include <base/tl/array.h>
 #include "player.h"
 
 IServer *CPlayer::Server() const { return m_pGameServer->Server(); }

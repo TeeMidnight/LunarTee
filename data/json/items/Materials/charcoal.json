@@ -1,0 +1,15 @@
+{
+    "name": "Charcoal",
+    "give": [
+        {
+            "name": "Charcoal",
+            "num": 2
+        }
+    ],
+    "need": [
+        {
+            "name": "Wood",
+            "num": 4
+        }
+    ]
+}

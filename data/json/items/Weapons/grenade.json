@@ -1,0 +1,19 @@
+{
+    "name": "Grenade",
+    "give": [
+        {
+            "name": "Grenade",
+            "num": 1
+        }
+    ],
+    "need": [
+        {
+            "name": "Metal",
+            "num": 20
+        },
+        {
+            "name": "Frame",
+            "num": 8
+        }
+    ]
+}

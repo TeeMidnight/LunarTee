@@ -1,0 +1,23 @@
+{
+    "name": "Gunpowder",
+    "give": [
+        {
+            "name": "Gunpowder",
+            "num": 4
+        }
+    ],
+    "need": [
+        {
+            "name": "Nitra",
+            "num": 4
+        },
+        {
+            "name": "Eggshell",
+            "num": 1
+        },
+        {
+            "name": "Charcoal",
+            "num": 2
+        }
+    ]
+}

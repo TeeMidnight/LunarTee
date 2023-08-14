@@ -1,6 +1,8 @@
 #ifndef LUNARTEE_ITEM_H
 #define LUNARTEE_ITEM_H
 
+#include <map>
+
 #include "inventory.h"
 #include "item-data.h"
 
@@ -9,25 +11,30 @@ class CItemCore
     friend class CCraftCore;
 
     class CGameContext *m_pGameServer;
-	CGameContext *GameServer() const { return m_pGameServer; }
-	class CMenu *Menu() const;
 
     class CCraftCore *m_pCraft;
 
     CInventory m_aInventories[MAX_CLIENTS];
 
+    int m_ItemTypeNum;
+
+    const char* GetTypesByStr(const char *pStr);
     void InitItem();
 
     static void MenuCraft(int ClientID, const char* pCmd, const char* pReason, void *pUserData);
     void RegisterMenu();
 
 public:
-	std::vector<CItemData> m_vItems;
+	std::map<std::string, std::vector<CItemData>> m_vItems;
+    std::string m_LastLoadItemType;
 
     CItemCore(CGameContext *pGameServer);
+	CGameContext *GameServer() const { return m_pGameServer; }
     class CCraftCore *Craft() const {return m_pCraft;}
+	class CMenu *Menu() const;
 
     void InitWeapon();
+    void ReadItemJson(const char *pPath);
 
     CItemData *GetItemData(const char *Name);
     CInventory *GetInventory(int ClientID);
