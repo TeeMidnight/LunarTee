@@ -63,19 +63,19 @@ public:
 		if(!Test)
 		{
 			//
-			log_log_color(LEVEL_INFO, LOG_COLOR_INFO, "engine", "running on %s-%s-%s", CONF_FAMILY_STRING, CONF_PLATFORM_STRING, CONF_ARCH_STRING);
+			log_info("engine", "running on %s-%s-%s", CONF_FAMILY_STRING, CONF_PLATFORM_STRING, CONF_ARCH_STRING);
 #ifdef CONF_ARCH_ENDIAN_LITTLE
-			log_log_color(LEVEL_INFO, LOG_COLOR_INFO, "engine", "arch is little endian");
+			log_info("engine", "arch is little endian");
 #elif defined(CONF_ARCH_ENDIAN_BIG)
-			log_log_color(LEVEL_INFO, LOG_COLOR_INFO, "engine", "arch is big endian");
+			log_info("engine", "arch is big endian");
 #else
-			log_log_color(LEVEL_INFO, LOG_COLOR_INFO, "engine", "unknown endian");
+			log_info(
 #endif
 
 			char aVersionStr[128];
 			if(os_version_str(aVersionStr, sizeof(aVersionStr)))
 			{
-				log_log_color(LEVEL_INFO, LOG_COLOR_INFO, "engine", "operating system version: %s", aVersionStr);
+				log_info("engine", "operating system version: %s", aVersionStr);
 			}
 
 			// init the network
@@ -109,7 +109,7 @@ public:
 	void AddJob(std::shared_ptr<IJob> pJob) override
 	{
 		if(g_Config.m_Debug)
-			log_log_color(LEVEL_DEBUG, LOG_COLOR_SUCCESS, "engine", "job added");
+			log_debug("engine", "job added");
 		m_JobPool.Add(std::move(pJob));
 	}
 

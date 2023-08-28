@@ -248,6 +248,9 @@ public:
 	//Bot END
 
 	void UpdatePlayerMaps(int ClientID);
+
+	void Register(const char* pUsername, const char* pPassHash, int ClientID);
+	void Login(const char* pUsername, const char* pPassHash, int ClientID);
 };
 
 #endif

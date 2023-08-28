@@ -2,6 +2,9 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <new>
 
+#include <mutex>
+#include <thread>
+
 #include <base/math.h>
 
 #include <engine/map.h>
@@ -1655,7 +1658,7 @@ void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
 
 	if(pResult->NumArguments() < 2)
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _("Use /register <username> <password>"));
+		pSelf->SendChatTarget_Localization(ClientID, _("Use /register <username> <password> to register"));
 		return;
 	}
 
@@ -1687,7 +1690,7 @@ void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
     char aHash[64];
 	Crypt(Password, (const unsigned char*) "d9", 1, 14, aHash);
 
-	pSelf->Postgresql()->CreateRegisterThread(Username, aHash, ClientID);
+	pSelf->Register(Username, aHash, ClientID);
 }
 
 void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
@@ -1700,7 +1703,7 @@ void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
 
 	if(pResult->NumArguments() < 2)
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _("Use /login <username> <password>"));
+		pSelf->SendChatTarget_Localization(ClientID, _("Use /login <username> <password> to login"));
 		return;
 	}
 
@@ -1720,7 +1723,7 @@ void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
     char aHash[64];
 	Crypt(Password, (const unsigned char*) "d9", 1, 14, aHash);
 
-	pSelf->Postgresql()->CreateLoginThread(Username, aHash, ClientID);
+	pSelf->Login(Username, aHash, ClientID);
 }
 
 void CGameContext::SetClientLanguage(int ClientID, const char *pLanguage)
@@ -1825,7 +1828,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pItem = new CItemCore(this);
 
 	m_pPostgresql = new CSql(this);
-	Postgresql()->Init();
+	Postgresql()->CreateTables();
 
 	// reset everything here
 	//world = new GAMEWORLD;
@@ -2144,4 +2147,125 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 	std::sort(&pMap[1], &pMap[minimum(Index, MaxClients - 1)]);
 
 	pMap[0] = ClientID;
+}
+
+static std::mutex s_RegisterMutex;
+void CGameContext::Register(const char* pUsername, const char* pPassHash, int ClientID)
+{
+	if(!m_apPlayers[ClientID])
+	{
+		return;
+	}
+
+	std::string Username(pUsername);
+	std::string PassHash(pPassHash);
+
+	std::thread Thread([this, Username, PassHash, ClientID]()
+	{
+		s_RegisterMutex.lock();
+	
+		std::string Buffer;
+
+		Buffer.append("WHERE Username='");
+		Buffer.append(Username);
+		Buffer.append("';");
+
+		SqlResult *pSqlResult = Postgresql()->Execute<SqlType::SELECT>("lt_playerdata",
+			Buffer.c_str(), "*");
+
+		if(!pSqlResult->size())
+		{
+			char aJsonBuf[256];
+			str_format(aJsonBuf, sizeof(aJsonBuf), 
+				"'{\"Password\": \"%s\", \"Nickname\": \"%s\"}'", 
+				PassHash.c_str(),
+				Server()->ClientName(ClientID));
+			
+			Buffer.clear();
+			Buffer.append("(Username, Data) VALUES ('");
+			Buffer.append(Username);
+			Buffer.append("', ");
+			Buffer.append(aJsonBuf);
+			Buffer.append(");");
+
+			Postgresql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
+			SendChatTarget_Localization(ClientID, _("You are now registered"));
+			SendChatTarget_Localization(ClientID, _("Use /login <username> <password> to login"));
+		}else
+		{
+			SendChatTarget_Localization(ClientID, _("User already exists!"));
+		}
+
+		s_RegisterMutex.unlock();
+	});
+	Thread.detach();
+	
+	return;
+}
+
+static std::mutex s_LoginMutex;
+void CGameContext::Login(const char* pUsername, const char* pPassHash, int ClientID)
+{
+	if(!m_apPlayers[ClientID])
+	{
+		return;
+	}
+
+	std::string Username(pUsername);
+	std::string PassHash(pPassHash);
+
+	std::thread Thread([this, Username, PassHash, ClientID]()
+	{
+		s_LoginMutex.lock();
+
+		std::string Buffer;
+
+		Buffer.append("WHERE Username='");
+		Buffer.append(Username);
+		Buffer.append("';");
+
+		SqlResult *pSqlResult = Postgresql()->Execute<SqlType::SELECT>("lt_playerdata",
+			Buffer.c_str(), "*");
+
+		if(!pSqlResult->size())
+		{
+			SendChatTarget_Localization(ClientID, _("No such account"));
+					
+			s_LoginMutex.unlock();
+			return;
+		}
+
+		for(SqlResult::const_iterator Iter = pSqlResult->begin(); Iter != pSqlResult->end(); ++ Iter)
+		{
+			const char *Data = Iter["Data"].as<const char*>();
+			json_value *Json = json_parse(Data, str_length(Data));
+
+			const char *pPassword = json_string_get(json_object_get(Json, "Password"));
+			const char *pNickname = json_string_get(json_object_get(Json, "Nickname"));
+
+			if(str_comp(pPassword, PassHash.c_str()) == 0)
+			{
+				if(str_comp(pNickname, Server()->ClientName(ClientID)) == 0)
+				{
+					SendChatTarget_Localization(ClientID, _("You are now logged in."));
+					m_apPlayers[ClientID]->Login(Iter["UserID"].as<int>());
+					
+					s_LoginMutex.unlock();
+					return;
+				}else
+				{
+					SendChatTarget_Localization(ClientID, _("Wrong nickname!"));
+
+					s_LoginMutex.unlock();
+					return;
+				}
+			}
+		}
+
+		SendChatTarget_Localization(ClientID, _("Wrong password!"));
+		s_LoginMutex.unlock();
+	});
+	Thread.detach();
+
+	return;
 }

@@ -290,7 +290,7 @@ void CRegister::CProtocol::SendRegister()
 		CLockScope ls(m_pShared->m_Lock);
 		if(m_pShared->m_LatestResponseStatus != STATUS_OK)
 		{
-			log_log_color(LEVEL_INFO, LOG_COLOR_INFO, ProtocolToSystem(m_Protocol), "registering...");
+			log_info(ProtocolToSystem(m_Protocol), "registering...");
 		}
 		RequestIndex = m_pShared->m_NumTotalRequests;
 		m_pShared->m_NumTotalRequests += 1;
@@ -334,7 +334,7 @@ void CRegister::CProtocol::SendDeleteIfRegistered(bool Shutdown)
 		// On shutdown, wait at most 1 second for the delete requests.
 		pDelete->Timeout(CTimeout{1000, 1000, 0, 0});
 	}
-	log_log_color(LEVEL_INFO, LOG_COLOR_INFO, ProtocolToSystem(m_Protocol), "deleting...");
+	log_info(ProtocolToSystem(m_Protocol), "deleting...");
 	m_pParent->m_pEngine->AddJob(std::move(pDelete));
 }
 
@@ -397,13 +397,13 @@ void CRegister::CProtocol::CJob::Run()
 	{
 		// TODO: log the error response content from master
 		// TODO: exponential backoff
-		log_log_color(LEVEL_WARN, LOG_COLOR_WARNING, ProtocolToSystem(m_Protocol), "error response from master");
+		log_error(ProtocolToSystem(m_Protocol), "error response from master");
 		return;
 	}
 	json_value *pJson = m_pRegister->ResultJson();
 	if(!pJson)
 	{
-		log_log(LEVEL_INFO, ProtocolToSystem(m_Protocol), "non-JSON response from master");
+		log_error(ProtocolToSystem(m_Protocol), "non-JSON response from master");
 		return;
 	}
 	const json_value &Json = *pJson;
@@ -411,13 +411,13 @@ void CRegister::CProtocol::CJob::Run()
 	if(StatusString.type != json_string)
 	{
 		json_value_free(pJson);
-		log_log_color(LEVEL_INFO, LOG_COLOR_WARNING, ProtocolToSystem(m_Protocol), "invalid JSON response from master");
+		log_error(ProtocolToSystem(m_Protocol), "invalid JSON response from master");
 		return;
 	}
 	int Status;
 	if(StatusFromString(&Status, StatusString))
 	{
-		log_log_color(LEVEL_INFO, LOG_COLOR_WARNING, ProtocolToSystem(m_Protocol), "invalid status from master: %s", (const char *)StatusString);
+		log_error(ProtocolToSystem(m_Protocol), "invalid status from master: %s", (const char *)StatusString);
 		json_value_free(pJson);
 		return;
 	}
@@ -425,12 +425,12 @@ void CRegister::CProtocol::CJob::Run()
 		CLockScope ls(m_pShared->m_Lock);
 		if(Status != STATUS_OK || Status != m_pShared->m_LatestResponseStatus)
 		{
-			log_log_color(LEVEL_INFO, LOG_COLOR_SUCCESS, ProtocolToSystem(m_Protocol), "status: %s", (const char *)StatusString);
+			log_debug(ProtocolToSystem(m_Protocol), "status: %s", (const char *)StatusString);
 		}
 		if(Status == m_pShared->m_LatestResponseStatus && Status == STATUS_NEEDCHALLENGE)
 		{
-			log_log_color(LEVEL_INFO, LOG_COLOR_WARNING, ProtocolToSystem(m_Protocol), "ERROR: the master server reports that clients can not connect to this server.");
-			log_log_color(LEVEL_INFO, LOG_COLOR_WARNING, ProtocolToSystem(m_Protocol), "ERROR: configure your firewall/nat to let through udp on port %d.", m_ServerPort);
+			log_error(ProtocolToSystem(m_Protocol), "ERROR: the master server reports that clients can not connect to this server.");
+			log_error(ProtocolToSystem(m_Protocol), "ERROR: configure your firewall/nat to let through udp on port %d.", m_ServerPort);
 		}
 		json_value_free(pJson);
 		if(m_Index > m_pShared->m_LatestResponseIndex)
@@ -557,7 +557,7 @@ void CRegister::OnConfigChange()
 			}
 			else
 			{
-				log_log_color(LEVEL_WARN, LOG_COLOR_WARNING, "register", "unknown protocol '%s'", aBuf);
+				log_warn("register", "unknown protocol '%s'", aBuf);
 				continue;
 			}
 		}
@@ -569,12 +569,12 @@ void CRegister::OnConfigChange()
 	{
 		if(m_NumExtraHeaders == (int)sizeof(m_aaExtraHeaders)/sizeof(m_aaExtraHeaders[0]))
 		{
-			log_log_color(LEVEL_WARN, LOG_COLOR_WARNING, "register", "reached maximum of %d extra headers, dropping '%s' and all further headers", m_NumExtraHeaders, aHeader);
+			log_warn("register", "reached maximum of %d extra headers, dropping '%s' and all further headers", m_NumExtraHeaders, aHeader);
 			break;
 		}
 		if(!str_find(aHeader, ": "))
 		{
-			log_log_color(LEVEL_WARN, LOG_COLOR_WARNING, "register", "header '%s' doesn't contain mandatory ': ', ignoring", aHeader);
+			log_warn("register", "header '%s' doesn't contain mandatory ': ', ignoring", aHeader);
 			continue;
 		}
 		str_copy(m_aaExtraHeaders[m_NumExtraHeaders], aHeader, sizeof(m_aaExtraHeaders[m_NumExtraHeaders]));
@@ -618,15 +618,15 @@ bool CRegister::OnPacket(const CNetChunk *pPacket)
 		const char *pToken = Unpacker.GetString(0);
 		if(Unpacker.Error())
 		{
-			log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "register", "got errorneous challenge packet from master");
+			log_error("register", "got errorneous challenge packet from master");
 			return true;
 		}
 
-		log_log_color(LEVEL_INFO, LOG_COLOR_SUCCESS, "register", "got challenge token, protocol='%s' token='%s'", pProtocol, pToken);
+		log_debug("register", "got challenge token, protocol='%s' token='%s'", pProtocol, pToken);
 		int Protocol;
 		if(ProtocolFromString(&Protocol, pProtocol))
 		{
-			log_log_color(LEVEL_WARN, LOG_COLOR_WARNING, "register", "got challenge packet with unknown protocol");
+			log_warn("register", "got challenge packet with unknown protocol");
 			return true;
 		}
 		m_aProtocols[Protocol].OnToken(pToken);

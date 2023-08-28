@@ -218,24 +218,20 @@ void CConsole::SetPrintOutputLevel_Hard(int Index, int OutputLevel)
 
 void CConsole::Print(int Level, const char *pFrom, const char *pStr)
 {
-	LOG_COLOR COLOR;
 	LEVEL LOG_LEVEL;
 	switch (Level)
 	{
 	case OUTPUT_LEVEL_STANDARD:
-		COLOR = LOG_COLOR_INFO;
 		LOG_LEVEL = LEVEL_INFO;
 		break;
 	case OUTPUT_LEVEL_ADDINFO:
-		COLOR = LOG_COLOR_SUCCESS;
 		LOG_LEVEL = LEVEL_DEBUG;
 		break;
 	default:
-		COLOR = LOG_COLOR{255, 255, 255};
 		LOG_LEVEL = LEVEL_INFO;
 		break;
 	}
-	log_log_color(LOG_LEVEL, COLOR, pFrom, "%s", pStr);
+	log_log(LOG_LEVEL, pFrom, "%s", pStr);
 
 	for(int i = 0; i < m_NumPrintCB; ++i)
 	{

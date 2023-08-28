@@ -1996,7 +1996,7 @@ int CServer::GenerateMap(const char *pMapName)
 	Storage()->GetCompletePath(IStorage::TYPE_SAVE, aMapDir, aFullPath, sizeof(aFullPath));
 	if(fs_makedir(aFullPath) != 0)
 	{
-		log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "mapgen", "Can't create the directory '%s'", aMapDir);
+		log_error("mapgen", "Can't create the directory '%s'", aMapDir);
 	}
 	
 	char aBuf[512];
@@ -2022,7 +2022,7 @@ void CServer::CreateMapThread(const char *pMapName)
 		static std::mutex s_Lock;
 		if(!s_Lock.try_lock())
 		{
-			log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "server", "failed lock create map thread");
+			log_error("server", "failed lock create map thread");
 			return;
 		}
 
@@ -2031,7 +2031,7 @@ void CServer::CreateMapThread(const char *pMapName)
 		{
 			s_Lock.unlock();
 
-			log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "server", "failed generate main map");
+			log_error("server", "failed generate main map");
 			Console()->ExecuteLine("shutdown", -1);
 			
 			return;
@@ -2041,7 +2041,7 @@ void CServer::CreateMapThread(const char *pMapName)
 
 		m_MainMapLoaded = true;
 		UpdateServerInfo();
-		log_log_color(LEVEL_INFO, LOG_COLOR_SUCCESS, "server", "Loaded new worlds '%s'", aBuf);
+		log_info("server", "Loaded new worlds '%s'", aBuf);
 	});
 	Thread.detach();
 }
@@ -2502,7 +2502,7 @@ int main(int argc, const char **argv) // ignore_convention
 
 	if(secure_random_init() != 0)
 	{
-		log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "secure", "could not initialize secure RNG");
+		log_error("secure", "could not initialize secure RNG");
 		return -1;
 	}
 
@@ -2548,7 +2548,7 @@ int main(int argc, const char **argv) // ignore_convention
 	pServer->m_pLocalization = new CLocalization(pStorage);
 	if(!pServer->m_pLocalization->Init())
 	{
-		log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "localization", "could not initialize localization");
+		log_error("localization", "could not initialize localization");
 		return -1;
 	}
 
@@ -2570,16 +2570,16 @@ int main(int argc, const char **argv) // ignore_convention
 		}
 		else
 		{
-			log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "server", "failed to open '%s' for logging", g_Config.m_Logfile);
+			log_error("server", "failed to open '%s' for logging", g_Config.m_Logfile);
 		}
 	}
 	auto pServerLogger = std::make_shared<CServerLogger>(pServer);
 	pEngine->SetAdditionalLogger(pServerLogger);
 
 	// run the server
-	log_log_color(LEVEL_INFO, LOG_COLOR_INFO, "server", "Starting...");
+	log_info("server", "Starting...");
 	pServer->Run();
-	log_log_color(LEVEL_INFO, LOG_COLOR_SUCCESS, "server", "Server shutdown");
+	log_info("server", "Server shutdown");
 
 	pServerLogger->OnServerDeletion();
 	// free

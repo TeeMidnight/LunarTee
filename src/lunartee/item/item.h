@@ -3,7 +3,6 @@
 
 #include <map>
 
-#include "inventory.h"
 #include "item-data.h"
 
 class CItemCore
@@ -14,7 +13,7 @@ class CItemCore
 
     class CCraftCore *m_pCraft;
 
-    CInventory m_aInventories[MAX_CLIENTS];
+    std::map<std::string, int> m_aInventories[MAX_CLIENTS];
 
     int m_ItemTypeNum;
 
@@ -30,17 +29,20 @@ public:
 
     CItemCore(CGameContext *pGameServer);
 	CGameContext *GameServer() const { return m_pGameServer; }
+    
     class CCraftCore *Craft() const {return m_pCraft;}
 	class CMenu *Menu() const;
+	class CSql *Postgresql() const;
 
     void InitWeapon();
     void ReadItemJson(const char *pPath);
 
     CItemData *GetItemData(const char *Name);
-    CInventory *GetInventory(int ClientID);
+    std::map<std::string, int> *GetInventory(int ClientID);
     int GetInvItemNum(const char *ItemName, int ClientID);
     void AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true, bool SendChat = false);
     void SetInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true);
+    void SetInvItemNumThread(const char *pItemName, int Num, int ClientID);
     void ClearInv(int ClientID, bool Database = true);
 };
 

@@ -1228,7 +1228,7 @@ bool CMapGen::CreateMap(const char *pFilename)
 {
 	if(!m_DataFile.Open(Storage(), pFilename))
 	{
-		log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "mapgen", "failed to open file '%s'...", pFilename);
+		log_error("mapgen", "failed to open file '%s'...", pFilename);
 		return false;
 	}
 

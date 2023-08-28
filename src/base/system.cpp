@@ -184,7 +184,7 @@ void dbg_assert_imp(const char *filename, int line, int test, const char *msg)
 		dbg_assert_failing.store(true, std::memory_order_release);
 		char error[256];
 		str_format(error, sizeof(error), "%s(%d): %s", filename, line, msg);
-		log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "assert", "%s", error);
+		dbg_msg("assert", "%s", error);
 		if(!already_failing)
 		{
 			DBG_ASSERT_HANDLER handler = dbg_assert_handler;

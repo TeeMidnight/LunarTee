@@ -2,6 +2,9 @@
 #include <engine/shared/json.h>
 #include <game/server/gamecontext.h>
 
+#include <map>
+#include <mutex>
+#include <thread>
 #include <vector>
 
 #include "item.h"
@@ -10,6 +13,7 @@
 #define ITEM_PATH "./data/json/items/"
 
 CMenu *CItemCore::Menu() const { return m_pGameServer->Menu(); }
+CSql *CItemCore::Postgresql() const { return m_pGameServer->Postgresql(); }
 
 CItemCore::CItemCore(CGameContext *pGameServer)
 {
@@ -93,7 +97,7 @@ void CItemCore::ReadItemJson(const char *pPath)
 	unsigned Length;
 	if(!GameServer()->Storage()->ReadFile(pPath, IStorage::TYPE_ALL, &pBuf, &Length))
 	{
-		log_log_color(LEVEL_ERROR, LOG_COLOR_ERROR, "Item", "Couldn't load item file %s", pPath);
+		log_error("Item", "Couldn't load item file %s", pPath);
 		return;
 	}
 	// parse json data
@@ -268,46 +272,31 @@ CItemData *CItemCore::GetItemData(const char *Name)
 	return pData;
 }
 
-CInventory *CItemCore::GetInventory(int ClientID)
+std::map<std::string, int> *CItemCore::GetInventory(int ClientID)
 {
 	return &m_aInventories[ClientID];
 }
 
 int CItemCore::GetInvItemNum(const char *ItemName, int ClientID)
 {
-	for(int i = 0;i < m_aInventories[ClientID].m_Datas.size();i ++)
-	{
-		if(str_comp(m_aInventories[ClientID].m_Datas[i].m_aName, ItemName) == 0)
-		{
-			return m_aInventories[ClientID].m_Datas[i].m_Num;
-		}
-	}
+	auto Item = m_aInventories[ClientID].find(ItemName);
+	if(Item != m_aInventories[ClientID].end())
+		return Item->second;
 	return 0;
 }
 
 void CItemCore::AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database, bool SendChat)
 {
-	bool Added = false;
-	int DatabaseNum = Num;
-	for(int i = 0;i < m_aInventories[ClientID].m_Datas.size();i ++)
+	auto Item = m_aInventories[ClientID].find(ItemName);
+
+	if(Item == m_aInventories[ClientID].end())
 	{
-		if(str_comp(m_aInventories[ClientID].m_Datas[i].m_aName, ItemName) == 0)
-		{
-			m_aInventories[ClientID].m_Datas[i].m_Num += Num;
-			DatabaseNum = m_aInventories[ClientID].m_Datas[i].m_Num;
-			Added = true;
-			break;
-		}
+		m_aInventories[ClientID][ItemName] = Num;
+	}else
+	{
+		m_aInventories[ClientID][ItemName] += Num;
 	}
 
-	if(!Added)
-	{
-		CInventoryData Data;
-		str_copy(Data.m_aName, ItemName);
-		Data.m_Num = Num;
-
-		m_aInventories[ClientID].m_Datas.add(Data);
-	}
 	if(SendChat)
 	{
 		if(Num > 0)
@@ -319,37 +308,84 @@ void CItemCore::AddInvItemNum(const char *ItemName, int Num, int ClientID, bool 
 			GameServer()->SendChatTarget_Localization(ClientID, _("You lost %t x%d"), ItemName, -Num);
 		}
 	}
-	GameServer()->Postgresql()->CreateUpdateItemThread(ClientID, ItemName, DatabaseNum);
+
+	if(Database)
+	{
+		SetInvItemNumThread(ItemName, m_aInventories[ClientID][ItemName], ClientID);
+	}
 }
 
 void CItemCore::SetInvItemNum(const char *ItemName, int Num, int ClientID, bool Database)
 {
-	bool Set = false;
-	for(int i = 0;i < m_aInventories[ClientID].m_Datas.size();i ++)
-	{
-		if(str_comp(m_aInventories[ClientID].m_Datas[i].m_aName, ItemName) == 0)
-		{
-			m_aInventories[ClientID].m_Datas[i].m_Num = Num;
-			Set = true;
-			break;
-		}
-	}
+	m_aInventories[ClientID][ItemName] = Num;
 
-	if(!Set)
-	{
-		CInventoryData Data;
-		str_copy(Data.m_aName, ItemName);
-		Data.m_Num = Num;
-
-		m_aInventories[ClientID].m_Datas.add(Data);
-	}
 	if(Database)
 	{
-		GameServer()->Postgresql()->CreateUpdateItemThread(ClientID, ItemName, Num);
+		SetInvItemNumThread(ItemName, m_aInventories[ClientID][ItemName], ClientID);
 	}
+}
+
+static std::mutex s_ItemMutex;
+void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID)
+{
+	if(!GameServer()->m_apPlayers[ClientID])
+	{
+		return;
+	}
+	std::string ItemName(pItemName);
+
+	std::thread Thread([this, ItemName, Num, ClientID]()
+	{
+		s_ItemMutex.lock();
+
+		auto pOwner = GameServer()->m_apPlayers[ClientID];
+		int UserID = pOwner->GetUserID();
+
+		std::string Buffer;
+
+		Buffer.append("WHERE OwnerID=");
+		Buffer.append(std::to_string(UserID));
+		Buffer.append(" AND ");
+		Buffer.append("ItemName='");
+		Buffer.append(ItemName);
+		Buffer.append("';");
+
+		SqlResult *pSqlResult = Postgresql()->Execute<SqlType::SELECT>("lt_itemdata",
+			Buffer.c_str(), "*");
+
+		if(!pSqlResult->size())
+		{
+			Buffer.clear();
+			Buffer.append("(OwnerID, ItemName, Num) VALUES (");
+			Buffer.append(std::to_string(UserID));
+			Buffer.append(", '");
+			Buffer.append(ItemName);
+			Buffer.append("', ");
+			Buffer.append(std::to_string(Num));
+			Buffer.append(");");
+
+			Postgresql()->Execute<SqlType::INSERT>("lt_itemdata", Buffer.c_str());
+		}else
+		{
+			int ID = pSqlResult->begin()["ID"].as<int>();
+
+			Buffer.clear();
+			Buffer.append("Num = ");
+			Buffer.append(std::to_string(Num));
+			Buffer.append(" WHERE ID = ");
+			Buffer.append(std::to_string(ID));
+			Buffer.append(");");
+
+			Postgresql()->Execute<SqlType::UPDATE>("lt_itemdata", Buffer.c_str());
+		}
+
+		s_ItemMutex.unlock();
+	});
+	Thread.detach();
+	return;
 }
 
 void CItemCore::ClearInv(int ClientID, bool Database)
 {
-	m_aInventories[ClientID].m_Datas.clear();
+	m_aInventories[ClientID].clear();
 }
