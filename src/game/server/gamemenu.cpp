@@ -66,7 +66,7 @@ void CMenu::RegisterMain()
             if(str_comp(pCmd, "SHOW") == 0)
             {
                 std::vector<CMenuOption> Options;
-                Options.push_back(CMenuOption(_("Main Menu"), 0, "#### %s ####"));
+                Options.push_back(CMenuOption(_("Main Menu"), 0, "#### {STR} ####"));
 
                 Options.push_back(CMenuOption(_("Craft"), "CRAFT"));
                 Options.push_back(CMenuOption(_("Language"), "LANGUAGE"));
@@ -101,7 +101,7 @@ void CMenu::RegisterLanguage()
 
             std::vector<CMenuOption> Options;
 
-            Options.push_back(CMenuOption(_("Language"), 0, "#### %s ####"));
+            Options.push_back(CMenuOption(_("Language"), 0, "#### {STR} ####"));
 
             for(int i = 0; i < pThis->Server()->Localization()->m_pLanguages.size(); i ++)
             {

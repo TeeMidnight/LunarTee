@@ -507,50 +507,14 @@ set(LIBS_SERVER ${LIBS} ${OPENSSL_LIBRARIES} ${PQXX_LIBRARIES})
 # thanks to InfectionDust
 if(LOCALIZE)
 
-  add_custom_target(generate-json ALL)
+  add_custom_target(localize ALL)
 
   add_custom_command(
-    TARGET generate-json
-    COMMAND ${PYTHON_EXECUTABLE} scripts/json-localize.py
+    TARGET localize
+    COMMAND ${PYTHON_EXECUTABLE} scripts/translate.py
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
   )
 
-  add_custom_target(generate ALL)
-
-  set(PO_TEMPlATE "data/server_lang/template.pot")
-
-  add_custom_command(
-    TARGET generate
-    COMMAND xgettext -o ${PO_TEMPlATE} -k_ -k_P:1,2 -k_C:1c,2 -k_CP:1c,2,3 -F -i --foreign-user --from-code=UTF-8 --package-name=LunarTee --package-version=${MOD_VERSION} --copyright-holder=RemakePower --from-code=UTF-8 --no-location ${ENGINE_SERVER} ${TEEUNIVERSES} ${LUNARTEE_SERVER} ${GAME_SERVER} ${INFNEXT} src/generated/localize-temp.h
-    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-  )
-  set(PO_LANGS
-    zh-CN
-  )
-
-  add_custom_target(update-po-files ALL)
-
-  foreach(PO_LANG ${PO_LANGS})
-    set(PO_LANG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/data/server_lang/${PO_LANG}.po")
-
-    if(EXISTS ${PO_LANG_FILE})
-      add_custom_command(
-        TARGET update-po-files
-        # BYPRODUCTS ${PO_LANG_FILE}
-        COMMAND msgmerge --update --backup=off --lang=${PO_LANG} --no-fuzzy --width=200 ${PO_LANG_FILE} ${PO_TEMPlATE}
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        DEPENDS ${PO_TEMPlATE}
-      )
-    else()
-      add_custom_command(
-        TARGET update-po-files
-        # BYPRODUCTS ${PO_LANG_FILE}
-        COMMAND msginit --width=200 --input=${PO_TEMPlATE} --no-translator --output-file=${PO_LANG_FILE}
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        DEPENDS ${PO_TEMPlATE}
-      )
-    endif()
-  endforeach()
 endif()
 
 # Target

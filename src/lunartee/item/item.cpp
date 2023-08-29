@@ -181,12 +181,12 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 		str_format(aCmd, sizeof(aCmd), "LIST %s", Type.first.c_str());
 		if(str_comp(pType, Type.first.c_str()))
 		{
-			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "== %s ▲"));
+			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "== {STR} ▲"));
 			continue;
 		}
 		else
 		{
-			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "== %s ▼"));
+			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "== {STR} ▼"));
 		}
 
 		for(auto &Item : Type.second)
@@ -199,8 +199,8 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 
 			if(str_comp(pSelect, Item.m_aName) == 0)
 			{
-				Options.push_back(CMenuOption(Item.m_aName, aCmd, "- %s ▼"));
-				Options.push_back(CMenuOption(_("Requires"), aCmd, "-   %s:"));
+				Options.push_back(CMenuOption(Item.m_aName, aCmd, "- {STR} ▼"));
+				Options.push_back(CMenuOption(_("Requires"), aCmd, "-   {STR}:"));
 				
 				char aBuf[VOTE_DESC_LENGTH];
 				for(auto Require : Item.m_Needs.m_vDatas)
@@ -210,16 +210,16 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 						std::get<1>(Require),
 						pThis->GetInvItemNum(std::get<0>(Require).c_str(), ClientID));
 
-					Options.push_back(CMenuOption(aBuf, aCmd, "@ %s"));
+					Options.push_back(CMenuOption(aBuf, aCmd, "@ {STR}"));
 				}
 
 				str_format(aBuf, sizeof(aBuf), "%s %s",
 					pThis->Menu()->Localize(_("Craft")),
 					pThis->Menu()->Localize(pSelect));
-				Options.push_back(CMenuOption(aBuf, aCmdCraft, "## %s"));
+				Options.push_back(CMenuOption(aBuf, aCmdCraft, "## {STR}"));
 			}
 			else 
-				Options.push_back(CMenuOption(Item.m_aName, aCmd, "- %s ▲"));
+				Options.push_back(CMenuOption(Item.m_aName, aCmd, "- {STR} ▲"));
 		}
 	}
 
@@ -301,11 +301,11 @@ void CItemCore::AddInvItemNum(const char *ItemName, int Num, int ClientID, bool 
 	{
 		if(Num > 0)
 		{
-			GameServer()->SendChatTarget_Localization(ClientID, _("You got %t x%d"), ItemName, Num);
+			GameServer()->SendChatTarget_Localization(ClientID, _("You got {LSTR} x{INT}"), ItemName, Num);
 		}
 		else if(Num < 0)
 		{
-			GameServer()->SendChatTarget_Localization(ClientID, _("You lost %t x%d"), ItemName, -Num);
+			GameServer()->SendChatTarget_Localization(ClientID, _("You lost {LSTR} x{INT}"), ItemName, -Num);
 		}
 	}
 
@@ -374,7 +374,7 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 			Buffer.append(std::to_string(Num));
 			Buffer.append(" WHERE ID = ");
 			Buffer.append(std::to_string(ID));
-			Buffer.append(");");
+			Buffer.append(";");
 
 			Postgresql()->Execute<SqlType::UPDATE>("lt_itemdata", Buffer.c_str());
 		}

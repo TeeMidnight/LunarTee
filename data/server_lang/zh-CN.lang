@@ -1,0 +1,293 @@
+LunarTee translation
+
+= Vote aborted
+## 
+
+= Vote passed
+## 
+
+= Vote failed
+## 
+
+= '{STR}' entered the server
+## 
+
+= ===Welcome to LunarTee===
+## 
+
+= Call vote is game menu
+## 
+
+= Show clan plate to show health bar
+## 
+
+= '{STR}' entered other world
+## 
+
+= Spectators aren't allowed to start a vote.
+## 
+
+= Wait for current vote to end before calling a new one.
+## 
+
+= You must wait {INT} seconds before making another vote
+## 
+
+= '{STR}' called vote to change server option '{STR}' ({STR})
+## 
+
+= '{STR}' isn't an option on this server
+## 
+
+= Server does not allow voting to kick players
+## 
+
+= Kick voting requires {INT} players on the server
+## 
+
+= Invalid client id to kick
+## 
+
+= You can't kick yourself
+## 
+
+= You can't kick admins
+## 
+
+= '{STR}' called for vote to kick you
+## 
+
+= Server does not allow voting to move players to spectators
+## 
+
+= Invalid client id to move
+## 
+
+= You can't move yourself
+## 
+
+= Please login!
+## 
+
+= Invalid spectator id {INT} used
+## 
+
+= '{STR}' changed name to '{STR}'
+## 
+
+= admin forced server option '{STR}' ({STR})
+## 
+
+= admin moved '{STR}' to spectator ({STR})
+## 
+
+= admin forced vote yes
+## 
+
+= admin forced vote no
+## 
+
+= {STR} by {STR}
+## 
+
+= Thanks {STR}
+## 
+
+= Language successfully switched to English
+## 
+
+= Unknown language or no input language code
+## 
+
+= Available languages: {STR}
+## 
+
+= Use /register <username> <password> to register
+## 
+
+= The length of the <Username> should be between {INT}-{INT}
+## 
+
+= The length of the <Password> should be between {INT}-{INT}
+## 
+
+= Use /login <username> <password> to login
+## 
+
+= You are now registered
+## 
+
+= User already exists!
+## 
+
+= No such account
+## 
+
+= You are now logged in.
+## 
+
+= Wrong nickname!
+## 
+
+= Wrong password!
+## 
+
+= Pickable
+## 
+
+= '{STR}' is going to check the world
+## 
+
+= '{STR}' backed world
+## 
+
+= Main Menu
+## 
+
+= Craft
+## 
+
+= Language
+## 
+
+= Previous Page
+## 
+
+= red team
+## 
+
+= blue team
+## 
+
+= game
+## 
+
+= spectators
+## 
+
+= No such item!
+## 
+
+= You don't have enough resources
+## 
+
+= You had {LSTR}
+## 
+
+= Making {LSTR}...
+## 
+
+= Make finish, you get {LSTR} x{INT}
+## 
+
+= Make finish, you get {LSTR}
+## 
+
+= Craft Menu
+## 
+
+= Requires
+## 
+
+= You got {LSTR} x{INT}
+## 
+
+= You lost {LSTR} x{INT}
+## 
+
+= Shrub
+## 
+
+= Stone
+## 
+
+= Bear
+## 
+
+= Chicken
+## 
+
+= Wood
+## 
+
+= Metal
+## 
+
+= Dust
+## 
+
+= Nitra
+## 
+
+= Bear Meat
+## 
+
+= Chicken Meat
+## 
+
+= Egg
+## 
+
+= Hammer
+## 
+
+= Gun
+## 
+
+= Gun Ammo
+## 
+
+= Shotgun
+## 
+
+= Shotgun Ammo
+## 
+
+= Grenade
+## 
+
+= Grenade Ammo
+## 
+
+= Rifle
+## 
+
+= Laser
+## 
+
+= Ninja
+## 
+
+= Freeze-Rifle
+## 
+
+= Materials
+## 
+
+= Charcoal
+## 
+
+= Eggshell
+## 
+
+= Shelled Eggs
+## 
+
+= Frame
+## 
+
+= Gunpowder
+## 
+
+= Bullets
+## 
+
+= Empty Ammo
+## 
+
+= Plasma
+## 
+
+= Weapons
+## 
+

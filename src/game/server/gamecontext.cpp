@@ -726,14 +726,14 @@ void CGameContext::OnClientEnter(int ClientID)
 
 	if(FindWorldIDWithWorld((m_apPlayers[ClientID]->GameWorld())) == 0)
 	{
-		SendChatTarget_Localization(-1, _("'%s' entered the server"), Server()->ClientName(ClientID));
+		SendChatTarget_Localization(-1, _("'{STR}' entered the server"), Server()->ClientName(ClientID));
 
 		SendChatTarget_Localization(ClientID, _("===Welcome to LunarTee==="));
-		SendChatTarget_Localization(ClientID, _("Bind /menu to your key"));
+		SendChatTarget_Localization(ClientID, _("Call vote is game menu"));
 		SendChatTarget_Localization(ClientID, _("Show clan plate to show health bar"));
 	}else
 	{
-		SendChatTarget_Localization(-1, _("'%s' entered other world"), Server()->ClientName(ClientID));
+		SendChatTarget_Localization(-1, _("'{STR}' entered other world"), Server()->ClientName(ClientID));
 	}
 	m_VoteUpdate = true;
 	Server()->ExpireServerInfo();
@@ -905,7 +905,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(pPlayer->m_LastVoteCall && Timeleft > 0)
 			{
 				int Seconds = (Timeleft/Server()->TickSpeed())+1;
-				SendChatTarget_Localization(ClientID, _("You must wait %d seconds before making another vote"), &Seconds, NULL);
+				SendChatTarget_Localization(ClientID, _("You must wait {INT} seconds before making another vote"), &Seconds, NULL);
 				return;
 			}
 
@@ -920,7 +920,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				{
 					if(str_comp_nocase(pMsg->m_pValue, pOption->m_aDescription) == 0)
 					{
-						SendChatTarget_Localization(-1, _("'%s' called vote to change server option '%s' (%s)"),
+						SendChatTarget_Localization(-1, _("'{STR}' called vote to change server option '{STR}' ({STR})"),
 									Server()->ClientName(ClientID), pOption->m_aDescription,
 									pReason, NULL);
 						str_format(aDesc, sizeof(aDesc), "%s", pOption->m_aDescription);
@@ -933,7 +933,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 				if(!pOption)
 				{
-					SendChatTarget_Localization(ClientID, _("'%s' isn't an option on this server"), pMsg->m_pValue);
+					SendChatTarget_Localization(ClientID, _("'{STR}' isn't an option on this server"), pMsg->m_pValue);
 					return;
 				}
 			}
@@ -954,7 +954,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 					if(PlayerNum < g_Config.m_SvVoteKickMin)
 					{
-						SendChatTarget_Localization(ClientID, _("Kick voting requires %d players on the server"), g_Config.m_SvVoteKickMin);
+						SendChatTarget_Localization(ClientID, _("Kick voting requires {INT} players on the server"), g_Config.m_SvVoteKickMin);
 						return;
 					}
 				}
@@ -977,7 +977,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				if(Server()->IsAuthed(KickID))
 				{
 					SendChatTarget_Localization(ClientID, _("You can't kick admins"));
-					SendChatTarget_Localization(KickID, _("'%s' called for vote to kick you"), Server()->ClientName(ClientID));
+					SendChatTarget_Localization(KickID, _("'{STR}' called for vote to kick you"), Server()->ClientName(ClientID));
 					return;
 				}
 
@@ -1098,7 +1098,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			pPlayer->m_LastSetSpectatorMode = Server()->Tick();
 			if(pMsg->m_SpectatorID != SPEC_FREEVIEW && (!m_apPlayers[pMsg->m_SpectatorID] || m_apPlayers[pMsg->m_SpectatorID]->GetTeam() == TEAM_SPECTATORS))
-				SendChatTarget_Localization(ClientID, _("Invalid spectator id %d used"), pMsg->m_SpectatorID);
+				SendChatTarget_Localization(ClientID, _("Invalid spectator id {INT} used"), pMsg->m_SpectatorID);
 			else
 			{
 				pPlayer->m_SpectatorID = pMsg->m_SpectatorID;
@@ -1118,7 +1118,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			Server()->SetClientName(ClientID, pMsg->m_pName);
 			if(str_comp(aOldName, Server()->ClientName(ClientID)) != 0)
 			{
-				SendChatTarget_Localization(-1, _("'%s' changed name to '%s'"), aOldName, Server()->ClientName(ClientID));
+				SendChatTarget_Localization(-1, _("'{STR}' changed name to '{STR}'"), aOldName, Server()->ClientName(ClientID));
 			}
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
@@ -1410,7 +1410,7 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 		{
 			if(str_comp_nocase(pValue, pOption->m_aDescription) == 0)
 			{
-				pSelf->SendChatTarget_Localization(-1, _("admin forced server option '%s' (%s)"), pValue, pReason);
+				pSelf->SendChatTarget_Localization(-1, _("admin forced server option '{STR}' ({STR})"), pValue, pReason);
 				pSelf->Console()->ExecuteLine(pOption->m_aCommand, -1);
 				break;
 			}
@@ -1455,7 +1455,7 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid client id to move");
 			return;
 		}
-		pSelf->SendChatTarget_Localization(-1, _("admin moved '%s' to spectator (%s)"), pSelf->Server()->ClientName(SpectateID), pReason);
+		pSelf->SendChatTarget_Localization(-1, _("admin moved '{STR}' to spectator ({STR})"), pSelf->Server()->ClientName(SpectateID), pReason);
 		str_format(aBuf, sizeof(aBuf), "set_team %d -1 %d", SpectateID, g_Config.m_SvVoteSpectateRejoindelay);
 		pSelf->Console()->ExecuteLine(aBuf, -1);
 	}
@@ -1543,10 +1543,10 @@ void CGameContext::ConAbout(IConsole::IResult *pResult, void *pUserData)
 	str_copy(aThanksList, "necropotame, DDNet, Kurosio");
 	// necropotame made this frame, Localization from Kurosio.
 
-	pSelf->SendChatTarget_Localization(ClientID, "=====%s=====", MOD_NAME);
-	pSelf->SendChatTarget_Localization(ClientID, _("%s by %s"), 
+	pSelf->SendChatTarget_Localization(ClientID, "====={STR}=====", MOD_NAME);
+	pSelf->SendChatTarget_Localization(ClientID, _("{STR} by {STR}"), 
 		MOD_NAME , "RemakePower");
-	pSelf->SendChatTarget_Localization(ClientID, _("Thanks %s"), aThanksList);
+	pSelf->SendChatTarget_Localization(ClientID, _("Thanks {STR}"), aThanksList);
 	
 }
 
@@ -1597,7 +1597,7 @@ void CGameContext::ConLanguage(IConsole::IResult *pResult, void *pUserData)
 		}
 		
 		dynamic_string Buffer;
-		pSelf->Server()->Localization()->Format_L(Buffer, pLanguage, _("Available languages: %s"), BufferList.c_str());
+		pSelf->Server()->Localization()->Format_L(Buffer, pLanguage, _("Available languages: {STR}"), BufferList.c_str());
 		
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_CHAT, "language", Buffer.buffer());
 	}
@@ -1672,13 +1672,13 @@ void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
 
 	if(str_length(pResult->GetString(0)) > MAX_ACCOUNTS_NAME_LENTH || str_length(pResult->GetString(0)) < MIN_ACCOUNTS_NAME_LENTH)
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _("The length of the <Username> should be between %d-%d"), MIN_ACCOUNTS_NAME_LENTH, MAX_ACCOUNTS_NAME_LENTH);
+		pSelf->SendChatTarget_Localization(ClientID, _("The length of the <Username> should be between {INT}-{INT}"), MIN_ACCOUNTS_NAME_LENTH, MAX_ACCOUNTS_NAME_LENTH);
 		return;
 	}
 
 	if(str_length(pResult->GetString(1)) > MAX_ACCOUNTS_PASSWORD_LENTH || str_length(pResult->GetString(0)) < MIN_ACCOUNTS_PASSWORD_LENTH)
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _("The length of the <Password> should be between %d-%d"), MIN_ACCOUNTS_PASSWORD_LENTH, MAX_ACCOUNTS_PASSWORD_LENTH);
+		pSelf->SendChatTarget_Localization(ClientID, _("The length of the <Password> should be between {INT}-{INT}"), MIN_ACCOUNTS_PASSWORD_LENTH, MAX_ACCOUNTS_PASSWORD_LENTH);
 		return;
 	}
 
@@ -2134,18 +2134,44 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 
 	std::nth_element(&Dist[0], &Dist[MaxClients - 1], &Dist[Dist.size()], distCompare);
 
-	int Index = 1; // exclude self client id
-	for(int i = 0; i < MaxClients - 1; i++)
+	for(unsigned i = 0; i < (unsigned) MaxClients - 1; i++)
 	{
-		pMap[i + 1] = -1; // also fill player with empty name to say chat msgs
-		if(Dist[i].second == ClientID || Dist[i].first > 5e9f)
+		if(pMap[i] == -1)
 			continue;
-		pMap[Index++] = Dist[i].second;
-	}
-	// sort by real client ids, guarantee order on distance changes, O(Nlog(N)) worst case
-	// sort just clients in game always except first (self client id) and last (fake client id) indexes
-	std::sort(&pMap[1], &pMap[minimum(Index, MaxClients - 1)]);
+		
+		bool Found = false;
+		int FoundID;
 
+		for(FoundID = 0; FoundID < MaxClients - 1; FoundID ++)
+		{
+			if(Dist[FoundID].second == pMap[i])
+			{
+				Found = true;
+				break;
+			}
+		}
+		
+		if(Found)
+		{
+			Dist.erase(Dist.begin() + FoundID);
+		}
+		else
+		{
+			pMap[i] = -1;
+		}
+	}
+
+	int Index = 0;
+	for(int i = 1; i < MaxClients - 1; i++)
+	{
+		if(pMap[i] == -1)
+		{
+			pMap[i] = Dist[Index].second;
+			Index ++;
+		}
+	}
+
+	pMap[MaxClients - 1] = -1;
 	pMap[0] = ClientID;
 }
 

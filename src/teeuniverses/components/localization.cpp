@@ -44,7 +44,7 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pSto
 {
 	// read file data into buffer
 	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "./data/server_lang/%s.po", m_aFilename);
+	str_format(aBuf, sizeof(aBuf), "./data/server_lang/%s.lang", m_aFilename);
 	
 	IOHANDLE File = pStorage->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
 
@@ -80,25 +80,24 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pSto
 		FileLine[FileLineLength] = 0;
 
 		//Get the key
-		static const char MsgIdKey[] = "msgid ";
-		static const char MsgStrKey[] = "msgstr ";
+		static const char MsgIdKey[] = "= ";
+		static const char MsgStrKey[] = "## ";
 
-		if(str_comp_nocase_num(FileLine, MsgIdKey, sizeof(MsgIdKey) - 1) == 0)
+		if(str_comp_nocase_num(FileLine, MsgIdKey, sizeof(MsgIdKey)) == 0)
 		{
 			pKey = FileLine+sizeof(MsgIdKey);
 			if(pKey && pKey[0])
 			{
 				std::string Buffer(pKey);
-				Buffer.pop_back();
 				pEntry = m_Translations.set(Buffer.c_str());
 			}
 		}
-		else if(pEntry && str_comp_nocase_num(FileLine, MsgStrKey, sizeof(MsgStrKey) - 1) == 0)
+		else if(pEntry && str_comp_nocase_num(FileLine, MsgStrKey, sizeof(MsgStrKey)) == 0)
 		{
 			const char *pValue = FileLine+sizeof(MsgStrKey);
-			int Length = str_length(pValue);
+			int Length = str_length(pValue) + 1;
 
-			if(Length > 1) // 1 = '"'
+			if(Length)
 			{
 				std::string Buffer(pValue);
 				Buffer.pop_back();
@@ -296,34 +295,38 @@ void CLocalization::Format_V(dynamic_string& Buffer, const char *pLanguageCode, 
 	{
 		if(ParamTypeStart >= 0)
 		{	
-			int IterAdd = 1;
+			if(pText[Iter] != '}')
+			{
+				Iter = str_utf8_forward(pText, Iter);
+				continue;
+			}
 			// we get data from an argument parsing arguments
-			if(str_comp_num("%s", pText + ParamTypeStart, 2) == 0) // string
+			if(str_comp_num("STR", pText + ParamTypeStart, 3) == 0) // string
 			{
 				const char *pVarArgValue = va_arg(VarArgsIter, const char *);
 				BufferIter = Buffer.append_at(BufferIter, pVarArgValue);
 			}
-			else if(str_comp_num("%t", pText + ParamTypeStart, 2) == 0) // localize string
+			else if(str_comp_num("LSTR", pText + ParamTypeStart, 4) == 0) // localize string
 			{
 				const char *pVarArgValue = va_arg(VarArgsIter, const char *);
 				const char *pTranslatedValue = pLanguage->Localize(pVarArgValue);
 				BufferIter = Buffer.append_at(BufferIter, (pTranslatedValue ? pTranslatedValue : pVarArgValue));
 			}
-			else if(str_comp_num("%d", pText + ParamTypeStart, 2) == 0) // intiger
+			else if(str_comp_num("INT", pText + ParamTypeStart, 3) == 0) // intiger
 			{
 				char aBuf[128];
 				const int pVarArgValue = va_arg(VarArgsIter, int);
 				str_format(aBuf, sizeof(aBuf), "%d", pVarArgValue); // %ll
 				BufferIter = Buffer.append_at(BufferIter, aBuf);
 			}
-			else if(str_comp_num("%f", pText + ParamTypeStart, 2) == 0) // float
+			else if(str_comp_num("FLOAT", pText + ParamTypeStart, 5) == 0) // float
 			{
 				char aBuf[128];
 				const double pVarArgValue = va_arg(VarArgsIter, double);
 				str_format(aBuf, sizeof(aBuf), "%lf", pVarArgValue); // %f
 				BufferIter = Buffer.append_at(BufferIter, aBuf);
 			}
-			else if(str_comp_num("%v", pText + ParamTypeStart, 2) == 0) // value
+			else if(str_comp_num("VALUE", pText + ParamTypeStart, 5) == 0) // value
 			{
 				const int64_t pVarArgValue = va_arg(VarArgsIter, int64_t);
 				char* aBuffer = format_integer_with_commas(',', pVarArgValue);
@@ -332,15 +335,16 @@ void CLocalization::Format_V(dynamic_string& Buffer, const char *pLanguageCode, 
 			}
 
 			//
-			Start = Iter + IterAdd;
+			Start = Iter + 1;
 			ParamTypeStart = -1;
 		}
 		// parameter parsing start
 		else
 		{
-			if(pText[Iter] == '%')
+			if(pText[Iter] == '{')
 			{
-				BufferIter = Buffer.append_at_num(BufferIter, pText+Start, Iter-Start);
+				BufferIter = Buffer.append_at_num(BufferIter, pText + Start, Iter - Start);
+				Iter++;
 				ParamTypeStart = Iter;
 			}
 		}

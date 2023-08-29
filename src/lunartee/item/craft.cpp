@@ -66,11 +66,11 @@ void CCraftCore::CraftItem(const char *pMakeItem, int ClientID)
 
 	if(!Makeable)
 	{
-		GameServer()->SendChatTarget_Localization(ClientID, _("You had %t"), pMakeItem);
+		GameServer()->SendChatTarget_Localization(ClientID, _("You had {LSTR}"), pMakeItem);
 		return;
 	}
 
-	GameServer()->SendChatTarget_Localization(ClientID, _("Making %t..."), pMakeItem);
+	GameServer()->SendChatTarget_Localization(ClientID, _("Making {LSTR}..."), pMakeItem);
 
 	ReturnItem(pItemInfo, ClientID);
 	
@@ -96,12 +96,12 @@ void CCraftCore::ReturnItem(class CItemData *Item, int ClientID)
 			
 		if(std::get<1>(Item->m_Gives.m_vDatas[i]) > 1)
 		{
-			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get %t x%d"), 
+			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get {LSTR} x{INT}"), 
 				std::get<0>(Item->m_Gives.m_vDatas[i]).c_str(), std::get<1>(Item->m_Gives.m_vDatas[i]));
 		}
 		else 
 		{
-			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get %t"), 
+			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get {LSTR}"), 
 				std::get<0>(Item->m_Gives.m_vDatas[i]).c_str());
 		}	
 	}

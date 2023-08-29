@@ -167,6 +167,7 @@ void CPlayer::PostTick()
 {
 	if(m_LoadingMap)
 		return;
+
 	// update latency value
 	if(!IsBot() && m_PlayerFlags&PLAYERFLAG_SCOREBOARD)
 	{
@@ -444,10 +445,10 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	{
 		if(Team == TEAM_SPECTATORS)
 		{
-			GameServer()->SendChatTarget_Localization(-1, _("'%s' is going to check the world"), Server()->ClientName(m_ClientID));
+			GameServer()->SendChatTarget_Localization(-1, _("'{STR}' is going to check the world"), Server()->ClientName(m_ClientID));
 		}else
 		{
-			GameServer()->SendChatTarget_Localization(-1, _("'%s' backed world"), Server()->ClientName(m_ClientID));
+			GameServer()->SendChatTarget_Localization(-1, _("'{STR}' backed world"), Server()->ClientName(m_ClientID));
 		}
 	}
 
