@@ -17,6 +17,10 @@
 
 #include "server.h"
 
+#define MAP_CHUNK_WIDTH 64
+#define MAP_CHUNK_HEIGHT 2
+#define CHUNK_SIZE 32
+
 // Based on triple32inc from https://github.com/skeeto/hash-prospector/tree/79a6074062a84907df6e45b756134b74e2956760
 static uint32_t HashUInt32(uint32_t Num)
 {
@@ -293,71 +297,85 @@ int CMapGen::AddExternalImage(const char *pImageName, int Width, int Height)
 
 void CMapGen::GenerateGameLayer()
 {
-	int Width = g_Config.m_SvGeneratedMapWidth;
-	int Height = g_Config.m_SvGeneratedMapHeight;
+	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
+	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
 
 	// create tiles
 	m_pGameTiles = new CTile[Width*Height];
 	m_pBackGroundTiles = new CTile[Width*Height];
-	
-	// fiil tiles to solid
-	for(int x = 0;x < Width; x ++)
-	{
-		for(int y = 0;y < Height; y ++)
-		{
-			m_pGameTiles[y*Width+x].m_Index = TILE_SOLID;
-			m_pGameTiles[y*Width+x].m_Flags = 0;
-			m_pGameTiles[y*Width+x].m_Reserved = 0;
-			m_pGameTiles[y*Width+x].m_Skip = 0;
 
-			m_pBackGroundTiles[y*Width+x].m_Index = 0;
-			m_pBackGroundTiles[y*Width+x].m_Flags = 0;
-			m_pBackGroundTiles[y*Width+x].m_Reserved = 0;
-			m_pBackGroundTiles[y*Width+x].m_Skip = 0;
-		}
-	}
+	srand(time(0) + rand());
+	const siv::PerlinNoise::seed_type UnhookableSeed = (unsigned int) clamp(rand(), 0, RAND_MAX);
+	const siv::PerlinNoise UnhookablePerlin{ UnhookableSeed };
 	
+	srand(time(0) + rand());
+	const siv::PerlinNoise::seed_type AirSeed = (unsigned int) clamp(rand(), 0, RAND_MAX);
+	const siv::PerlinNoise AirPerlin{ AirSeed };
+	
+	// fill tiles to solid
+	auto FillThread = [this, Width, Height, UnhookablePerlin](int ChunkX, int ChunkY)
 	{
-		srand(time(0) + rand());
-		
-		const siv::PerlinNoise::seed_type seed = (unsigned int) clamp(rand(), 0, RAND_MAX);
-
-		const siv::PerlinNoise perlin{ seed };
-		
-		// noise create nohook tiles
-		for(int x = 0;x < Width; x ++)
+		for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x ++)
 		{
-			for(int y = 0;y < Height; y ++)
+			for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y ++)
 			{
-				if(x < 1 || x > Width-2 || y < 1 || y > Height-2)
+				m_pGameTiles[y*Width+x].m_Index = TILE_SOLID;
+				m_pGameTiles[y*Width+x].m_Flags = 0;
+				m_pGameTiles[y*Width+x].m_Reserved = 0;
+				m_pGameTiles[y*Width+x].m_Skip = 0;
+
+				m_pBackGroundTiles[y*Width+x].m_Index = 0;
+				m_pBackGroundTiles[y*Width+x].m_Flags = 0;
+				m_pBackGroundTiles[y*Width+x].m_Reserved = 0;
+				m_pBackGroundTiles[y*Width+x].m_Skip = 0;
+			}
+		}
+		
+		{
+			// noise create unhookable tiles
+			for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x ++)
+			{
+				for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y ++)
 				{
-					continue;
-				}
-				const double noise = perlin.octave2D_01((x * 0.01), (y * 0.01), 4, 0.6);
-				if(noise < 0.2f && m_pGameTiles[y*Width+x].m_Index == TILE_SOLID)
-				{
-					m_pGameTiles[y*Width+x].m_Index = TILE_NOHOOK;
+					if(x < 1 || x > Width-2 || y < 1 || y > Height-2)
+					{
+						continue;
+					}
+					const double noise = UnhookablePerlin.octave2D_01((x * 0.01), (y * 0.01), 4, 0.6);
+					if(noise < 0.2f && m_pGameTiles[y*Width+x].m_Index == TILE_SOLID)
+					{
+						m_pGameTiles[y*Width+x].m_Index = TILE_NOHOOK;
+					}
 				}
 			}
 		}
+	};
+
+	std::vector<std::thread> vThreads;
+	for(int x = 0; x < MAP_CHUNK_WIDTH; x ++)
+	{
+		for(int y = 0; y < MAP_CHUNK_HEIGHT; y ++)
+		{
+			vThreads.push_back(std::thread(FillThread, x, y));
+		}
+	}
+
+	for(auto &Thread : vThreads)
+	{
+		Thread.join();
 	}
 
 	{
-		srand(time(0) + rand());
-		
-		const siv::PerlinNoise::seed_type seed = (unsigned int) clamp(rand(), 0, RAND_MAX);
-
-		const siv::PerlinNoise perlin{ seed };
-
 		for(int x = 0;x < Width; x ++)
 		{
-			int GenerateHeight = maximum(1, (int) (clamp(perlin.octave2D_01((x * 0.01), 0, 4), (double)0.f, (double)0.9f) * Height - 1));
+			int GenerateHeight = maximum(1, (int) (clamp(AirPerlin.octave2D_01((x * 0.01), 0, 4), (double)0.f, (double)0.9f) * Height - 1));
 			for(int y = 0;y < GenerateHeight; y ++)
 			{
 				m_pGameTiles[y*Width+x].m_Index = TILE_AIR;
 			}
 		}
 	}
+
 	// create spawn center (for moon)
 	{
 		// spawn center
@@ -476,8 +494,8 @@ void CMapGen::GenerateBackground()
 
 void CMapGen::GenerateDoodadsLayer()
 {
-	int Width = g_Config.m_SvGeneratedMapWidth;
-	int Height = g_Config.m_SvGeneratedMapHeight;
+	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
+	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
 	CMapItemGroup Item;
 	Item.m_Version = CMapItemGroup::CURRENT_VERSION;
 	Item.m_ParallaxX = 100;
@@ -591,27 +609,66 @@ void CMapGen::GenerateHookable(CMapGen *pParent)
 		return;
 	}
 
-	int Width = g_Config.m_SvGeneratedMapWidth;
-	int Height = g_Config.m_SvGeneratedMapHeight;
+	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
+	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
 
 	pParent->m_pHookableTiles = new CTile[Width*Height];
-	for(int x = 0;x < Width;x ++)
+
+	auto FillThread = [pParent, Width, Height](int ChunkX, int ChunkY)
 	{
-		for(int y = 0;y < Height;y ++)
+		for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x ++)
 		{
-			pParent->m_pHookableTiles[y*Width+x].m_Flags = 0;
-			pParent->m_pHookableTiles[y*Width+x].m_Reserved = 0;
-			pParent->m_pHookableTiles[y*Width+x].m_Skip = 0;
-			if(pParent->m_pGameTiles[y*Width+x].m_Index == TILE_SOLID || pParent->m_pGameTiles[y*Width+x].m_Index == TILE_NOHOOK)
+			for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y ++)
 			{
-				pParent->m_pHookableTiles[y*Width+x].m_Index = 1;
-			}else 
-			{
-				pParent->m_pHookableTiles[y*Width+x].m_Index = 0;
+				pParent->m_pHookableTiles[y*Width+x].m_Flags = 0;
+				pParent->m_pHookableTiles[y*Width+x].m_Reserved = 0;
+				pParent->m_pHookableTiles[y*Width+x].m_Skip = 0;
+				if(pParent->m_pGameTiles[y*Width+x].m_Index == TILE_SOLID || pParent->m_pGameTiles[y*Width+x].m_Index == TILE_NOHOOK)
+				{
+					pParent->m_pHookableTiles[y*Width+x].m_Index = 1;
+				}else 
+				{
+					pParent->m_pHookableTiles[y*Width+x].m_Index = 0;
+				}
 			}
 		}
+	};
+
+	auto ProceedThread = [pParent, Width, Height](int ChunkX, int ChunkY)
+	{
+		vec2 StartPos(ChunkX * CHUNK_SIZE, ChunkY * CHUNK_SIZE);
+		vec2 EndPos((ChunkX + 1) * CHUNK_SIZE, (ChunkY + 1) * CHUNK_SIZE);
+		pParent->Proceed(pParent->m_pHookableTiles, pParent->m_MainRules, StartPos, EndPos);
+	};
+
+	std::vector<std::thread> vThreads;
+	for(int x = 0; x < MAP_CHUNK_WIDTH; x ++)
+	{
+		for(int y = 0; y < MAP_CHUNK_HEIGHT; y ++)
+		{
+			vThreads.push_back(std::thread(FillThread, x, y));
+		}
 	}
-	pParent->Proceed(pParent->m_pHookableTiles, pParent->m_MainRules, Width, Height);
+
+	for(auto &Thread : vThreads)
+	{
+		Thread.join();
+	}
+
+	vThreads.clear();
+
+	for(int x = 0; x < MAP_CHUNK_WIDTH; x ++)
+	{
+		for(int y = 0; y < MAP_CHUNK_HEIGHT; y ++)
+		{
+			vThreads.push_back(std::thread(ProceedThread, x, y));
+		}
+	}
+
+	for(auto &Thread : vThreads)
+	{
+		Thread.join();
+	}
 
 	pParent->m_HookableReady = true;
 
@@ -627,8 +684,8 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 		return;
 	}
 
-	int Width = g_Config.m_SvGeneratedMapWidth;
-	int Height = g_Config.m_SvGeneratedMapHeight;
+	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
+	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
 
 	pParent->m_pUnhookableTiles = new CTile[Width*Height];
 	for(int x = 0;x < Width;x ++)
@@ -647,7 +704,7 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 			}
 		}
 	}
-	pParent->Proceed(pParent->m_pUnhookableTiles, pParent->m_UnhookableRules, Width, Height);
+	pParent->Proceed(pParent->m_pUnhookableTiles, pParent->m_UnhookableRules, vec2(0, 0), vec2(Width, Height));
 
 	pParent->m_UnhookableReady = true;
 
@@ -656,8 +713,8 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 
 void CMapGen::GenerateMap()
 {
-	int Width = g_Config.m_SvGeneratedMapWidth;
-	int Height = g_Config.m_SvGeneratedMapHeight;
+	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
+	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
 
 	// save version
 	{
@@ -707,7 +764,7 @@ void CMapGen::GenerateMap()
 		StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), "Backgroundtiles");
 
 		int ImageID = AddEmbeddedImage("spacetiles", 1024, 1024);
-		Proceed(m_pBackGroundTiles, m_BackgroundRules, Width, Height);
+		Proceed(m_pBackGroundTiles, m_BackgroundRules, vec2(0, 0), vec2(Width, Height));
 		AddTile(m_pBackGroundTiles, "BackgroundTiles", ImageID, vec4(155, 155, 155, 255));
 		
 		m_DataFile.AddItem(MAPITEMTYPE_GROUP, m_NumGroups++, sizeof(Item), &Item);
@@ -772,12 +829,15 @@ void CMapGen::GenerateMap()
 	return;
 }
 
-void CMapGen::Proceed(CTile *pTiles, int ConfigID, int Width, int Height)
+void CMapGen::Proceed(CTile *pTiles, int ConfigID, vec2 StartPos, vec2 EndPos)
 {
 	if(ConfigID < 0 || ConfigID >= (int) m_vConfigs.size())
 		return;
 
 	CConfiguration *pConf = &m_vConfigs[ConfigID];
+
+	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
+	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
 
 	// for every run: copy tiles, automap, overwrite tiles
 	for(size_t h = 0; h < pConf->m_vRuns.size(); ++h)
@@ -785,9 +845,9 @@ void CMapGen::Proceed(CTile *pTiles, int ConfigID, int Width, int Height)
 		CRun *pRun = &pConf->m_vRuns[h];
 
 		// auto map
-		for(int y = 0; y < Height; y++)
+		for(int y = StartPos.y; y < (int) EndPos.y; y++)
 		{
-			for(int x = 0; x < Width; x++)
+			for(int x = StartPos.x; x < (int) EndPos.x; x++)
 			{
 				CTile *pTile = &(pTiles[y * Width + x]);
 
@@ -1180,6 +1240,9 @@ int CMapGen::LoadRules(const char *pImageName)
 
 void CMapGen::AddGameTile(CTile *pTile)
 {
+	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
+	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
+
 	CMapItemLayerTilemap Item;
 	Item.m_Version = 3;
 	Item.m_Layer.m_Version = 0;
@@ -1191,8 +1254,8 @@ void CMapGen::AddGameTile(CTile *pTile)
 	Item.m_Color.a = 255;
 	Item.m_ColorEnv = -1;
 	Item.m_ColorEnvOffset = 0;
-	Item.m_Width = g_Config.m_SvGeneratedMapWidth;
-	Item.m_Height = g_Config.m_SvGeneratedMapHeight;
+	Item.m_Width = Width;
+	Item.m_Height = Height;
 	Item.m_Flags = 1;
 	Item.m_Image = -1;
 
@@ -1203,6 +1266,9 @@ void CMapGen::AddGameTile(CTile *pTile)
 
 void CMapGen::AddTile(CTile *pTile, const char *LayerName, int Image, vec4 Color)
 {
+	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
+	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
+
 	CMapItemLayerTilemap Item;
 	Item.m_Version = 3;
 	Item.m_Layer.m_Version = 0;
@@ -1214,8 +1280,8 @@ void CMapGen::AddTile(CTile *pTile, const char *LayerName, int Image, vec4 Color
 	Item.m_Color.a = Color.a;
 	Item.m_ColorEnv = -1;
 	Item.m_ColorEnvOffset = 0;
-	Item.m_Width = g_Config.m_SvGeneratedMapWidth;
-	Item.m_Height = g_Config.m_SvGeneratedMapHeight;
+	Item.m_Width = Width;
+	Item.m_Height = Height;
 	Item.m_Flags = 0;
 	Item.m_Image = Image;
 

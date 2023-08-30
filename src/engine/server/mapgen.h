@@ -64,7 +64,7 @@ public:
 
 	// auto map
 	int LoadRules(const char *pImageName);
-	void Proceed(CTile *pTiles, int ConfigID, int Width, int Height);
+	void Proceed(CTile *pTiles, int ConfigID, vec2 StartPos, vec2 EndPos);
 
 	struct CIndexInfo
 	{

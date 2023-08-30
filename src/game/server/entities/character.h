@@ -176,6 +176,9 @@ public:
 		vec2 m_LastPos;
 		vec2 m_LastTargetPos;
 		vec2 m_RandomPos;
+
+		vec2 m_NowTargetPos;
+		vec2 m_TargetPos;
 	};
 	CBotInfo m_Botinfo;
 

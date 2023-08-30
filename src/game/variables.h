@@ -4,8 +4,6 @@
 #define GAME_VARIABLES_H
 #undef GAME_VARIABLES_H // this file will be included several times
 
-MACRO_CONFIG_INT(SvGeneratedMapWidth, sv_generated_map_width, 512, 512, 4096, CFGFLAG_SERVER, "generated map width")
-MACRO_CONFIG_INT(SvGeneratedMapHeight, sv_generated_map_height, 128, 128, 512, CFGFLAG_SERVER, "generated map height (do not make it so big with width)")
 MACRO_CONFIG_INT(SvGeneratedMap, sv_generated_map, 1, 0, 1, CFGFLAG_SERVER, "generated map")
 
 MACRO_CONFIG_STR(SvSqlDatabase, sv_sql_database, 256, "db_lunartee", CFGFLAG_SERVER, "SQL Database name")

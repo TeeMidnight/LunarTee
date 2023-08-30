@@ -69,6 +69,9 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 		m_LastWeapon = LT_WEAPON_HAMMER;
 	}
 	mem_zero(&m_Botinfo, sizeof(CBotInfo));
+	m_Botinfo.m_TargetPos = vec2(0, 0);
+	m_Botinfo.m_NowTargetPos = vec2(0, 0);
+	m_Botinfo.m_LastTargetPos = vec2(0, 0);
 
 	m_QueuedWeapon = -1;
 
@@ -1028,9 +1031,8 @@ void CCharacter::DoBotActions()
 			{
 				m_Botinfo.m_Direction = 1;
 			}else m_Botinfo.m_Direction = -1;
-
-			
 		}
+		
 		//Attack
 		if(pBotData->m_Hammer)
 		{
@@ -1069,17 +1071,14 @@ void CCharacter::DoBotActions()
 			}
 		}
 
-		m_Input.m_TargetX = (int)(pTarget->m_Pos.x - m_Pos.x + m_Botinfo.m_RandomPos.x);
-		m_Input.m_TargetY = (int)(pTarget->m_Pos.y - m_Pos.y + m_Botinfo.m_RandomPos.y);
+		m_Botinfo.m_TargetPos.x = (int)(pTarget->m_Pos.x - m_Pos.x + m_Botinfo.m_RandomPos.x);
+		m_Botinfo.m_TargetPos.y = (int)(pTarget->m_Pos.y - m_Pos.y + m_Botinfo.m_RandomPos.y);
 
 		if(!pBotData->m_Hammer && !pBotData->m_Gun)
 		{
-			m_Input.m_TargetX = -m_Input.m_TargetX;
-			m_Input.m_TargetY = -m_Input.m_TargetY;
+			m_Botinfo.m_TargetPos.x = -m_Botinfo.m_TargetPos.x;
+			m_Botinfo.m_TargetPos.y = -m_Botinfo.m_TargetPos.y;
 		}
-
-		m_LatestInput.m_TargetX = m_Input.m_TargetX;
-		m_LatestInput.m_TargetY = m_Input.m_TargetY;
 
 		m_Botinfo.m_LastTargetPos = pTarget->m_Pos;
 	}else 
@@ -1101,10 +1100,20 @@ void CCharacter::DoBotActions()
 		}
 
 		// set character angle
-		m_Input.m_TargetX = m_Botinfo.m_Direction ? m_Botinfo.m_Direction : LastDirection;
-		m_Input.m_TargetY = 0;
-		m_LatestInput.m_TargetX = m_Input.m_TargetX;
-		m_LatestInput.m_TargetY = m_Input.m_TargetY;
+		m_Botinfo.m_TargetPos = vec2(m_Botinfo.m_Direction * 32.0f, 0);
+	}
+
+	m_Input.m_TargetX = m_Botinfo.m_NowTargetPos.x;
+	m_Input.m_TargetY = m_Botinfo.m_NowTargetPos.y;
+	m_LatestInput.m_TargetX = m_Input.m_TargetX;
+	m_LatestInput.m_TargetY = m_Input.m_TargetY;
+
+	if(m_Botinfo.m_Direction)
+	{
+		if(distance(m_Botinfo.m_NowTargetPos, m_Botinfo.m_TargetPos) > 24.0f)
+			m_Botinfo.m_NowTargetPos += normalize(m_Botinfo.m_TargetPos - m_Botinfo.m_NowTargetPos) * 16.0f;
+		else
+			m_Botinfo.m_NowTargetPos = m_Botinfo.m_TargetPos;
 	}
 
 	CCharacter *pUnder = GameWorld()->ClosestCharacter(vec2(m_Pos.x, m_Pos.y + 32.0f), 5.0f, this);
