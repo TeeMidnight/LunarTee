@@ -1552,57 +1552,6 @@ void CGameContext::ConAbout(IConsole::IResult *pResult, void *pUserData)
 
 void CGameContext::ConLanguage(IConsole::IResult *pResult, void *pUserData)
 {
-	CGameContext *pSelf = (CGameContext *)pUserData;
-	
-	int ClientID = pResult->GetClientID();
-	
-	const char *pLanguageCode = (pResult->NumArguments()>0) ? pResult->GetString(0) : 0x0;
-	char aFinalLanguageCode[8];
-	aFinalLanguageCode[0] = 0;
-
-	if(pLanguageCode)
-	{
-		if(str_comp_nocase(pLanguageCode, "ua") == 0)
-			str_copy(aFinalLanguageCode, "uk");
-		else
-		{
-			for(int i=0; i<pSelf->Server()->Localization()->m_pLanguages.size(); i++)
-			{
-				if(str_comp_nocase(pLanguageCode, pSelf->Server()->Localization()->m_pLanguages[i]->GetFilename()) == 0)
-					str_copy(aFinalLanguageCode, pLanguageCode);
-			}
-		}
-	}
-	
-	if(aFinalLanguageCode[0])
-	{
-		pSelf->SetClientLanguage(ClientID, aFinalLanguageCode);
-		pSelf->SendChatTarget_Localization(ClientID, _("Language successfully switched to English"));
-		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "%s change language to %s", pSelf->Server()->ClientName(ClientID), aFinalLanguageCode);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "language", aBuf);	
-	}
-	else
-	{
-		const char *pLanguage = pSelf->m_apPlayers[ClientID]->GetLanguage();
-		const char *pTxtUnknownLanguage = pSelf->Server()->Localization()->Localize(pLanguage, _("Unknown language or no input language code"));
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "language", pTxtUnknownLanguage);
-
-		std::string BufferList;
-		for(int i=0; i<pSelf->Server()->Localization()->m_pLanguages.size(); i++)
-		{
-			if(i>0)
-				BufferList.append(", ");
-			BufferList.append(pSelf->Server()->Localization()->m_pLanguages[i]->GetFilename());
-		}
-		
-		dynamic_string Buffer;
-		pSelf->Server()->Localization()->Format_L(Buffer, pLanguage, _("Available languages: {STR}"), BufferList.c_str());
-		
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_CHAT, "language", Buffer.buffer());
-	}
-	
-	return;
 }
 
 void CGameContext::ConEmote(IConsole::IResult *pResult, void *pUserData)
@@ -1801,7 +1750,6 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("regenerate_map", "", CFGFLAG_SERVER, ConMapRegenerate, this, "regenerate map");
 	
 	Console()->Register("about", "", CFGFLAG_CHAT, ConAbout, this, "Show information about the mod");
-	Console()->Register("language", "?s", CFGFLAG_CHAT, ConLanguage, this, "change language");
 
 	Console()->Register("emote", "s?i", CFGFLAG_CHAT, ConEmote, this, "change emote");
 
@@ -2215,7 +2163,7 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 			Buffer.append(");");
 
 			Postgresql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
-			SendChatTarget_Localization(ClientID, _("You are now registered"));
+			SendChatTarget_Localization(ClientID, _("You are now registered."));
 			SendChatTarget_Localization(ClientID, _("Use /login <username> <password> to login"));
 		}else
 		{

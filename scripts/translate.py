@@ -2,6 +2,8 @@ import os, json
 import re
 
 Translate = {}
+JsonTranslate = {}
+SortTranslate = {}
 
 def ReadFile(path):
     File = open(path, "r")
@@ -23,20 +25,20 @@ def ReadJson():
     data = json.loads(jsonFile.read())
     
     for i in data:
-        Translate.setdefault(str(i['name']), "")
+        JsonTranslate.setdefault(str(i['name']), "")
 
     for i in data:
         for j in i['drops']:
-            Translate.setdefault(str(j['name']), "")
+            JsonTranslate.setdefault(str(j['name']), "")
 
     jsonFileName = "data/json/weapons.json"
     jsonFile = open(jsonFileName, "r")
     data = json.loads(jsonFile.read())
 
     for i in data:
-        Translate.setdefault(str(i['item']), "")
+        JsonTranslate.setdefault(str(i['item']), "")
         if 'item_ammo' in i:
-            Translate.setdefault(str(i['item_ammo']), "")
+            JsonTranslate.setdefault(str(i['item_ammo']), "")
 
     def ReadJsonFile(path):
         jsonFile = open(path, "r")
@@ -44,19 +46,22 @@ def ReadJson():
             
         if "need" in data:
             for j in data['need']:
-                Translate.setdefault(j['name'], "")
+                JsonTranslate.setdefault(j['name'], "")
         if "give" in data:
             for j in data['give']:
-                Translate.setdefault(j['name'], "")
+                JsonTranslate.setdefault(j['name'], "")
 
     for i in os.listdir("data/json/items/"):
         parentdir = os.path.join("data/json/items/", i)
         if os.path.isdir(parentdir):
-            Translate.setdefault(i, "")
+            JsonTranslate.setdefault(i, "")
             for j in os.listdir(parentdir):
                 childdir = os.path.join(parentdir, j)
                 if os.path.isfile(childdir):
                     ReadJsonFile(childdir)
+
+    for key in sorted(JsonTranslate):
+        SortTranslate.setdefault(key, "")
 
     jsonFile.close()
 
@@ -70,8 +75,8 @@ def ReadDir(dir):
             ReadFile(fulldir)
 
 def ReadLanguageFile(path):
-    for key in Translate:
-        Translate[key] = ""
+    for key in SortTranslate:
+        SortTranslate[key] = ""
 
     langfile = open(path, "r")
 
@@ -81,8 +86,8 @@ def ReadLanguageFile(path):
 
         if line[:1] == "=":
             nextkey = line[2:]
-        if line[:2] == "##" and nextkey in Translate:
-            Translate[nextkey] = line[3:]
+        if line[:2] == "##" and nextkey in SortTranslate:
+            SortTranslate[nextkey] = line[3:]
 
     langfile.close()
     
@@ -92,16 +97,21 @@ def WriteLanguageFile(path):
 
     print(f"LunarTee translation", end="\n\n", file=langfile)
 
-    for key in Translate:
+    for key in SortTranslate:
         print(f"= {key}", end="\n", file=langfile)
-        print(f"## {Translate[key]}", end="\n", file=langfile)
+        print(f"## {SortTranslate[key]}", end="\n", file=langfile)
         print("", end="\n", file=langfile)
 
     langfile.close()
 
 if __name__ == '__main__':
     ReadDir("src/")
+    
+    for key in sorted(Translate):
+        SortTranslate.setdefault(key, "")
+
     ReadJson()
+
 
     languagefiles = ['zh-CN']
 

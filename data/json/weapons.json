@@ -1,6 +1,6 @@
 [
     {
-        "item": "Hammer",
+        "item": "Wood Hammer",
         "weapon": 0
     },
     {
@@ -24,7 +24,7 @@
         "weapon": 4
     },
     {
-        "item": "Ninja",
+        "item": "Ninja Sword",
         "weapon": 5
     },
     {

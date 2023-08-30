@@ -56,7 +56,7 @@
         "hammer": false,
         "health": 20,
         "hook": false,
-        "name": "Stone",
+        "name": "Rock",
         "skin": "default",
         "spawn_proba": 60,
         "teamdamage": false

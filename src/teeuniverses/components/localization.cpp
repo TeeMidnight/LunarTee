@@ -83,24 +83,23 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pSto
 		static const char MsgIdKey[] = "= ";
 		static const char MsgStrKey[] = "## ";
 
-		if(str_comp_nocase_num(FileLine, MsgIdKey, sizeof(MsgIdKey)) == 0)
+		if(str_startswith_nocase(FileLine, MsgIdKey))
 		{
-			pKey = FileLine+sizeof(MsgIdKey);
+			pKey = FileLine+2;
 			if(pKey && pKey[0])
 			{
 				std::string Buffer(pKey);
 				pEntry = m_Translations.set(Buffer.c_str());
 			}
 		}
-		else if(pEntry && str_comp_nocase_num(FileLine, MsgStrKey, sizeof(MsgStrKey)) == 0)
+		else if(pEntry && str_startswith_nocase(FileLine, MsgStrKey))
 		{
-			const char *pValue = FileLine+sizeof(MsgStrKey);
+			const char *pValue = FileLine+3;
 			int Length = str_length(pValue) + 1;
 
 			if(Length)
 			{
 				std::string Buffer(pValue);
-				Buffer.pop_back();
 				
 				pEntry->m_apVersions = new char[Length];
 
@@ -108,7 +107,6 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pSto
 			}else
 			{
 				std::string Buffer(pKey);
-				Buffer.pop_back();
 
 				m_Translations.unset(Buffer.c_str());
 			}

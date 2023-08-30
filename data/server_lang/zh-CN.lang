@@ -1,293 +1,287 @@
 LunarTee translation
 
-= Vote aborted
-## 
-
-= Vote passed
-## 
-
-= Vote failed
-## 
-
-= '{STR}' entered the server
-## 
-
-= ===Welcome to LunarTee===
-## 
-
-= Call vote is game menu
-## 
-
-= Show clan plate to show health bar
-## 
-
-= '{STR}' entered other world
-## 
-
-= Spectators aren't allowed to start a vote.
-## 
-
-= Wait for current vote to end before calling a new one.
-## 
-
-= You must wait {INT} seconds before making another vote
-## 
-
-= '{STR}' called vote to change server option '{STR}' ({STR})
-## 
-
-= '{STR}' isn't an option on this server
-## 
-
-= Server does not allow voting to kick players
-## 
-
-= Kick voting requires {INT} players on the server
-## 
-
-= Invalid client id to kick
-## 
-
-= You can't kick yourself
-## 
-
-= You can't kick admins
+= '{STR}' backed world
 ## 
 
 = '{STR}' called for vote to kick you
-## 
+## '{STR}' 发起投票踢出你
 
-= Server does not allow voting to move players to spectators
-## 
-
-= Invalid client id to move
-## 
-
-= You can't move yourself
-## 
-
-= Please login!
-## 
-
-= Invalid spectator id {INT} used
-## 
+= '{STR}' called vote to change server option '{STR}' ({STR})
+## '{STR}' 发起投票使用服务器选项'{STR}' ({STR})
 
 = '{STR}' changed name to '{STR}'
 ## 
 
-= admin forced server option '{STR}' ({STR})
-## 
+= '{STR}' entered other world
+## '{STR}' 进入其他世界
 
-= admin moved '{STR}' to spectator ({STR})
-## 
-
-= admin forced vote yes
-## 
-
-= admin forced vote no
-## 
-
-= {STR} by {STR}
-## 
-
-= Thanks {STR}
-## 
-
-= Language successfully switched to English
-## 
-
-= Unknown language or no input language code
-## 
-
-= Available languages: {STR}
-## 
-
-= Use /register <username> <password> to register
-## 
-
-= The length of the <Username> should be between {INT}-{INT}
-## 
-
-= The length of the <Password> should be between {INT}-{INT}
-## 
-
-= Use /login <username> <password> to login
-## 
-
-= You are now registered
-## 
-
-= User already exists!
-## 
-
-= No such account
-## 
-
-= You are now logged in.
-## 
-
-= Wrong nickname!
-## 
-
-= Wrong password!
-## 
-
-= Pickable
-## 
+= '{STR}' entered the server
+## '{STR}' 进入服务器
 
 = '{STR}' is going to check the world
 ## 
 
-= '{STR}' backed world
-## 
+= '{STR}' isn't an option on this server
+## '{STR}' 在此服务器上不是一个选项
 
-= Main Menu
-## 
+= ===Welcome to LunarTee===
+## ===欢迎来到LunarTee===
+
+= Call vote is game menu
+## 投票是游戏菜单
 
 = Craft
-## 
-
-= Language
-## 
-
-= Previous Page
-## 
-
-= red team
-## 
-
-= blue team
-## 
-
-= game
-## 
-
-= spectators
-## 
-
-= No such item!
-## 
-
-= You don't have enough resources
-## 
-
-= You had {LSTR}
-## 
-
-= Making {LSTR}...
-## 
-
-= Make finish, you get {LSTR} x{INT}
-## 
-
-= Make finish, you get {LSTR}
-## 
+## 制造
 
 = Craft Menu
-## 
+## 制造菜单
+
+= Invalid client id to kick
+## 无效的客户端ID
+
+= Invalid client id to move
+## 无效的客户端ID
+
+= Invalid spectator id {INT} used
+## 无效的旁观者ID {INT}
+
+= Kick voting requires {INT} players on the server
+## 发起踢出投票至少需要{INT}名玩家在线
+
+= Language
+## 语言
+
+= Main Menu
+## 主菜单
+
+= Make finish, you get {LSTR}
+## 制造完成, 你得到了 {LSTR}
+
+= Make finish, you get {LSTR} x{INT}
+## 制造完成, 你得到了 {LSTR} x{INT}
+
+= Making {LSTR}...
+## 制造 {LSTR} 中...
+
+= No such account
+## 没有此账号!
+
+= No such item!
+## 没有此物品!
+
+= Pickable
+## 可拾取
+
+= Please login!
+## 请登录!
+
+= Previous Page
+## 上一页
 
 = Requires
-## 
+## 需要
+
+= Server does not allow voting to kick players
+## 服务器不允许投票踢出玩家
+
+= Server does not allow voting to move players to spectators
+## 服务器不允许投票移动玩家
+
+= Show clan plate to show health bar
+## 显示战队以显示血量条
+
+= Spectators aren't allowed to start a vote.
+## 旁观者不允许发起投票
+
+= Thanks {STR}
+## 感谢 {STR}
+
+= The length of the <Password> should be between {INT}-{INT}
+## <密码>的长度应当在{INT}-{INT}之间
+
+= The length of the <Username> should be between {INT}-{INT}
+## <用户名>的长度应当在{INT}-{INT}之间
+
+= Use /login <username> <password> to login
+## 使用 /login <用户名> <密码> 以登录
+
+= Use /register <username> <password> to register
+## 使用 /register <用户名> <密码> 以注册
+
+= User already exists!
+## 用户已存在
+
+= Vote aborted
+## 投票中止
+
+= Vote failed
+## 投票否决
+
+= Vote passed
+## 投票通过
+
+= Wait for current vote to end before calling a new one.
+## 等待当前投票结束再发起一个新的
+
+= Wrong nickname!
+## 错误的昵称!
+
+= Wrong password!
+## 错误的密码!
+
+= You are now logged in.
+## 你现在登录了.
+
+= You are now registered.
+## 你现在注册了.
+
+= You can't kick admins
+## 你不能踢出管理
+
+= You can't kick yourself
+## 你不能踢出你自己
+
+= You can't move yourself
+## 你不能移动你自己
+
+= You don't have enough resources
+## 你没有足够的资源
 
 = You got {LSTR} x{INT}
-## 
+## 你得到了 {LSTR} x{INT}
+
+= You had {LSTR}
+## 你已经拥有 {LSTR}
 
 = You lost {LSTR} x{INT}
-## 
+## 你失去了 {LSTR} x{INT}
 
-= Shrub
-## 
+= You must wait {INT} seconds before making another vote
+## 你必须等待{INT}秒才能发起投票
 
-= Stone
-## 
+= admin forced server option '{STR}' ({STR})
+## 管理员强制使用服务器选项 '{STR}' ({STR})
+
+= admin forced vote no
+## 管理员否决投票
+
+= admin forced vote yes
+## 管理员通过投票
+
+= admin moved '{STR}' to spectator ({STR})
+## 管理员移动'{STR}'到旁观({STR})
+
+= blue team
+## 蓝队
+
+= game
+## 游戏
+
+= red team
+## 红队
+
+= spectators
+## 旁观者
+
+= {STR} by {STR}
+## {STR} by {STR}
 
 = Bear
-## 
-
-= Chicken
-## 
-
-= Wood
-## 
-
-= Metal
-## 
-
-= Dust
-## 
-
-= Nitra
-## 
+## 熊
 
 = Bear Meat
-## 
-
-= Chicken Meat
-## 
-
-= Egg
-## 
-
-= Hammer
-## 
-
-= Gun
-## 
-
-= Gun Ammo
-## 
-
-= Shotgun
-## 
-
-= Shotgun Ammo
-## 
-
-= Grenade
-## 
-
-= Grenade Ammo
-## 
-
-= Rifle
-## 
-
-= Laser
-## 
-
-= Ninja
-## 
-
-= Freeze-Rifle
-## 
-
-= Materials
-## 
-
-= Charcoal
-## 
-
-= Eggshell
-## 
-
-= Shelled Eggs
-## 
-
-= Frame
-## 
-
-= Gunpowder
-## 
+## 熊肉
 
 = Bullets
-## 
+## 子弹
+
+= Charcoal
+## 木炭
+
+= Chicken
+## 鸡
+
+= Chicken Meat
+## 鸡肉
+
+= Dust
+## 尘土
+
+= Egg
+## 蛋
+
+= Eggshell
+## 蛋磕
 
 = Empty Ammo
-## 
+## 空子弹
+
+= Frame
+## 框架
+
+= Freeze-Rifle
+## 冻结激光枪
+
+= Grenade
+## 榴弹炮
+
+= Grenade Ammo
+## 榴弹
+
+= Gun
+## 手枪
+
+= Gun Ammo
+## 手枪子弹
+
+= Gunpowder
+## 火药
+
+= Laser
+## 激光
+
+= Materials
+## 材料
+
+= Metal
+## 金属材料
+
+= Ninja Sword
+## 忍者刀
+
+= Nitra
+## 硫磺
 
 = Plasma
-## 
+## 等离子体
+
+= Rifle
+## 激光枪
+
+= Rock
+## 岩石
+
+= Shelled Eggs
+## 剥壳蛋
+
+= Shotgun
+## 霰弹枪
+
+= Shotgun Ammo
+## 霰弹
+
+= Shrub
+## 灌木
+
+= Stone
+## 石头
 
 = Weapons
-## 
+## 武器
+
+= Wood
+## 木头
+
+= Wood Hammer
+## 木锤
 

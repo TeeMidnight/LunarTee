@@ -170,7 +170,7 @@ void CGameController::OnCharacterSpawn(class CCharacter *pChr)
 		return;
 
 	// give default weapons
-	GameServer()->Item()->SetInvItemNum("Hammer", 1, pChr->GetCID(), 0);
+	GameServer()->Item()->SetInvItemNum("Wood Hammer", 1, pChr->GetCID(), 0);
 }
 
 void CGameController::TogglePause()

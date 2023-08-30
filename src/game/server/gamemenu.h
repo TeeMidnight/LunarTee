@@ -33,7 +33,7 @@ public:
 class CMenuOption
 {
 public:
-	CMenuOption(const char* pDesc, const char* pCmd = 0, const char* pFormat = "- %s")
+	CMenuOption(const char* pDesc, const char* pCmd = 0, const char* pFormat = "- {STR}")
 	{
 		str_copy(m_aOption, pDesc);
 
@@ -43,7 +43,7 @@ public:
 			str_copy(m_aCmd, pCmd);
 			
 		if(!pFormat || !pFormat[0])
-			str_copy(m_aFormat, "- %s");
+			str_copy(m_aFormat, "- {STR}");
 		else
 			str_copy(m_aFormat, pFormat);
 	}
