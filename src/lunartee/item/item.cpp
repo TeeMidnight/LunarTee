@@ -171,7 +171,7 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 
 	std::vector<CMenuOption> Options;
 
-	Options.push_back(CMenuOption(_("Craft Menu"), 0, "#### %s ####"));
+	Options.push_back(CMenuOption(_("Craft Menu"), 0, "#### {STR} ####"));
 
 	char aCmd[VOTE_CMD_LENGTH];
 	char aCmdCraft[VOTE_CMD_LENGTH];
