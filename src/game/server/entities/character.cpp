@@ -85,7 +85,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_Core.Init(&GameWorld()->m_Core, Collision());
 	m_Core.m_Pos = m_Pos;
 	m_Core.m_ClientID = GetCID();
-	GameWorld()->m_Core.AddCharacter(&m_Core);
+	GameWorld()->m_Core.m_vpCharacters[GetCID()] = &m_Core;
 
 	m_ReckoningTick = 0;
 	m_NextDmgTick = 0;
@@ -106,7 +106,7 @@ void CCharacter::DestroyChar()
 {
 	dbg_msg("yee", "destroy %d", GetCID());
 	m_Alive = false;
-	GameWorld()->m_Core.DeleteCharacter(&m_Core);
+	GameWorld()->m_Core.DeleteCharacter(GetCID());
 	GameWorld()->DestroyEntity(this);
 	if(m_pPlayer->IsBot())
 		GameServer()->OnBotDead(GetCID());
@@ -680,7 +680,7 @@ void CCharacter::Die(int Killer, int Weapon)
 
 	m_Alive = false;
 	GameWorld()->RemoveEntity(this);
-	GameWorld()->m_Core.DeleteCharacter(&m_Core);
+	GameWorld()->m_Core.DeleteCharacter(GetCID());
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
 
 	if(m_pPlayer->IsBot())

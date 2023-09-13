@@ -7,7 +7,10 @@
 #include <base/math.h>
 
 #include <math.h>
+#include <map>
+
 #include "collision.h"
+
 #include <engine/shared/protocol.h>
 #include <generated/protocol.h>
 
@@ -173,21 +176,20 @@ class CWorldCore
 public:
 	CWorldCore()
 	{
-		m_apCharacters.clear();
+		m_vpCharacters.clear();
 	}
 
-	void AddCharacter(class CCharacterCore *pChr) { m_apCharacters.push_back(pChr); }
-	void DeleteCharacter(class CCharacterCore *pChr)
+	void DeleteCharacter(int ClientID)
 	{
-		auto i = std::find(m_apCharacters.begin(), m_apCharacters.end(), pChr);
-		if(i != m_apCharacters.end())
-			m_apCharacters.erase(i);
+		auto i = m_vpCharacters.find(ClientID);
+		if(i != m_vpCharacters.end())
+			m_vpCharacters.erase(i);
 	}
 
 	class CCharacterCore *FindCharacter(int ClientID);
 
 	CTuningParams m_Tuning;
-	std::vector<class CCharacterCore*> m_apCharacters;
+	std::map<int, class CCharacterCore*> m_vpCharacters;
 };
 
 class CCharacterCore

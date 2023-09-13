@@ -58,15 +58,9 @@ float VelocityRamp(float Value, float Start, float Range, float Curvature)
 
 CCharacterCore *CWorldCore::FindCharacter(int ClientID)
 {
-	auto i = std::find_if(m_apCharacters.begin(), m_apCharacters.end(), 
-		[ClientID](CCharacterCore *pCore)
-		{
-			return pCore->m_ClientID == ClientID;
-		});
-
-	if(i != m_apCharacters.end())
-		return *i;
-	return 0x0;
+	if(m_vpCharacters.count(ClientID))
+		return m_vpCharacters[ClientID];
+	return nullptr;
 }
 
 void CCharacterCore::Init(CWorldCore *pWorld, CCollision *pCollision)
@@ -266,22 +260,22 @@ void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
 		if(m_pWorld && pTuningParams->m_PlayerHooking)
 		{
 			float Distance = 0.0f;
-			for(auto &pCharCore : m_pWorld->m_apCharacters)
+			for(auto &pCharCore : m_pWorld->m_vpCharacters)
 			{
-				if(!pCharCore || pCharCore == this)
+				if(!pCharCore.second || pCharCore.second == this)
 					continue;
 
 				vec2 ClosestPoint;
-				if(closest_point_on_line(m_HookPos, NewPos, pCharCore->m_Pos, ClosestPoint))
+				if(closest_point_on_line(m_HookPos, NewPos, pCharCore.second->m_Pos, ClosestPoint))
 				{
-					if(distance(pCharCore->m_Pos, ClosestPoint) < PhysSize+2.0f)
+					if(distance(pCharCore.second->m_Pos, ClosestPoint) < PhysSize+2.0f)
 					{
-						if (m_HookedPlayer == -1 || distance(m_HookPos, pCharCore->m_Pos) < Distance)
+						if (m_HookedPlayer == -1 || distance(m_HookPos, pCharCore.second->m_Pos) < Distance)
 						{
 							m_TriggeredEvents |= COREEVENT_HOOK_ATTACH_PLAYER;
 							m_HookState = HOOK_GRABBED;
-							m_HookedPlayer = pCharCore->m_ClientID;
-							Distance = distance(m_HookPos, pCharCore->m_Pos);
+							m_HookedPlayer = pCharCore.second->m_ClientID;
+							Distance = distance(m_HookPos, pCharCore.second->m_Pos);
 						}
 					}
 				}
@@ -362,18 +356,18 @@ void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
 
 	if(m_pWorld)
 	{
-		for(auto &pCharCore : m_pWorld->m_apCharacters)
+		for(auto &pCharCore : m_pWorld->m_vpCharacters)
 		{
-			if(!pCharCore)
+			if(!pCharCore.second)
 				continue;
 
 			//player *p = (player*)ent;
-			if(pCharCore == this) // || !(p->flags&FLAG_ALIVE)
+			if(pCharCore.second == this) // || !(p->flags&FLAG_ALIVE)
 				continue; // make sure that we don't nudge our self
 
 			// handle player <-> player collision
-			float Distance = distance(m_Pos, pCharCore->m_Pos);
-			vec2 Dir = normalize(m_Pos - pCharCore->m_Pos);
+			float Distance = distance(m_Pos, pCharCore.second->m_Pos);
+			vec2 Dir = normalize(m_Pos - pCharCore.second->m_Pos);
 			if(pTuningParams->m_PlayerCollision && Distance < PhysSize*1.25f && Distance > 0.0f)
 			{
 				float a = (PhysSize*1.45f - Distance);
@@ -389,7 +383,7 @@ void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
 			}
 
 			// handle hook influence
-			if(m_HookedPlayer == pCharCore->m_ClientID && pTuningParams->m_PlayerHooking)
+			if(m_HookedPlayer == pCharCore.second->m_ClientID && pTuningParams->m_PlayerHooking)
 			{
 				if(Distance > PhysSize*1.50f) // TODO: fix tweakable variable
 				{
@@ -397,8 +391,8 @@ void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
 					float DragSpeed = pTuningParams->m_HookDragSpeed;
 
 					// add force to the hooked player
-					pCharCore->m_Vel.x = SaturatedAdd(-DragSpeed, DragSpeed, pCharCore->m_Vel.x, Accel*Dir.x*1.5f);
-					pCharCore->m_Vel.y = SaturatedAdd(-DragSpeed, DragSpeed, pCharCore->m_Vel.y, Accel*Dir.y*1.5f);
+					pCharCore.second->m_Vel.x = SaturatedAdd(-DragSpeed, DragSpeed, pCharCore.second->m_Vel.x, Accel*Dir.x*1.5f);
+					pCharCore.second->m_Vel.y = SaturatedAdd(-DragSpeed, DragSpeed, pCharCore.second->m_Vel.y, Accel*Dir.y*1.5f);
 
 					// add a little bit force to the guy who has the grip
 					m_Vel.x = SaturatedAdd(-DragSpeed, DragSpeed, m_Vel.x, -Accel*Dir.x*0.25f);
@@ -434,16 +428,16 @@ void CCharacterCore::Move(const CTuningParams* pTuningParams)
 		{
 			float a = i/Distance;
 			vec2 Pos = mix(m_Pos, NewPos, a);
-			for(auto &pCharCore : m_pWorld->m_apCharacters)
+			for(auto &pCharCore : m_pWorld->m_vpCharacters)
 			{
-				if(!pCharCore || pCharCore == this)
+				if(!pCharCore.second || pCharCore.second == this)
 					continue;
-				float D = distance(Pos, pCharCore->m_Pos);
+				float D = distance(Pos, pCharCore.second->m_Pos);
 				if(D < 28.0f && D > 0.0f)
 				{
 					if(a > 0.0f)
 						m_Pos = LastPos;
-					else if(distance(NewPos, pCharCore->m_Pos) > D)
+					else if(distance(NewPos, pCharCore.second->m_Pos) > D)
 						m_Pos = NewPos;
 					return;
 				}
