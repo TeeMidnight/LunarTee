@@ -427,7 +427,7 @@ endif()
 
 chash("src/generated/nethash.cpp"
   "src/engine/shared/protocol.h"
-  "${PROJECT_BINARY_DIR}/src/generated/protocol.h"
+  "src/generated/protocol.h"
   "src/game/tuning.h"
   "src/game/gamecore.cpp"
 )

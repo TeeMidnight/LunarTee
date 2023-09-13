@@ -18,7 +18,7 @@
 #include "server.h"
 
 #define MAP_CHUNK_WIDTH 64
-#define MAP_CHUNK_HEIGHT 2
+#define MAP_CHUNK_HEIGHT 4
 #define CHUNK_SIZE 32
 
 // Based on triple32inc from https://github.com/skeeto/hash-prospector/tree/79a6074062a84907df6e45b756134b74e2956760
@@ -295,6 +295,13 @@ int CMapGen::AddExternalImage(const char *pImageName, int Width, int Height)
 	return m_NumImages-1;
 }
 
+static int GetTile(CTile *pTiles, int x, int y)
+{
+	int Index = y * CHUNK_SIZE * MAP_CHUNK_WIDTH + x;
+
+	return pTiles[Index].m_Index;
+}
+
 void CMapGen::GenerateGameLayer()
 {
 	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
@@ -313,24 +320,25 @@ void CMapGen::GenerateGameLayer()
 	const siv::PerlinNoise AirPerlin{ AirSeed };
 	
 	// fill tiles to solid
-	auto FillThread = [this, Width, Height, UnhookablePerlin](int ChunkX, int ChunkY)
+	auto FillThread = [this, Width, Height, UnhookablePerlin, AirPerlin](int ChunkX, int ChunkY)
 	{
+		CTile *pTiles = m_pGameTiles;
 		for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x ++)
 		{
 			for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y ++)
 			{
-				m_pGameTiles[y*Width+x].m_Index = TILE_SOLID;
-				m_pGameTiles[y*Width+x].m_Flags = 0;
-				m_pGameTiles[y*Width+x].m_Reserved = 0;
-				m_pGameTiles[y*Width+x].m_Skip = 0;
+				pTiles[y * Width + x].m_Index = TILE_SOLID;
+				pTiles[y * Width + x].m_Flags = 0;
+				pTiles[y * Width + x].m_Reserved = 0;
+				pTiles[y * Width + x].m_Skip = 0;
 
-				m_pBackGroundTiles[y*Width+x].m_Index = 0;
-				m_pBackGroundTiles[y*Width+x].m_Flags = 0;
-				m_pBackGroundTiles[y*Width+x].m_Reserved = 0;
-				m_pBackGroundTiles[y*Width+x].m_Skip = 0;
+				m_pBackGroundTiles[y * Width + x].m_Index = 0;
+				m_pBackGroundTiles[y * Width + x].m_Flags = 0;
+				m_pBackGroundTiles[y * Width + x].m_Reserved = 0;
+				m_pBackGroundTiles[y * Width + x].m_Skip = 0;
 			}
 		}
-		
+
 		{
 			// noise create unhookable tiles
 			for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x ++)
@@ -342,10 +350,24 @@ void CMapGen::GenerateGameLayer()
 						continue;
 					}
 					const double noise = UnhookablePerlin.octave2D_01((x * 0.01), (y * 0.01), 4, 0.6);
-					if(noise < 0.2f && m_pGameTiles[y*Width+x].m_Index == TILE_SOLID)
+					if(noise < 0.2f)
 					{
-						m_pGameTiles[y*Width+x].m_Index = TILE_NOHOOK;
+						pTiles[y * Width + x].m_Index = TILE_NOHOOK;
 					}
+				}
+			}
+		}
+		
+		for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x ++)
+		{
+			int NoiseX = (x ? ((x < Width - 1) ? x : (Width - 2)) : 1);
+
+			int GenerateHeight = maximum(1, (int) (clamp(AirPerlin.octave2D_01((NoiseX * 0.01), 0, 4), (double)0.f, (double)0.9f) * Height - 1));
+			for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y ++)
+			{
+				if(y < GenerateHeight)
+				{
+					pTiles[y * Width + x].m_Index = TILE_AIR;
 				}
 			}
 		}
@@ -363,17 +385,6 @@ void CMapGen::GenerateGameLayer()
 	for(auto &Thread : vThreads)
 	{
 		Thread.join();
-	}
-
-	{
-		for(int x = 0;x < Width; x ++)
-		{
-			int GenerateHeight = maximum(1, (int) (clamp(AirPerlin.octave2D_01((x * 0.01), 0, 4), (double)0.f, (double)0.9f) * Height - 1));
-			for(int y = 0;y < GenerateHeight; y ++)
-			{
-				m_pGameTiles[y*Width+x].m_Index = TILE_AIR;
-			}
-		}
 	}
 
 	// create spawn center (for moon)
@@ -423,23 +434,9 @@ void CMapGen::GenerateGameLayer()
 	// create border
 	for(int x = 0;x < Width; x ++)
 	{
-		for(int y = 0;y < Height; y ++)
+		for(int y = Height - 4;y < Height; y ++)
 		{
-			if(x <= 3 || x >= Width-4 || y >= Height-4)
-			{
-				m_pGameTiles[y*Width+x].m_Index = TILE_SOLID;
-			}
-		}
-	}
-
-	for(int x = 0;x < Width; x ++)
-	{
-		for(int y = 0;y < 2; y ++)
-		{
-			if(m_pGameTiles[y * Width + x].m_Index != TILE_AIR)
-			{
-				m_pGameTiles[y * Width + x].m_Index = TILE_NOHOOK;
-			}
+			m_pGameTiles[y * Width + x].m_Index = TILE_SOLID;
 		}
 	}
 } 
@@ -518,10 +515,10 @@ void CMapGen::GenerateDoodadsLayer()
 	{
 		for(int y = 0;y < Height;y ++)
 		{
-			m_pDoodadsTiles[y*Width+x].m_Index = 0;
-			m_pDoodadsTiles[y*Width+x].m_Flags = 0;
-			m_pDoodadsTiles[y*Width+x].m_Reserved = 0;
-			m_pDoodadsTiles[y*Width+x].m_Skip = 0;
+			m_pDoodadsTiles[y * Width + x].m_Index = 0;
+			m_pDoodadsTiles[y * Width + x].m_Flags = 0;
+			m_pDoodadsTiles[y * Width + x].m_Reserved = 0;
+			m_pDoodadsTiles[y * Width + x].m_Skip = 0;
 		}
 	}
 
@@ -620,15 +617,15 @@ void CMapGen::GenerateHookable(CMapGen *pParent)
 		{
 			for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y ++)
 			{
-				pParent->m_pHookableTiles[y*Width+x].m_Flags = 0;
-				pParent->m_pHookableTiles[y*Width+x].m_Reserved = 0;
-				pParent->m_pHookableTiles[y*Width+x].m_Skip = 0;
-				if(pParent->m_pGameTiles[y*Width+x].m_Index == TILE_SOLID || pParent->m_pGameTiles[y*Width+x].m_Index == TILE_NOHOOK)
+				pParent->m_pHookableTiles[y * Width + x].m_Flags = 0;
+				pParent->m_pHookableTiles[y * Width + x].m_Reserved = 0;
+				pParent->m_pHookableTiles[y * Width + x].m_Skip = 0;
+				if(pParent->m_pGameTiles[y * Width + x].m_Index == TILE_SOLID || pParent->m_pGameTiles[y * Width + x].m_Index == TILE_NOHOOK)
 				{
-					pParent->m_pHookableTiles[y*Width+x].m_Index = 1;
+					pParent->m_pHookableTiles[y * Width + x].m_Index = 1;
 				}else 
 				{
-					pParent->m_pHookableTiles[y*Width+x].m_Index = 0;
+					pParent->m_pHookableTiles[y * Width + x].m_Index = 0;
 				}
 			}
 		}
@@ -692,15 +689,15 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 	{
 		for(int y = 0;y < Height;y ++)
 		{
-			pParent->m_pUnhookableTiles[y*Width+x].m_Flags = 0;
-			pParent->m_pUnhookableTiles[y*Width+x].m_Reserved = 0;
-			pParent->m_pUnhookableTiles[y*Width+x].m_Skip = 0;
-			if(y > 1 && pParent->m_pGameTiles[y*Width+x].m_Index == TILE_NOHOOK)
+			pParent->m_pUnhookableTiles[y * Width + x].m_Flags = 0;
+			pParent->m_pUnhookableTiles[y * Width + x].m_Reserved = 0;
+			pParent->m_pUnhookableTiles[y * Width + x].m_Skip = 0;
+			if(y > 1 && pParent->m_pGameTiles[y * Width + x].m_Index == TILE_NOHOOK)
 			{
-				pParent->m_pUnhookableTiles[y*Width+x].m_Index = 1;
+				pParent->m_pUnhookableTiles[y * Width + x].m_Index = 1;
 			}else 
 			{
-				pParent->m_pUnhookableTiles[y*Width+x].m_Index = 0;
+				pParent->m_pUnhookableTiles[y * Width + x].m_Index = 0;
 			}
 		}
 	}
