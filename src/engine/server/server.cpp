@@ -1914,14 +1914,11 @@ void CServer::ClearIdMap(int ClientID)
 	{
 		m_aIDMap[ClientID].m_IDMap[i] = -1;
 	}
-	m_aIDMap[ClientID].m_IDMap[ClientID] = 0;
 
 	for(int i = 0;i < VANILLA_MAX_CLIENTS; i ++)
 	{
 		m_aIDMap[ClientID].m_VanillaIDMap[i] = -1;
 	}
-	m_aIDMap[ClientID].m_VanillaIDMap[ClientID] = 0;
-
 }
 
 char *CServer::GetMapName(CMapData *pMapData)

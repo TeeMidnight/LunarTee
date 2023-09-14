@@ -2043,7 +2043,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 	int *pMap = Server()->GetIdMap(ClientID);
 	int MaxClients = (Server()->Is64Player(ClientID) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS);
 
-	std::vector<std::pair<float,int>> Dist;
+	std::vector<std::pair<float, int>> Dist;
 
 	// compute distances
 	for (int i = 0; i < MAX_CLIENTS; i++)
@@ -2059,7 +2059,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		}
 		else if(m_apPlayers[i]->GameWorld() == m_apPlayers[ClientID]->GameWorld())
 		{
-			Dist[Dist.size()-1].first = minimum(3000.f, length_squared(m_apPlayers[ClientID]->m_ViewPos - m_apPlayers[i]->m_ViewPos));
+			Dist[Dist.size()-1].first = minimum(3000.f, distance(m_apPlayers[ClientID]->m_ViewPos, m_apPlayers[i]->m_ViewPos));
 		}
 		else
 		{
@@ -2071,18 +2071,18 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 	{
 		if(m_vpBotPlayers[i]->GameWorld() != m_apPlayers[ClientID]->GameWorld())
 			continue;
+
+		if(distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos) > 3000.0f)
+			continue;
 			
 		std::pair<float,int> temp;
-		temp.first = length_squared(m_apPlayers[ClientID]->m_ViewPos - m_vpBotPlayers[i]->m_ViewPos);
-		
+		temp.first = distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos);
 		temp.second = m_vpBotPlayers[i]->GetCID();
 
 		Dist.push_back(temp);
 	}
 
-	std::nth_element(&Dist[0], &Dist[MaxClients - 1], &Dist[Dist.size()], distCompare);
-
-	for(unsigned i = 0; i < (unsigned) MaxClients - 1; i++)
+	for(int i = 1; i < MaxClients - 1; i++)
 	{
 		if(pMap[i] == -1)
 			continue;
@@ -2090,7 +2090,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		bool Found = false;
 		int FoundID;
 
-		for(FoundID = 0; FoundID < MaxClients - 1; FoundID ++)
+		for(FoundID = 0; FoundID < minimum((int) Dist.size(), MaxClients - 1); FoundID ++)
 		{
 			if(Dist[FoundID].second == pMap[i])
 			{
@@ -2112,7 +2112,10 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 	int Index = 0;
 	for(int i = 1; i < MaxClients - 1; i++)
 	{
-		if(pMap[i] == -1)
+		if(Index >= (int) Dist.size())
+			break;
+
+		if(pMap[i] == -1 || !GetPlayer(pMap[i]))
 		{
 			pMap[i] = Dist[Index].second;
 			Index ++;
