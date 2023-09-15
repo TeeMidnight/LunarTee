@@ -1,7 +1,7 @@
 LunarTee translation
 
 = '{STR}' backed world
-## 
+## '{STR}' 返回世界
 
 = '{STR}' called for vote to kick you
 ## '{STR}' 发起投票踢出你
@@ -10,7 +10,7 @@ LunarTee translation
 ## '{STR}' 发起投票使用服务器选项'{STR}' ({STR})
 
 = '{STR}' changed name to '{STR}'
-## 
+## '{STR}' 已更名为 '{STR}'
 
 = '{STR}' entered other world
 ## '{STR}' 进入其他世界
@@ -19,7 +19,7 @@ LunarTee translation
 ## '{STR}' 进入服务器
 
 = '{STR}' is going to check the world
-## 
+## '{STR}' 将去查看世界
 
 = '{STR}' isn't an option on this server
 ## '{STR}' 在此服务器上不是一个选项
@@ -211,7 +211,7 @@ LunarTee translation
 ## 蛋
 
 = Eggshell
-## 蛋磕
+## 蛋壳
 
 = Empty Ammo
 ## 空子弹

@@ -31,13 +31,14 @@
 #include <engine/shared/protocol_ex.h>
 #include <engine/shared/snapshot.h>
 
+#include <game/version.h>
+
+#include <lunartee/mapgen/mapgen.h>
+
+#include <lunartee/localization//localization.h>
+
 #include "register.h"
 #include "server.h"
-#include "server_logger.h"
-
-#include <teeuniverses/components/localization.h>
-#include <engine/server/mapgen.h>
-#include <game/version.h>
 
 #include <fstream>
 #include <sstream>

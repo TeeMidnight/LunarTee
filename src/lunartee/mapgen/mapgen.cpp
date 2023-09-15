@@ -1,5 +1,6 @@
 // Thanks ddnet
-#include <engine/server/mapgen.h>
+#include <engine/server/server.h>
+
 #include <engine/shared/config.h>
 #include <engine/shared/linereader.h>
 
@@ -15,7 +16,7 @@
 #include <thread>
 #include <time.h>
 
-#include "server.h"
+#include "mapgen.h"
 
 #define MAP_CHUNK_WIDTH 64
 #define MAP_CHUNK_HEIGHT 4

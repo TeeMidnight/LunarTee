@@ -10,8 +10,6 @@
 #include "item.h"
 #include "craft.h"
 
-#define ITEM_PATH "./data/json/items/"
-
 CMenu *CItemCore::Menu() const { return m_pGameServer->Menu(); }
 CSql *CItemCore::Postgresql() const { return m_pGameServer->Postgresql(); }
 
@@ -20,8 +18,9 @@ CItemCore::CItemCore(CGameContext *pGameServer)
     m_pGameServer = pGameServer;
     m_pCraft = new CCraftCore(this);
 	m_LastLoadItemType.clear();
+	m_LoadPath.clear();
 
-	InitItem();
+	LoadItems("./data/json/items/");
 
 	RegisterMenu();
 }
@@ -32,7 +31,7 @@ static int LoadItem(const char *pName, int IsDir, int Type, void *pUser)
 	if(!IsDir)
 	{
 		char aBuf[IO_MAX_PATH_LENGTH];
-		str_format(aBuf, sizeof(aBuf), "%s%s/%s", ITEM_PATH, pCore->m_LastLoadItemType.c_str(), pName);
+		str_format(aBuf, sizeof(aBuf), "%s%s/%s", pCore->m_LoadPath.c_str(), pCore->m_LastLoadItemType.c_str(), pName);
 		pCore->ReadItemJson(aBuf);
 	}
 	
@@ -51,7 +50,7 @@ static int LoadItemType(const char *pName, int IsDir, int Type, void *pUser)
 		pCore->m_LastLoadItemType = pName;
 
 		char aBuf[IO_MAX_PATH_LENGTH];
-		str_format(aBuf, sizeof(aBuf), "%s%s/", ITEM_PATH, pName);
+		str_format(aBuf, sizeof(aBuf), "%s%s/", pCore->m_LoadPath.c_str(), pName);
 
 		pCore->GameServer()->Storage()->ListDirectory(IStorage::TYPE_ALL, aBuf, LoadItem, pCore);
 	}
@@ -59,9 +58,11 @@ static int LoadItemType(const char *pName, int IsDir, int Type, void *pUser)
 	return 0;
 }
 
-void CItemCore::InitItem()
+void CItemCore::LoadItems(const char* pPath)
 {
-	GameServer()->Storage()->ListDirectory(IStorage::TYPE_ALL, ITEM_PATH, LoadItemType, this);
+	m_LoadPath = pPath;
+
+	GameServer()->Storage()->ListDirectory(IStorage::TYPE_ALL, pPath, LoadItemType, this);
 
 	m_ItemTypeNum = (int) m_vItems.size();
 

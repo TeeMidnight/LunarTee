@@ -8,7 +8,7 @@
 #include <engine/console.h>
 #include <engine/shared/memheap.h>
 
-#include <teeuniverses/components/localization.h>
+#include <lunartee/localization//localization.h>
 
 #include <lunartee/item/item.h>
 #include <lunartee/accounts/postgresql.h>

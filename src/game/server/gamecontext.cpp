@@ -18,7 +18,7 @@
 #include <engine/shared/json.h>
 #include <engine/shared/map.h>
 
-#include <teeuniverses/components/localization.h>
+#include <lunartee/localization//localization.h>
 #include <engine/server/crypt.h>
 
 #include <lunartee/item/item.h>
@@ -366,7 +366,7 @@ void CGameContext::SendChatTarget_Localization(int To, const char *pText, ...)
 	Msg.m_Team = 0;
 	Msg.m_ClientID = -1;
 	
-	dynamic_string Buffer;
+	std::string Buffer;
 	
 	va_list VarArgs;
 	va_start(VarArgs, pText);
@@ -378,7 +378,7 @@ void CGameContext::SendChatTarget_Localization(int To, const char *pText, ...)
 			Buffer.clear();
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
 			
-			Msg.m_pMessage = Buffer.buffer();
+			Msg.m_pMessage = Buffer.c_str();
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
 		}
 	}
@@ -454,7 +454,7 @@ void CGameContext::SendBroadcast_Localization(const char *pText, int ClientID, .
 	if(ClientID >= MAX_CLIENTS)
 		return;
 	
-	dynamic_string Buffer;
+	std::string Buffer;
 	
 	va_list VarArgs;
 	va_start(VarArgs, ClientID);
@@ -463,7 +463,7 @@ void CGameContext::SendBroadcast_Localization(const char *pText, int ClientID, .
 	if(ClientID < 0)
 	{
 		Server()->Localization()->Format_VL(Buffer, "en", _(pText), VarArgs);
-		Msg.m_pMessage = Buffer.buffer();
+		Msg.m_pMessage = Buffer.c_str();
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
 	}
 
@@ -474,9 +474,8 @@ void CGameContext::SendBroadcast_Localization(const char *pText, int ClientID, .
 			Buffer.clear();
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), _(pText), VarArgs);
 			
-			Msg.m_pMessage = Buffer.buffer();
+			Msg.m_pMessage = Buffer.c_str();
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
-			
 		}
 	}
 	
@@ -1613,9 +1612,9 @@ void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
 
 	if(!CheckStringSQL(pResult->GetString(0)) || !CheckStringSQL(pResult->GetString(1)))
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _C("Special char in accounts", "Invalid char"));
+		pSelf->SendChatTarget_Localization(ClientID, _("Invalid char"));
 
-		pSelf->SendChatTarget_Localization(ClientID, _C("Special char in accounts", "Please input 0-9, A-Z, a-z for your username and password"));
+		pSelf->SendChatTarget_Localization(ClientID, _("Please input 0-9, A-Z, a-z for your username and password"));
 		return;
 	}
 
@@ -1658,9 +1657,9 @@ void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
 
 	if(!CheckStringSQL(pResult->GetString(0)) || !CheckStringSQL(pResult->GetString(1)))
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _C("Special char in accounts", "Invalid char"));
+		pSelf->SendChatTarget_Localization(ClientID, _("Invalid char"));
 
-		pSelf->SendChatTarget_Localization(ClientID, _C("Special char in accounts", "Please input 0-9, A-Z, a-z for your username and password"));
+		pSelf->SendChatTarget_Localization(ClientID, _("Please input 0-9, A-Z, a-z for your username and password"));
 		return;
 	}
 
@@ -2072,7 +2071,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		if(m_vpBotPlayers[i]->GameWorld() != m_apPlayers[ClientID]->GameWorld())
 			continue;
 
-		if(distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos) > 3000.0f)
+		if(distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos) > 6000.0f)
 			continue;
 			
 		std::pair<float,int> temp;

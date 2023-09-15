@@ -1,5 +1,5 @@
-#ifndef ENGINE_SERVER_MAPCONVERTER_H
-#define ENGINE_SERVER_MAPCONVERTER_H
+#ifndef LUNARTEE_MAPGEN_MAPGEN_H
+#define LUNARTEE_MAPGEN_MAPGEN_H
 
 #include <base/color.h>
 
@@ -57,10 +57,7 @@ public:
 
 	void GenerateBackground();
 	void GenerateGameLayer();
-	//void GenerateSpaceTile();
 	void GenerateDoodadsLayer();
-	//void GenerateHookableLayer();
-	//void GenerateUnhookableLayer();
 
 	// auto map
 	int LoadRules(const char *pImageName);

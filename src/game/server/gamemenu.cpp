@@ -103,10 +103,9 @@ void CMenu::RegisterLanguage()
 
             Options.push_back(CMenuOption(_("Language"), 0, "#### {STR} ####"));
 
-            for(int i = 0; i < pThis->Server()->Localization()->m_pLanguages.size(); i ++)
+            for(auto &pLanguage : pThis->Server()->Localization()->m_vpLanguages)
             {
-                Options.push_back(CMenuOption(pThis->Server()->Localization()->m_pLanguages[i]->GetName(),
-                    pThis->Server()->Localization()->m_pLanguages[i]->GetFilename()));
+                Options.push_back(CMenuOption(pLanguage->GetName(), pLanguage->GetFilename()));
             }
 
             pThis->UpdateMenu(ClientID, Options, "LANGUAGE");
@@ -152,14 +151,14 @@ void CMenu::UpdateMenu(int ClientID, std::vector<CMenuOption> Options, const cha
     {
         auto &pOption = Options[i];
 
-        dynamic_string Buffer;
+        std::string Buffer;
         Server()->Localization()->Format(Buffer, m_aLanguageCode, pOption.m_aFormat, 
             Localize(pOption.m_aOption));
 
-        str_copy(pOption.m_aOption, Buffer.buffer());
+        str_copy(pOption.m_aOption, Buffer.c_str());
 
         CNetMsg_Sv_VoteOptionAdd Msg;
-        Msg.m_pDescription = Buffer.buffer();
+        Msg.m_pDescription = Buffer.c_str();
         Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
     }
     

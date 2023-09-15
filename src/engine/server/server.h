@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+#include "server_logger.h"
 
 class CSnapIDPool
 {

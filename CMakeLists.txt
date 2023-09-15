@@ -487,14 +487,12 @@ file(GLOB_RECURSE GAME_SERVER "src/game/server/*.cpp" "src/game/server/*.h")
 
 file(GLOB_RECURSE LUNARTEE_SERVER "src/lunartee/*.cpp" "src/lunartee/*.h")
 
-file(GLOB_RECURSE TEEUNIVERSES "src/teeuniverses/*.cpp" "src/teeuniverses/*.h")
-
 set(GAME_GENERATED_SERVER
   "src/generated/server_data.cpp"
   "src/generated/server_data.h"
 )
 
-set(SERVER_SRC ${ENGINE_SERVER} ${TEEUNIVERSES} ${LUNARTEE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER})
+set(SERVER_SRC ${ENGINE_SERVER} ${LUNARTEE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER})
 if(TARGET_OS STREQUAL "windows")
   set(SERVER_ICON "other/icons/${SERVER_EXECUTABLE}.rc")
 else()
