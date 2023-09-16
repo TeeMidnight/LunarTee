@@ -25,6 +25,8 @@
 #include <lunartee/item/item.h>
 #include <lunartee/item/craft.h>
 
+#include <lunartee/datacontroller.h>
+
 #include "gamecontroller.h"
 #include "gamecontext.h"
 enum
@@ -1784,6 +1786,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 	// select gametype
 	m_pController = new CGameController(this);
+	m_pDataController = new CDataController(this);
 
 	OnMenuOptionsInit();
 }

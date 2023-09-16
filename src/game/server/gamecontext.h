@@ -119,6 +119,7 @@ public:
 	std::vector<CPlayer*> m_vpBotPlayers;
 
 	CGameController *m_pController;
+	class CDataController *m_pDataController;
 	std::vector<CGameWorld*> m_vpWorlds;
 
 	// helper functions
