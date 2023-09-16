@@ -2552,10 +2552,6 @@ int main(int argc, const char **argv) // ignore_convention
 		if(str_comp("-s", argv[i]) == 0 || str_comp("--silent", argv[i]) == 0) // ignore_convention
 		{
 			Silent = true;
-#if defined(CONF_FAMILY_WINDOWS)
-			ShowWindow(GetConsoleWindow(), SW_HIDE);
-			break;
-#endif
 		}
 	}
 	std::vector<std::shared_ptr<ILogger>> vpLoggers;
@@ -2581,12 +2577,12 @@ int main(int argc, const char **argv) // ignore_convention
 	IKernel *pKernel = IKernel::Create();
 
 	// create the components
-	IEngine *pEngine = CreateEngine("Teeworlds", pFutureConsoleLogger, 2);
+	IEngine *pEngine = CreateEngine("LunarTee", pFutureConsoleLogger, 2);
 
 	// IEngineMap *pEngineMap = CreateEngineMap();
 	IGameServer *pGameServer = CreateGameServer();
 	IConsole *pConsole = CreateConsole(CFGFLAG_SERVER|CFGFLAG_ECON);
-	IStorage *pStorage = CreateStorage("Teeworlds", IStorage::STORAGETYPE_SERVER, argc, argv); // ignore_convention
+	IStorage *pStorage = CreateStorage("LunarTee", IStorage::STORAGETYPE_SERVER, argc, argv); // ignore_convention
 	IConfig *pConfig = CreateConfig();
 
 	pFutureAssertionLogger->Set(CreateAssertionLogger(pStorage, MOD_NAME));

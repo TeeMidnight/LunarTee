@@ -2246,9 +2246,9 @@ int fs_storage_path(const char *appname, char *path, int max)
 #elif defined(CONF_PLATFORM_MACOS)
 	str_format(path, max, "%s/Library/Application Support/%s", home, appname);
 #else
-	if(str_comp(appname, "Teeworlds") == 0)
+	if(str_comp(appname, "LunarTee") == 0)
 	{
-		// fallback for old directory for Teeworlds compatibility
+		// fallback for old directory for Teeworlds LunarTee compatibility
 		str_format(path, max, "%s/.%s", home, appname);
 	}
 	else
