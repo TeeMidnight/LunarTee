@@ -6,7 +6,6 @@
 #include <engine/engine.h>
 #include <engine/shared/config.h>
 #include <engine/shared/http.h>
-#include <engine/shared/json.h>
 #include <engine/shared/network.h>
 #include <engine/shared/packer.h>
 #include <engine/shared/uuid_manager.h>
@@ -400,39 +399,34 @@ void CRegister::CProtocol::CJob::Run()
 		log_error(ProtocolToSystem(m_Protocol), "error response from master");
 		return;
 	}
-	json_value *pJson = m_pRegister->ResultJson();
-	if(!pJson)
+	nlohmann::json Json = m_pRegister->ResultJson();
+	if(Json.empty())
 	{
 		log_error(ProtocolToSystem(m_Protocol), "non-JSON response from master");
 		return;
 	}
-	const json_value &Json = *pJson;
-	const json_value &StatusString = Json["status"];
-	if(StatusString.type != json_string)
+	if(Json["status"].is_string())
 	{
-		json_value_free(pJson);
 		log_error(ProtocolToSystem(m_Protocol), "invalid JSON response from master");
 		return;
 	}
 	int Status;
-	if(StatusFromString(&Status, StatusString))
+	if(StatusFromString(&Status, Json["status"].get<std::string>().c_str()))
 	{
-		log_error(ProtocolToSystem(m_Protocol), "invalid status from master: %s", (const char *)StatusString);
-		json_value_free(pJson);
+		log_error(ProtocolToSystem(m_Protocol), "invalid status from master: %s", Json["status"].get<std::string>().c_str());
 		return;
 	}
 	{
 		CLockScope ls(m_pShared->m_Lock);
 		if(Status != STATUS_OK || Status != m_pShared->m_LatestResponseStatus)
 		{
-			log_debug(ProtocolToSystem(m_Protocol), "status: %s", (const char *)StatusString);
+			log_debug(ProtocolToSystem(m_Protocol), "status: %s", ((std::string) Json["status"]).c_str());
 		}
 		if(Status == m_pShared->m_LatestResponseStatus && Status == STATUS_NEEDCHALLENGE)
 		{
 			log_error(ProtocolToSystem(m_Protocol), "ERROR: the master server reports that clients can not connect to this server.");
 			log_error(ProtocolToSystem(m_Protocol), "ERROR: configure your firewall/nat to let through udp on port %d.", m_ServerPort);
 		}
-		json_value_free(pJson);
 		if(m_Index > m_pShared->m_LatestResponseIndex)
 		{
 			m_pShared->m_LatestResponseIndex = m_Index;

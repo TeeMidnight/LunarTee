@@ -14,8 +14,9 @@
 #include <game/collision.h>
 #include <game/gamecore.h>
 
+#include <engine/external/json/json.hpp>
+
 #include <engine/shared/config.h>
-#include <engine/shared/json.h>
 #include <engine/shared/map.h>
 
 #include <lunartee/localization//localization.h>
@@ -1976,40 +1977,28 @@ void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)
 	if(!m_apPlayers[ID])
 		return;
 
-	char aCSkinName[64];
-
 	CPlayer::CTeeInfo &TeeInfo = m_apPlayers[ID]->m_TeeInfos;
 
-	char aJsonSkin[400];
-	aJsonSkin[0] = '\0';
+	nlohmann::json SkinJson;
+
+	SkinJson.push_back({{ "name", TeeInfo.m_SkinName }});
 
 	// 0.6
 	if(TeeInfo.m_UseCustomColor)
 	{
-		str_format(aJsonSkin, sizeof(aJsonSkin),
-			"\"name\":\"%s\","
-			"\"color_body\":%d,"
-			"\"color_feet\":%d",
-			EscapeJson(aCSkinName, sizeof(aCSkinName), TeeInfo.m_SkinName),
-			TeeInfo.m_ColorBody,
-			TeeInfo.m_ColorFeet);
+		SkinJson.push_back({ 
+			{ "color_body", TeeInfo.m_ColorBody},
+			{ "color_feet", TeeInfo.m_ColorFeet},
+		});
 	}
-	else
-	{
-		str_format(aJsonSkin, sizeof(aJsonSkin),
-			"\"name\":\"%s\"",
-			EscapeJson(aCSkinName, sizeof(aCSkinName), TeeInfo.m_SkinName));
-	}
-	
 
 	str_format(aBuf, BufSize,
-		",\"skin\":{"
+		",\"skin\":"
 		"%s"
-		"},"
-		"\"afk\":%s,"
+		","
+		"\"afk\":false,"
 		"\"team\":%d",
-		aJsonSkin,
-		JsonBool(false),
+		SkinJson.dump().c_str(),
 		m_apPlayers[ID]->GetTeam());
 }
 
@@ -2151,17 +2140,17 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 
 		if(!pSqlResult->size())
 		{
-			char aJsonBuf[256];
-			str_format(aJsonBuf, sizeof(aJsonBuf), 
-				"'{\"Password\": \"%s\", \"Nickname\": \"%s\"}'", 
-				PassHash.c_str(),
-				Server()->ClientName(ClientID));
+			nlohmann::json Json;
+			Json.push_back({
+				{"Password", PassHash.c_str()},
+				{"Nickname", Server()->ClientName(ClientID)}
+			});
 			
 			Buffer.clear();
 			Buffer.append("(Username, Data) VALUES ('");
 			Buffer.append(Username);
 			Buffer.append("', ");
-			Buffer.append(aJsonBuf);
+			Buffer.append(Json.dump());
 			Buffer.append(");");
 
 			Postgresql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
@@ -2213,15 +2202,14 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 
 		for(SqlResult::const_iterator Iter = pSqlResult->begin(); Iter != pSqlResult->end(); ++ Iter)
 		{
-			const char *Data = Iter["Data"].as<const char*>();
-			json_value *Json = json_parse(Data, str_length(Data));
+			nlohmann::json Json = nlohmann::json::parse(Iter["Data"].as<const char*>());
 
-			const char *pPassword = json_string_get(json_object_get(Json, "Password"));
-			const char *pNickname = json_string_get(json_object_get(Json, "Nickname"));
+			std::string Password = Json["Password"];
+			std::string Nickname = Json["Nickname"];
 
-			if(str_comp(pPassword, PassHash.c_str()) == 0)
+			if(Password == PassHash)
 			{
-				if(str_comp(pNickname, Server()->ClientName(ClientID)) == 0)
+				if(Nickname == Server()->ClientName(ClientID))
 				{
 					SendChatTarget_Localization(ClientID, _("You are now logged in."));
 					m_apPlayers[ClientID]->Login(Iter["UserID"].as<int>());

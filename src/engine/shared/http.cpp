@@ -3,10 +3,11 @@
 #include <base/log.h>
 #include <base/math.h>
 #include <base/system.h>
-#include <engine/external/json-parser/json.h>
 #include <engine/shared/config.h>
 #include <engine/storage.h>
 #include <game/version.h>
+
+#include <engine/external/json/json.hpp>
 
 #if !defined(CONF_FAMILY_WINDOWS)
 #include <csignal>
@@ -402,7 +403,7 @@ void CHttpRequest::Result(unsigned char **ppResult, size_t *pResultLength) const
 	*pResultLength = m_ResponseLength;
 }
 
-json_value *CHttpRequest::ResultJson() const
+nlohmann::json CHttpRequest::ResultJson()
 {
 	unsigned char *pResult;
 	size_t ResultLength;
@@ -411,5 +412,9 @@ json_value *CHttpRequest::ResultJson() const
 	{
 		return nullptr;
 	}
-	return json_parse((char *)pResult, ResultLength);
+
+	char aBuf[1024];
+	str_copy(aBuf, (char *) pResult, ResultLength);
+
+	return nlohmann::json::parse(aBuf);
 }

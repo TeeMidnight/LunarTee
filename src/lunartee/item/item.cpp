@@ -1,5 +1,5 @@
 
-#include <engine/shared/json.h>
+#include <engine/external/json/json.hpp>
 #include <game/server/gamecontext.h>
 
 #include <map>
@@ -102,47 +102,42 @@ void CItemCore::ReadItemJson(const char *pPath)
 		return;
 	}
 	// parse json data
-	json_value *Items = json_parse( (json_char *) pBuf, Length);
-	if(Items)
+	nlohmann::json Items = nlohmann::json::parse((char *) pBuf);
+	if(!Items.empty())
 	{
 		m_vItems[m_LastLoadItemType].push_back(CItemData());
 
 		CItemData *pData = &(*m_vItems[m_LastLoadItemType].rbegin());
-		str_copy(pData->m_aName, json_string_get(json_object_get(Items, "name")));
+		str_copy(pData->m_aName, Items["name"].get<std::string>().c_str());
 
-		const json_value *NeedArray = json_object_get(Items, "need");
-		if(NeedArray && NeedArray->type == json_array)
+		nlohmann::json Needs = Items["need"];
+		if(Needs.is_array())
 		{
 			CMakeData Need;
 			pData->m_Makeable = true;
-			for(int j = 0;j < json_array_length(NeedArray);j++)
+			for(auto& Current : Needs)
 			{
-				const json_value *pCurrent = json_array_get(NeedArray, j);
-				std::string Name(json_string_get(json_object_get(pCurrent, "name")));
 				bool SendChat = true;
-				if(json_object_get(pCurrent, "sendchat") != &json_value_none)
-					SendChat = json_boolean_get(json_object_get(pCurrent, "sendchat"));
-				int Num = json_int_get(json_object_get(pCurrent, "num"));
+				if(!Current["sendchat"].empty())
+					SendChat = Current["sendchat"].get<bool>();
 				
-				Need.m_vDatas.push_back(std::make_tuple(Name, Num, SendChat));
+				Need.m_vDatas.push_back(std::make_tuple(Current["name"], Current["num"], SendChat));
 			}
 			pData->m_Needs = Need;
 		}
 
-		const json_value *GiveArray = json_object_get(Items, "give");
-		if(GiveArray && GiveArray->type == json_array)
+		nlohmann::json Gives = Items["need"];
+		if(Gives.is_array())
 		{
 			CMakeData Give;
-			for(int j = 0;j < json_array_length(GiveArray);j++)
+			pData->m_Makeable = true;
+			for(auto& Current : Needs)
 			{
-				const json_value *pCurrent = json_array_get(GiveArray, j);
-				std::string Name(json_string_get(json_object_get(pCurrent, "name")));
 				bool SendChat = true;
-				if(json_object_get(pCurrent, "sendchat") != &json_value_none)
-					SendChat = json_boolean_get(json_object_get(pCurrent, "sendchat"));
-				int Num = json_int_get(json_object_get(pCurrent, "num"));
-
-				Give.m_vDatas.push_back(std::make_tuple(Name, Num, SendChat));
+				if(!Current["sendchat"].empty())
+					SendChat = Current["sendchat"].get<bool>();
+				
+				Give.m_vDatas.push_back(std::make_tuple(Current["name"], Current["num"], SendChat));
 			}
 			pData->m_Gives = Give;
 		}
@@ -242,17 +237,15 @@ void CItemCore::InitWeapon()
 		return;
 
 	// parse json data
-	json_value *Items = json_parse( (json_char *) pBuf, Length);
-	if(Items && Items->type == json_array)
+	nlohmann::json Items = nlohmann::json::parse((char *) pBuf);
+	if(Items.is_array())
 	{
-		for(int i = 0; i < json_array_length(Items); ++i)
+		for(auto& WeaponData : Items)
 		{
-			const json_value *pWeaponData = json_array_get(Items, i);
-
-			IWeapon *pWeapon = g_Weapons.m_aWeapons[json_int_get(json_object_get(pWeaponData, "weapon"))];
-			pWeapon->SetItemName(json_string_get(json_object_get(pWeaponData, "item")));
-			if(json_object_get(pWeaponData, "item_ammo") != &json_value_none)
-				pWeapon->SetAmmoName(json_string_get(json_object_get(pWeaponData, "item_ammo")));
+			IWeapon *pWeapon = g_Weapons.m_aWeapons[WeaponData["weapon"].get<int>()];
+			pWeapon->SetItemName(WeaponData["item"].get<std::string>().c_str());
+			if(!WeaponData["item_ammo"].empty())
+				pWeapon->SetAmmoName(WeaponData["item_ammo"].get<std::string>().c_str());
 		}
 	}
 }

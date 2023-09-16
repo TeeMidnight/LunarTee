@@ -112,7 +112,6 @@ if __name__ == '__main__':
 
     ReadJson()
 
-
     languagefiles = ['zh-CN']
 
     for filename in languagefiles:

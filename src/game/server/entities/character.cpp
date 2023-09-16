@@ -104,7 +104,6 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 void CCharacter::DestroyChar()
 {
-	dbg_msg("yee", "destroy %d", GetCID());
 	m_Alive = false;
 	GameWorld()->m_Core.DeleteCharacter(GetCID());
 	GameWorld()->DestroyEntity(this);

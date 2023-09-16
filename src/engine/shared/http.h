@@ -5,7 +5,8 @@
 #include <atomic>
 #include <engine/shared/jobs.h>
 
-typedef struct _json_value json_value;
+#include <engine/external/json/json.hpp>
+
 class IStorage;
 
 enum
@@ -153,7 +154,7 @@ public:
 	void Abort() { m_Abort = true; }
 
 	void Result(unsigned char **ppResult, size_t *pResultLength) const;
-	json_value *ResultJson() const;
+	nlohmann::json ResultJson();
 };
 
 inline std::unique_ptr<CHttpRequest> HttpHead(const char *pUrl)

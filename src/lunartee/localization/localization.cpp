@@ -1,7 +1,7 @@
 // Thanks kurosio
 #include "localization.h"
 
-#include <engine/shared/json.h>
+#include <engine/external/json/json.hpp>
 #include <engine/shared/config.h>
 #include <engine/storage.h>
 
@@ -23,7 +23,7 @@ CLocalization::CLanguage::CLanguage(const char *pName, const char *pFilename, co
 	if(pParentFilename && pParentFilename[0])
 		str_copy(m_aParentFilename, pParentFilename, sizeof(m_aParentFilename));
 	else
-		str_copy(m_aParentFilename, "en");
+		str_copy(m_aParentFilename, g_Config.m_SvDefaultLanguage);
 }
 
 CLocalization::CLanguage::~CLanguage() = default;
@@ -132,20 +132,15 @@ bool CLocalization::Init()
 		return false;
 	// extract data
 	m_pMainLanguage = 0;
-	json_value *rStart = json_parse( (json_char *) pBuf, Length);
-	if(rStart->type == json_array)
+	nlohmann::json rStart = nlohmann::json::parse( (char *) pBuf);
+	if(rStart.is_array())
 	{
-		for(int i = 0; i < json_array_length(rStart); ++i)
+		for(auto& Current : rStart)
 		{
-			const json_value *pCurrent = json_array_get(rStart, i);
-
-			const char *Name = json_string_get(json_object_get(pCurrent, "name"));
-			const char *File = json_string_get(json_object_get(pCurrent, "file"));
-			const char *Parent = json_string_get(json_object_get(pCurrent, "parent"));
-
-			m_vpLanguages.push_back(new CLanguage(Name, File, Parent));
+			m_vpLanguages.push_back(new CLanguage(Current["name"].get<std::string>().c_str(),
+				Current["file"].get<std::string>().c_str(), Current["parent"].empty() ? "" : Current["parent"].get<std::string>().c_str()));
 				
-			if(str_comp(g_Config.m_SvDefaultLanguage, File) == 0)
+			if(str_comp(g_Config.m_SvDefaultLanguage, Current["file"].get<std::string>().c_str()) == 0)
 			{
 				(* m_vpLanguages.rbegin())->Load(this, Storage());
 				

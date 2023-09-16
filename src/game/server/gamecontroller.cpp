@@ -9,7 +9,7 @@
 #include "gamecontroller.h"
 #include "gamecontext.h"
 
-#include <engine/shared/json.h>
+#include <engine/external/json/json.hpp>
 
 #include <fstream>
 #include <string.h>
@@ -427,45 +427,42 @@ static void InitBotDataThread(void *pUser)
 		return;
 
 	// parse json data
-	json_value *BotArray = json_parse( (json_char *) pBuf, Length);
-	if(BotArray->type == json_array)
+	nlohmann::json BotArray = nlohmann::json::parse((char *) pBuf);
+	if(BotArray.is_array())
 	{
-		for(int i = 0; i < json_array_length(BotArray); ++i)
+		for(auto& Current : BotArray)
 		{
-			const json_value *pCurrent = json_array_get(BotArray, i);
-
 			CBotData Data;
-			str_copy(Data.m_aName, json_string_get(json_object_get(pCurrent, "name")));
-			str_copy(Data.m_SkinName, json_string_get(json_object_get(pCurrent, "skin")));
-			if(json_object_get(pCurrent, "color_body") != &json_value_none && json_object_get(pCurrent, "color_feet") != &json_value_none)
+			str_copy(Data.m_aName, Current["name"].get<std::string>().c_str());
+			str_copy(Data.m_SkinName, Current["skin"].get<std::string>().c_str());
+			if(!Current["color_body"].empty() && !Current["color_feet"].empty())
 			{
-				Data.m_ColorBody = json_int_get(json_object_get(pCurrent, "color_body"));
-				Data.m_ColorFeet = json_int_get(json_object_get(pCurrent, "color_feet"));
+				Data.m_ColorBody = Current["color_body"].get<int>();
+				Data.m_ColorFeet = Current["color_feet"].get<int>();
 			}else
 			{
 				Data.m_ColorBody = -1;
 				Data.m_ColorFeet = -1;
 			}
-			Data.m_Health = json_int_get(json_object_get(pCurrent, "health"));
-			Data.m_AttackProba = json_int_get(json_object_get(pCurrent, "attack_proba"));
-			Data.m_SpawnProba = json_int_get(json_object_get(pCurrent, "spawn_proba"));
-			Data.m_AI = json_boolean_get(json_object_get(pCurrent, "AI"));
-			Data.m_Gun = json_boolean_get(json_object_get(pCurrent, "gun"));
-			Data.m_Hammer = json_boolean_get(json_object_get(pCurrent, "hammer"));
-			Data.m_Hook = json_boolean_get(json_object_get(pCurrent, "hook"));
-			Data.m_TeamDamage = json_boolean_get(json_object_get(pCurrent, "team_damage"));
+			Data.m_Health = Current["health"].get<int>();
+			Data.m_AttackProba = Current["attack_proba"].get<int>();
+			Data.m_SpawnProba = Current["spawn_proba"].get<int>();
+			Data.m_AI = Current["AI"].get<bool>();
+			Data.m_Gun = Current["gun"].get<bool>();
+			Data.m_Hammer = Current["hammer"].get<bool>();
+			Data.m_Hook = Current["hook"].get<bool>();
+			Data.m_TeamDamage = Current["teamdamage"].get<bool>();
 			
-			const json_value *DropsArray = json_object_get(pCurrent, "drops");
-			if(DropsArray->type == json_array)
+			nlohmann::json DropsArray = Current["drops"];
+			if(DropsArray.is_array())
 			{
-				for(int j = 0;j < json_array_length(DropsArray);j++)
+				for(auto &CurrentDrop : DropsArray)
 				{
-					const json_value *pCurrentA = json_array_get(DropsArray, j);
 					CBotDropData DropData;
-					str_copy(DropData.m_ItemName, json_string_get(json_object_get(pCurrentA, "name")));
-					DropData.m_DropProba = json_int_get(json_object_get(pCurrentA, "proba"));
-					DropData.m_MinNum = json_int_get(json_object_get(pCurrentA, "min"));
-					DropData.m_MaxNum = json_int_get(json_object_get(pCurrentA, "max"));
+					str_copy(DropData.m_ItemName, CurrentDrop["name"].get<std::string>().c_str());
+					DropData.m_DropProba = CurrentDrop["proba"].get<int>();
+					DropData.m_MinNum = CurrentDrop["min"].get<int>();
+					DropData.m_MaxNum = CurrentDrop["max"].get<int>();
 					Data.m_vDrops.push_back(DropData);
 				}
 			}
