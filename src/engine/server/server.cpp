@@ -36,7 +36,7 @@
 
 #include <lunartee/mapgen/mapgen.h>
 
-#include <lunartee/localization//localization.h>
+#include <lunartee/localization/localization.h>
 
 #include "register.h"
 #include "server.h"
