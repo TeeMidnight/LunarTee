@@ -1,5 +1,5 @@
-#ifndef LUNARTEE_ACCOUNTS_DATACORE_H
-#define LUNARTEE_ACCOUNTS_DATACORE_H
+#ifndef LUNARTEE_POSTGRESQL_H
+#define LUNARTEE_POSTGRESQL_H
 
 #define MAX_ACCOUNTS_NAME_LENTH 16
 #define MIN_ACCOUNTS_NAME_LENTH 8
@@ -25,15 +25,12 @@ enum class SqlType
 
 class CSqlConnection
 {
-	CSql *m_pSql;
 	SqlConnection *m_pConnection;
 public:
-	CSql *Sql() { return m_pSql; }
 	SqlConnection *Connection() { return m_pConnection; }
 
-	CSqlConnection(CSql *pSql)
+	CSqlConnection()
 	{
-		m_pSql = pSql;
 		m_pConnection = nullptr;
 	}
 	~CSqlConnection() = default;
@@ -73,7 +70,9 @@ public:
 	const char* IP() { return m_IP.c_str(); }
 	unsigned short Port() { return m_Port; }
 	
-    CSql(class CGameContext *pGameServer);
+	CSql() {}
+
+    void Init(class CGameContext *pGameServer);
 
 	~CSql() 
 	{
@@ -136,5 +135,8 @@ public:
 		return Execute(Buffer.c_str());
 	}
 };
+
+extern CSql g_Postgresql;
+extern CSql *Sql();
 
 #endif

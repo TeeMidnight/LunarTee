@@ -6,6 +6,8 @@
 #include <game/mapitems.h>
 #include <game/server/gameworld.h>
 
+#include <lunartee/datacontroller.h>
+
 #include <thread>
 #include <mutex>
 #include <bitset>
@@ -479,10 +481,10 @@ void CCharacter::SyncWeapon()
 			m_aWeapons[i].m_Ammo = -1;
 		}else 
 		{
-			m_aWeapons[i].m_Ammo = GameServer()->Item()->GetInvItemNum(g_Weapons.m_aWeapons[i]->GetAmmoName(), GetCID());
+			m_aWeapons[i].m_Ammo = Datas()->Item()->GetInvItemNum(g_Weapons.m_aWeapons[i]->GetAmmoName(), GetCID());
 		}
 
-		m_aWeapons[i].m_Got = GameServer()->Item()->GetInvItemNum(g_Weapons.m_aWeapons[i]->GetItemName(), GetCID());
+		m_aWeapons[i].m_Got = Datas()->Item()->GetInvItemNum(g_Weapons.m_aWeapons[i]->GetItemName(), GetCID());
 	}
 }
 
@@ -500,7 +502,7 @@ void CCharacter::OnWeaponFire(int Weapon)
 		return;
 
 	if(g_Weapons.m_aWeapons[Weapon]->GetAmmoName()[0])
-		GameServer()->Item()->AddInvItemNum(g_Weapons.m_aWeapons[Weapon]->GetAmmoName(), -1, GetCID());
+		Datas()->Item()->AddInvItemNum(g_Weapons.m_aWeapons[Weapon]->GetAmmoName(), -1, GetCID());
 }
 
 void CCharacter::Tick()

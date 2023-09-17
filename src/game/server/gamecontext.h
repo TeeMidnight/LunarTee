@@ -8,10 +8,9 @@
 #include <engine/console.h>
 #include <engine/shared/memheap.h>
 
-#include <lunartee/localization//localization.h>
+#include <lunartee/localization/localization.h>
 
 #include <lunartee/item/item.h>
-#include <lunartee/accounts/postgresql.h>
 
 #include <game/layers.h>
 #include <game/voting.h>
@@ -59,8 +58,6 @@ class CGameContext : public IGameServer
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
 	CMenu *m_pMenu;
-	CItemCore *m_pItem;
-	CSql *m_pPostgresql;
 
 	static void ConsoleOutputCallback_Chat(const char *pLine, void *pUser);
 
@@ -105,8 +102,6 @@ public:
 	class IConsole *Console() { return m_pConsole; }
 	CTuningParams *Tuning() { return &m_Tuning; }
 	CMenu *Menu() { return m_pMenu; }
-	CSql *Postgresql() { return m_pPostgresql; }
-	class CItemCore *Item() { return m_pItem; }
 
 	CGameContext();
 	~CGameContext();
@@ -119,7 +114,6 @@ public:
 	std::vector<CPlayer*> m_vpBotPlayers;
 
 	CGameController *m_pController;
-	class CDataController *m_pDataController;
 	std::vector<CGameWorld*> m_vpWorlds;
 
 	// helper functions

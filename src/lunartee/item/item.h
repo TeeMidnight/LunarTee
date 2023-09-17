@@ -32,7 +32,6 @@ public:
     
     class CCraftCore *Craft() const {return m_pCraft;}
 	class CMenu *Menu() const;
-	class CSql *Postgresql() const;
 
     void LoadItems(const char* pPath);
 

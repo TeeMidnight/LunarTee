@@ -11,6 +11,8 @@
 
 #include <engine/external/json/json.hpp>
 
+#include <lunartee/datacontroller.h>
+
 #include <fstream>
 #include <string.h>
 
@@ -39,7 +41,7 @@ CGameController::CGameController(class CGameContext *pGameServer)
 	m_BotDataInit = false;
 	
 	WeaponIniter.InitWeapons(pGameServer);
-	GameServer()->Item()->InitWeapon();
+	Datas()->Item()->InitWeapon();
 
 	InitBotData();
 }
@@ -170,7 +172,7 @@ void CGameController::OnCharacterSpawn(class CCharacter *pChr)
 		return;
 
 	// give default weapons
-	GameServer()->Item()->SetInvItemNum("Wood Hammer", 1, pChr->GetCID(), 0);
+	Datas()->Item()->SetInvItemNum("Wood Hammer", 1, pChr->GetCID(), 0);
 }
 
 void CGameController::TogglePause()
@@ -505,7 +507,7 @@ void CGameController::GiveDrop(int GiveID, CBotData BotData)
 			if(Num == 0)
 				continue;
 			const char *pName = BotData.m_vDrops[i].m_ItemName;
-			GameServer()->Item()->AddInvItemNum(pName, Num, GiveID, true, true);
+			Datas()->Item()->AddInvItemNum(pName, Num, GiveID, true, true);
 		}
 	}
 }

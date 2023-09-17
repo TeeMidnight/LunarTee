@@ -1,6 +1,9 @@
 
 #include <engine/external/json/json.hpp>
+
 #include <game/server/gamecontext.h>
+
+#include <lunartee/postgresql.h>
 
 #include <map>
 #include <mutex>
@@ -11,7 +14,6 @@
 #include "craft.h"
 
 CMenu *CItemCore::Menu() const { return m_pGameServer->Menu(); }
-CSql *CItemCore::Postgresql() const { return m_pGameServer->Postgresql(); }
 
 CItemCore::CItemCore(CGameContext *pGameServer)
 {
@@ -344,7 +346,7 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 		Buffer.append(ItemName);
 		Buffer.append("';");
 
-		SqlResult *pSqlResult = Postgresql()->Execute<SqlType::SELECT>("lt_itemdata",
+		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_itemdata",
 			Buffer.c_str(), "*");
 
 		if(!pSqlResult->size())
@@ -358,7 +360,7 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 			Buffer.append(std::to_string(Num));
 			Buffer.append(");");
 
-			Postgresql()->Execute<SqlType::INSERT>("lt_itemdata", Buffer.c_str());
+			Sql()->Execute<SqlType::INSERT>("lt_itemdata", Buffer.c_str());
 		}else
 		{
 			int ID = pSqlResult->begin()["ID"].as<int>();
@@ -370,7 +372,7 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 			Buffer.append(std::to_string(ID));
 			Buffer.append(";");
 
-			Postgresql()->Execute<SqlType::UPDATE>("lt_itemdata", Buffer.c_str());
+			Sql()->Execute<SqlType::UPDATE>("lt_itemdata", Buffer.c_str());
 		}
 
 		s_ItemMutex.unlock();

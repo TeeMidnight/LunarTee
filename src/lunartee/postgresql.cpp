@@ -62,7 +62,7 @@ SqlResult *CSqlWork::Commit(const char* pExec)
 	return pResult;
 }
 
-CSql::CSql(CGameContext *pGameServer)
+void CSql::Init(CGameContext *pGameServer)
 {
 	g_pGameServer = pGameServer;
 		
@@ -83,7 +83,7 @@ void CSql::CreateTables()
 		{
 			m_pResult = nullptr;
 			// Create connection
-			CSqlConnection *pConnection = new CSqlConnection(this);
+			CSqlConnection *pConnection = new CSqlConnection();
 			
 			pConnection->Connect();
 
@@ -127,7 +127,7 @@ SqlResult *CSql::Execute(const char* pExec)
 				delete m_pResult;
 			m_pResult = nullptr;
 			// Create connection
-			CSqlConnection *pConnection = new CSqlConnection(this);
+			CSqlConnection *pConnection = new CSqlConnection();
 			
 			pConnection->Connect();
 
@@ -147,3 +147,6 @@ SqlResult *CSql::Execute(const char* pExec)
 
 	return m_pResult;
 }
+
+CSql g_Postgresql;
+CSql *Sql() { return &g_Postgresql; }

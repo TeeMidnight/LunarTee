@@ -26,6 +26,7 @@
 #include <lunartee/item/craft.h>
 
 #include <lunartee/datacontroller.h>
+#include <lunartee/postgresql.h>
 
 #include "gamecontroller.h"
 #include "gamecontext.h"
@@ -83,9 +84,7 @@ CGameContext::~CGameContext()
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
 
-	delete m_pPostgresql;
 	delete m_pMenu;
-	delete m_pItem;
 }
 
 void CGameContext::OnSetAuthed(int ClientID, int Level)
@@ -775,7 +774,7 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 	delete m_apPlayers[ClientID];
 	m_apPlayers[ClientID] = nullptr;
 
-	Item()->ClearInv(ClientID, false);
+	Datas()->Item()->ClearInv(ClientID, false);
 
 	m_VoteUpdate = true;
 
@@ -1775,10 +1774,10 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
 
 	m_pMenu = new CMenu(this);
-	m_pItem = new CItemCore(this);
 
-	m_pPostgresql = new CSql(this);
-	Postgresql()->CreateTables();
+	Datas()->Init(m_pServer, m_pStorage, this);
+
+	Sql()->CreateTables();
 
 	// reset everything here
 	//world = new GAMEWORLD;
@@ -1786,7 +1785,6 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 	// select gametype
 	m_pController = new CGameController(this);
-	m_pDataController = new CDataController(this);
 
 	OnMenuOptionsInit();
 }
@@ -1867,7 +1865,7 @@ IGameServer *CreateGameServer() { return new CGameContext; }
 
 void CGameContext::CraftItem(int ClientID, const char *pItemName)
 {
-	Item()->Craft()->CraftItem(pItemName, ClientID);
+	Datas()->Item()->Craft()->CraftItem(pItemName, ClientID);
 }
 
 int CGameContext::GetPlayerNum() const
@@ -1899,7 +1897,8 @@ int CGameContext::GetBotNum(CGameWorld *pGameWorld) const
 	int Num = 0;
 	for(int i = 0; i < (int) m_vpBotPlayers.size(); i ++)
 	{
-		if(m_vpBotPlayers[i]->GameWorld() == pGameWorld)
+		if(m_vpBotPlayers[i]->GameWorld() == pGameWorld && 
+			( m_vpBotPlayers[i]->GetCharacter() && !m_vpBotPlayers[i]->GetCharacter()->Pickable()))
 			Num++;
 	}
 	return Num;
@@ -2138,7 +2137,7 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 		Buffer.append(Username);
 		Buffer.append("';");
 
-		SqlResult *pSqlResult = Postgresql()->Execute<SqlType::SELECT>("lt_playerdata",
+		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
 			Buffer.c_str(), "*");
 
 		if(!pSqlResult->size())
@@ -2156,7 +2155,7 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 			Buffer.append(Json.dump());
 			Buffer.append(");");
 
-			Postgresql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
+			Sql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
 			SendChatTarget_Localization(ClientID, _("You are now registered."));
 			SendChatTarget_Localization(ClientID, _("Use /login <username> <password> to login"));
 		}else
@@ -2192,7 +2191,7 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 		Buffer.append(Username);
 		Buffer.append("';");
 
-		SqlResult *pSqlResult = Postgresql()->Execute<SqlType::SELECT>("lt_playerdata",
+		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
 			Buffer.c_str(), "*");
 
 		if(!pSqlResult->size())
