@@ -2581,7 +2581,7 @@ int main(int argc, const char **argv) // ignore_convention
 
 	// IEngineMap *pEngineMap = CreateEngineMap();
 	IGameServer *pGameServer = CreateGameServer();
-	IConsole *pConsole = CreateConsole(CFGFLAG_SERVER|CFGFLAG_ECON);
+	IConsole *pConsole = CreateConsole(CFGFLAG_SERVER | CFGFLAG_ECON);
 	IStorage *pStorage = CreateStorage("LunarTee", IStorage::STORAGETYPE_SERVER, argc, argv); // ignore_convention
 	IConfig *pConfig = CreateConfig();
 

@@ -1,23 +1,19 @@
-#ifndef GAME_SERVER_BOTDATA_H
-#define GAME_SERVER_BOTDATA_H
+#ifndef LUNARTEE_BOTDATA_H
+#define LUNARTEE_BOTDATA_H
 
 #include <base/system.h>
 #include <engine/shared/protocol.h>
 
-class CBotDropData
+struct CBotDropData
 {
-public:
-    CBotDropData() {};
     char m_ItemName[128];
     int m_DropProba;
     int m_MinNum;
     int m_MaxNum;
 };
 
-class CBotData
+struct CBotData
 {
-public:
-    CBotData() {};
     char m_aName[MAX_NAME_LENGTH];
     char m_SkinName[64];
 

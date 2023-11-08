@@ -1,8 +1,6 @@
 #ifndef GAME_SERVER_DEFINE_H
 #define GAME_SERVER_DEFINE_H
 
-#include "botdata.h"
-
 #include <base/system.h>
 
 #define MENU_CLOSETICK 200

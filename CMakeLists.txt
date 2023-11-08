@@ -270,7 +270,7 @@ if(NOT CMAKE_CROSSCOMPILING)
   find_package(PkgConfig)
 endif()
 find_package(ZLIB)
-find_package(MiniZip)
+find_package(LibZip)
 find_package(Git)
 find_package(PythonInterp)
 find_package(Curl)
@@ -341,8 +341,8 @@ endif()
 if(NOT(PNG_FOUND))
   message(SEND_ERROR "You must install libpng to compile LunarTee")
 endif()
-if(NOT(MINIZIP_FOUND))
-  message(SEND_ERROR "You must install MiniZip to compile LunarTee")
+if(NOT(LIBZIP_FOUND))
+  message(SEND_ERROR "You must install libzip to compile LunarTee")
 endif()
 
 if(TARGET_OS STREQUAL "windows")
@@ -464,7 +464,7 @@ set(LIBS
   ${PNG_LIBRARIES}
   ${CURL_LIBRARIES}
   ${ZLIB_LIBRARIES}
-  ${MINIZIP_LIBRARIES}
+  ${LIBZIP_LIBRARIES}
   ${PLATFORM_LIBS}
 )
 

@@ -24,8 +24,6 @@ class CItemCore
 
 public:
 	std::map<std::string, std::vector<CItemData>> m_vItems;
-    std::string m_LastLoadItemType;
-    std::string m_LoadPath;
 
     CItemCore(CGameContext *pGameServer);
 	CGameContext *GameServer() const { return m_pGameServer; }
@@ -33,10 +31,8 @@ public:
     class CCraftCore *Craft() const {return m_pCraft;}
 	class CMenu *Menu() const;
 
-    void LoadItems(const char* pPath);
-
-    void InitWeapon();
-    void ReadItemJson(const char *pPath);
+    void InitWeapon(std::string Buffer);
+    void ReadItemJson(std::string FileBuffer, std::string ItemType);
 
     CItemData *GetItemData(const char *Name);
     std::map<std::string, int> *GetInventory(int ClientID);

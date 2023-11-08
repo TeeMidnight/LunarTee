@@ -16,8 +16,6 @@
 #include <fstream>
 #include <string.h>
 
-static LOCK BotDataLock = 0;
-
 CGameController::CGameController(class CGameContext *pGameServer)
 {
 	m_pGameServer = pGameServer;
@@ -35,15 +33,8 @@ CGameController::CGameController(class CGameContext *pGameServer)
 
 	m_UnbalancedTick = -1;
 	m_ForceBalanced = false;
-
-	BotDataLock = lock_create();
-
-	m_BotDataInit = false;
 	
 	WeaponIniter.InitWeapons(pGameServer);
-	Datas()->Item()->InitWeapon();
-
-	InitBotData();
 }
 
 CGameController::~CGameController()
@@ -216,9 +207,6 @@ bool CGameController::CanBeMovedOnBalance(int ClientID)
 
 void CGameController::Tick()
 {
-	if(m_BotDataInit)
-		OnCreateBot();
-
 	// check for inactive players
 	if(g_Config.m_SvInactiveKickTime > 0)
 	{
@@ -399,103 +387,6 @@ bool ItemCompare(std::pair<std::string, int> a, std::pair<std::string, int> b)
 {
 	return (a.second > b.second);
 }
-
-void CGameController::OnCreateBot()
-{
-	for(int i = 0; i < (int) GameServer()->m_vpWorlds.size(); i ++)
-	{
-		int NeedSpawn = GameServer()->m_vpWorlds[i]->Collision()->GetWidth()/16;
-		int BotNum = GameServer()->GetBotNum(GameServer()->m_vpWorlds[i]);
-		while(BotNum < NeedSpawn)
-		{	
-			CBotData Data = RandomBotData();
-			GameServer()->CreateBot(GameServer()->m_vpWorlds[i], Data);
-
-			BotNum ++;
-		}
-	}
-}
-
-static void InitBotDataThread(void *pUser)
-{
-	lock_wait(BotDataLock);
-	CGameController *pController = (CGameController *) pUser;
-	// read file data into buffer
-	const char *pFilename = "./data/json/bot.json";
-	
-	void *pBuf;
-	unsigned Length;
-	if(!pController->GameServer()->Storage()->ReadFile(pFilename, IStorage::TYPE_ALL, &pBuf, &Length))
-		return;
-
-	// parse json data
-	nlohmann::json BotArray = nlohmann::json::parse((char *) pBuf);
-	if(BotArray.is_array())
-	{
-		for(auto& Current : BotArray)
-		{
-			CBotData Data;
-			str_copy(Data.m_aName, Current["name"].get<std::string>().c_str());
-			str_copy(Data.m_SkinName, Current["skin"].get<std::string>().c_str());
-			if(!Current["color_body"].empty() && !Current["color_feet"].empty())
-			{
-				Data.m_ColorBody = Current["color_body"].get<int>();
-				Data.m_ColorFeet = Current["color_feet"].get<int>();
-			}else
-			{
-				Data.m_ColorBody = -1;
-				Data.m_ColorFeet = -1;
-			}
-			Data.m_Health = Current["health"].get<int>();
-			Data.m_AttackProba = Current["attack_proba"].get<int>();
-			Data.m_SpawnProba = Current["spawn_proba"].get<int>();
-			Data.m_AI = Current["AI"].get<bool>();
-			Data.m_Gun = Current["gun"].get<bool>();
-			Data.m_Hammer = Current["hammer"].get<bool>();
-			Data.m_Hook = Current["hook"].get<bool>();
-			Data.m_TeamDamage = Current["teamdamage"].get<bool>();
-			
-			nlohmann::json DropsArray = Current["drops"];
-			if(DropsArray.is_array())
-			{
-				for(auto &CurrentDrop : DropsArray)
-				{
-					CBotDropData DropData;
-					str_copy(DropData.m_ItemName, CurrentDrop["name"].get<std::string>().c_str());
-					DropData.m_DropProba = CurrentDrop["proba"].get<int>();
-					DropData.m_MinNum = CurrentDrop["min"].get<int>();
-					DropData.m_MaxNum = CurrentDrop["max"].get<int>();
-					Data.m_vDrops.push_back(DropData);
-				}
-			}
-
-			pController->m_vBotDatas.push_back(Data);
-		}
-	}
-
-	pController->m_BotDataInit = true;
-
-	lock_unlock(BotDataLock);
-}
-
-void CGameController::InitBotData()
-{
-	void *thread = thread_init(InitBotDataThread, this, "init bot data");
-	thread_detach(thread);
-}
-
-CBotData CGameController::RandomBotData()
-{
-	CBotData Data;
-	int RandomID;
-	do
-	{
-		RandomID = random_int(0, (int) m_vBotDatas.size()-1);
-	}
-	while(random_int(1, 100) > m_vBotDatas[RandomID].m_SpawnProba);
-	Data = m_vBotDatas[RandomID];
-	return Data;
-}	
 
 void CGameController::GiveDrop(int GiveID, CBotData BotData)
 {

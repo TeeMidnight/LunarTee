@@ -126,15 +126,7 @@ public:
 
 	double GetTime();
 
-/** Bot **/
-	void OnCreateBot();
-	void InitBotData();
-	CBotData RandomBotData();
-	void GiveDrop(int GiveID, CBotData BotData);
-
-	std::vector<CBotData> m_vBotDatas;
-	bool m_BotDataInit;
-/** Bot End **/
+	void GiveDrop(int GiveID, struct CBotData BotData);
 
 	WeaponInit WeaponIniter;
 };

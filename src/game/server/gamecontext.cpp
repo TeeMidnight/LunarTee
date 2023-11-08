@@ -30,6 +30,8 @@
 
 #include "gamecontroller.h"
 #include "gamecontext.h"
+
+#include <zip.h>
 enum
 {
 	RESET,
@@ -83,6 +85,8 @@ CGameContext::~CGameContext()
 		delete pWorld;
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
+	if(!m_Resetting)
+		delete m_pBotController;
 
 	delete m_pMenu;
 }
@@ -98,6 +102,7 @@ void CGameContext::Clear()
 	CHeap *pVoteOptionHeap = m_pVoteOptionHeap;
 	CVoteOptionServer *pVoteOptionFirst = m_pVoteOptionFirst;
 	CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
+	CBotController* pController = m_pBotController;
 	CTuningParams Tuning = m_Tuning;
 
 	m_Resetting = true;
@@ -108,6 +113,7 @@ void CGameContext::Clear()
 	m_pVoteOptionHeap = pVoteOptionHeap;
 	m_pVoteOptionFirst = pVoteOptionFirst;
 	m_pVoteOptionLast = pVoteOptionLast;
+	m_pBotController = pController;
 	m_Tuning = Tuning;
 }
 
@@ -595,6 +601,9 @@ void CGameContext::SendTuningParams(int ClientID, const CTuningParams &Params)
 
 void CGameContext::OnTick()
 {
+	// update datapack
+	Datas()->Tick();
+
 	// check tuning
 	CheckPureTuning();
 
@@ -624,7 +633,9 @@ void CGameContext::OnTick()
 		m_vpWorlds[i]->m_Core.m_Tuning = m_Tuning;
 		m_vpWorlds[i]->Tick();
 	}
-	//if(world.paused) // make sure that the game object always updates
+	
+	m_pBotController->Tick();
+
 	m_pController->Tick();
 
 	// update voting
@@ -1785,6 +1796,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 	// select gametype
 	m_pController = new CGameController(this);
+	m_pBotController = new CBotController(this);
 
 	OnMenuOptionsInit();
 }

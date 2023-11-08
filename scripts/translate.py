@@ -105,12 +105,12 @@ def WriteLanguageFile(path):
     langfile.close()
 
 if __name__ == '__main__':
-    ReadDir("src/")
+    ReadDir("src/game/")
+    ReadDir("src/lunartee/")
+    ReadDir("src/engine/server/")
     
     for key in sorted(Translate):
         SortTranslate.setdefault(key, "")
-
-    ReadJson()
 
     languagefiles = ['zh-CN']
 

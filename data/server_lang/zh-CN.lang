@@ -36,6 +36,9 @@ LunarTee translation
 = Craft Menu
 ## 制造菜单
 
+= Invalid char
+## 无效的字符
+
 = Invalid client id to kick
 ## 无效的客户端ID
 
@@ -71,6 +74,9 @@ LunarTee translation
 
 = Pickable
 ## 可拾取
+
+= Please input 0-9, A-Z, a-z for your username and password
+## 请用0-9, A-Z, a-z之间的字符作为你的用户名和密码
 
 = Please login!
 ## 请登录!
@@ -185,103 +191,4 @@ LunarTee translation
 
 = {STR} by {STR}
 ## {STR} by {STR}
-
-= Bear
-## 熊
-
-= Bear Meat
-## 熊肉
-
-= Bullets
-## 子弹
-
-= Charcoal
-## 木炭
-
-= Chicken
-## 鸡
-
-= Chicken Meat
-## 鸡肉
-
-= Dust
-## 尘土
-
-= Egg
-## 蛋
-
-= Eggshell
-## 蛋壳
-
-= Empty Ammo
-## 空子弹
-
-= Frame
-## 框架
-
-= Freeze-Rifle
-## 冻结激光枪
-
-= Grenade
-## 榴弹炮
-
-= Grenade Ammo
-## 榴弹
-
-= Gun
-## 手枪
-
-= Gun Ammo
-## 手枪子弹
-
-= Gunpowder
-## 火药
-
-= Laser
-## 激光
-
-= Materials
-## 材料
-
-= Metal
-## 金属材料
-
-= Ninja Sword
-## 忍者刀
-
-= Nitra
-## 硫磺
-
-= Plasma
-## 等离子体
-
-= Rifle
-## 激光枪
-
-= Rock
-## 岩石
-
-= Shelled Eggs
-## 剥壳蛋
-
-= Shotgun
-## 霰弹枪
-
-= Shotgun Ammo
-## 霰弹
-
-= Shrub
-## 灌木
-
-= Stone
-## 石头
-
-= Weapons
-## 武器
-
-= Wood
-## 木头
-
-= Wood Hammer
-## 木锤
 

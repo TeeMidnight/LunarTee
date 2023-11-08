@@ -225,9 +225,14 @@ void CLocalization::Format_V(std::string& Buffer, const char *pLanguageCode, con
 			if(str_comp_num("STR", pText + FormatStart, 3) == 0) // string
 			{
 				Buffer += va_arg(VarArgsIter, const char *);
-			}else if(str_comp_num("LSTR", pText + FormatStart, 4) == 0) // localize string
+			}else if(str_comp_num("LSTR", pText + FormatStart, 4) == 0) // Translate string
 			{
-				Buffer += pLanguage->Localize(va_arg(VarArgsIter, const char *));
+				const char* pStr = va_arg(VarArgsIter, const char *);
+				const char* pTranslateStr = pLanguage->Localize(pStr);
+				if(!pTranslateStr || !pTranslateStr[0])
+					Buffer += pStr;
+				else 
+					Buffer += pTranslateStr;
 			}else if(str_comp_num("INT", pText + FormatStart, 3) == 0) // int
 			{
 				Buffer += std::to_string(va_arg(VarArgsIter, int));

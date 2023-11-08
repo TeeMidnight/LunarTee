@@ -262,10 +262,6 @@ int CHttpRequest::RunImpl(CURL *pUser)
 		curl_easy_setopt(pHandle, CURLOPT_FORBID_REUSE, 1L);
 	}
 
-#ifdef CONF_PLATFORM_ANDROID
-	curl_easy_setopt(pHandle, CURLOPT_CAINFO, "data/cacert.pem");
-#endif
-
 	switch(m_Type)
 	{
 	case REQUEST::GET:

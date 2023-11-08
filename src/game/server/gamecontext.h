@@ -8,9 +8,9 @@
 #include <engine/console.h>
 #include <engine/shared/memheap.h>
 
-#include <lunartee/localization/localization.h>
-
+#include <lunartee/bots/botcontroller.h>
 #include <lunartee/item/item.h>
+#include <lunartee/localization/localization.h>
 
 #include <game/layers.h>
 #include <game/voting.h>
@@ -114,6 +114,7 @@ public:
 	std::vector<CPlayer*> m_vpBotPlayers;
 
 	CGameController *m_pController;
+	CBotController *m_pBotController;
 	std::vector<CGameWorld*> m_vpWorlds;
 
 	// helper functions

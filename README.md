@@ -7,4 +7,4 @@ Depends
 =======
 On Ubuntu / Debian
 -------
-    sudo apt install postgresql libpqxx-dev libminizip-dev
+    sudo apt install postgresql libpqxx-dev libzip-dev

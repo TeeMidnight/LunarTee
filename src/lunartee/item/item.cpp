@@ -4,6 +4,7 @@
 #include <game/server/gamecontext.h>
 
 #include <lunartee/postgresql.h>
+#include <lunartee/datacontroller.h>
 
 #include <map>
 #include <mutex>
@@ -19,63 +20,8 @@ CItemCore::CItemCore(CGameContext *pGameServer)
 {
     m_pGameServer = pGameServer;
     m_pCraft = new CCraftCore(this);
-	m_LastLoadItemType.clear();
-	m_LoadPath.clear();
-
-	LoadItems("./data/json/items/");
 
 	RegisterMenu();
-}
-
-static int LoadItem(const char *pName, int IsDir, int Type, void *pUser)
-{
-	CItemCore *pCore = (CItemCore *) pUser;
-	if(!IsDir)
-	{
-		char aBuf[IO_MAX_PATH_LENGTH];
-		str_format(aBuf, sizeof(aBuf), "%s%s/%s", pCore->m_LoadPath.c_str(), pCore->m_LastLoadItemType.c_str(), pName);
-		pCore->ReadItemJson(aBuf);
-	}
-	
-	return 0;
-}
-
-static int LoadItemType(const char *pName, int IsDir, int Type, void *pUser)
-{
-	CItemCore *pCore = (CItemCore *) pUser;
-	if(IsDir)
-	{
-		if(pName[0] == '.')
-			return 0;
-
-		pCore->m_vItems[std::string(pName)] = std::vector<CItemData>();
-		pCore->m_LastLoadItemType = pName;
-
-		char aBuf[IO_MAX_PATH_LENGTH];
-		str_format(aBuf, sizeof(aBuf), "%s%s/", pCore->m_LoadPath.c_str(), pName);
-
-		pCore->GameServer()->Storage()->ListDirectory(IStorage::TYPE_ALL, aBuf, LoadItem, pCore);
-	}
-	
-	return 0;
-}
-
-void CItemCore::LoadItems(const char* pPath)
-{
-	m_LoadPath = pPath;
-
-	GameServer()->Storage()->ListDirectory(IStorage::TYPE_ALL, pPath, LoadItemType, this);
-
-	m_ItemTypeNum = (int) m_vItems.size();
-
-	for(auto &Type : m_vItems)
-	{
-		std::sort(Type.second.begin(), Type.second.end(), 
-			[](const CItemData& ItemA, const CItemData& ItemB)
-			{
-				return str_comp(ItemA.m_aName, ItemB.m_aName);
-			});
-	}
 }
 
 const char* CItemCore::GetTypesByStr(const char* pStr)
@@ -94,25 +40,25 @@ const char* CItemCore::GetTypesByStr(const char* pStr)
 	return "";
 }
 
-void CItemCore::ReadItemJson(const char *pPath)
+void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
 {
-	void *pBuf;
-	unsigned Length;
-	if(!GameServer()->Storage()->ReadFile(pPath, IStorage::TYPE_ALL, &pBuf, &Length))
-	{
-		log_error("Item", "Couldn't load item file %s", pPath);
-		return;
-	}
 	// parse json data
-	nlohmann::json Items = nlohmann::json::parse((char *) pBuf);
-	if(!Items.empty())
+	nlohmann::json Item = nlohmann::json::parse(FileBuffer);
+
+	if(!m_vItems.count(ItemType))
 	{
-		m_vItems[m_LastLoadItemType].push_back(CItemData());
+		m_vItems[ItemType] = std::vector<CItemData>();
+		m_ItemTypeNum = (int) m_vItems.size();
+	}
 
-		CItemData *pData = &(*m_vItems[m_LastLoadItemType].rbegin());
-		str_copy(pData->m_aName, Items["name"].get<std::string>().c_str());
+	if(!Item.empty())
+	{
+		m_vItems[ItemType].push_back(CItemData());
 
-		nlohmann::json Needs = Items["need"];
+		CItemData *pData = &(*m_vItems[ItemType].rbegin());
+		str_copy(pData->m_aName, Item["name"].get<std::string>().c_str());
+
+		nlohmann::json Needs = Item["need"];
 		if(Needs.is_array())
 		{
 			CMakeData Need;
@@ -128,7 +74,7 @@ void CItemCore::ReadItemJson(const char *pPath)
 			pData->m_Needs = Need;
 		}
 
-		nlohmann::json Gives = Items["need"];
+		nlohmann::json Gives = Item["need"];
 		if(Gives.is_array())
 		{
 			CMakeData Give;
@@ -229,17 +175,10 @@ void CItemCore::RegisterMenu()
     Menu()->Register("CRAFT", "MAIN", this, MenuCraft);
 }
 
-void CItemCore::InitWeapon()
+void CItemCore::InitWeapon(std::string Buffer)
 {
-	const char *pFilename = "./data/json/weapons.json";
-	
-	void *pBuf;
-	unsigned Length;
-	if(!GameServer()->Storage()->ReadFile(pFilename, IStorage::TYPE_ALL, &pBuf, &Length))
-		return;
-
 	// parse json data
-	nlohmann::json Items = nlohmann::json::parse((char *) pBuf);
+	nlohmann::json Items = nlohmann::json::parse(Buffer);
 	if(Items.is_array())
 	{
 		for(auto& WeaponData : Items)
