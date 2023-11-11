@@ -2159,6 +2159,14 @@ int CServer::Run()
 
 	m_Econ.Init(Console(), &m_ServerBan);
 
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "===========================================");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "+   |                     -----           +");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "+   |  ,   ,,---.,---..---. | ,---.,---.  +");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "+   |  |   ||   |,---||     | |---'|---'  +");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "+   |  '---''   '`---''     ' `---'`---'  +");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "+   `------                               +");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "===========================================");
+	
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "server name is '%s'", g_Config.m_SvName);
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);

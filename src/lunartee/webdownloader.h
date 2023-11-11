@@ -1,7 +1,7 @@
 #ifndef LUNARTEE_WEBDOWNLOADER_H
 #define LUNARTEE_WEBDOWNLOADER_H
 
-typedef void (*WEB_CALLBACK)(const char*, const char*);
+typedef void (*WEB_CALLBACK)(const char* pUrl, const char* pPath, const char* pFile);
 
 class CWebDownloader
 {

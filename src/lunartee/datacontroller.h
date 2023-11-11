@@ -109,7 +109,12 @@ public:
         m_pRootDir = nullptr;
     }
 
-    void CloseFile() { if(m_pFile) zip_close(m_pFile); }
+    void CloseFile() 
+    { 
+        if(m_pFile) 
+            zip_close(m_pFile); 
+        m_pFile = nullptr; 
+    }
 
     bool OpenFile(const char* pPath);
 
@@ -121,6 +126,48 @@ public:
     bool UnzipFile(std::string &ReadBuffer, CZipItem *pItem);
 };
 
+enum DatapackState
+{
+    PACKSTATE_NONE = 1<<0,
+    PACKSTATE_RELOAD = 1<<1,
+    PACKSTATE_PRELOAD = 1<<2,
+    PACKSTATE_ENABLE = 1<<3,
+    PACKSTATE_UNLOAD = 1<<4,
+};
+
+struct CDatapack
+{
+    CDatapack(const char* pPath, bool Web, bool Enable = true)
+    {
+        mem_zero(this, sizeof(CDatapack));
+
+        str_copy(Web ? m_aWebLink : m_aLocalPath, pPath);
+        m_State = PACKSTATE_RELOAD;
+        m_State |= Enable ? PACKSTATE_ENABLE : 0;
+    }
+
+    inline bool operator==(const CDatapack& Datapack)
+    {
+        if(m_aPackageID[0])
+            return str_comp(m_aPackageID, Datapack.m_aPackageID) == 0;
+        else if(m_aWebLink[0])
+            return str_comp(m_aWebLink, Datapack.m_aWebLink) == 0;
+        else if(m_aLocalPath[0])
+            return str_comp(m_aLocalPath, Datapack.m_aLocalPath) == 0;
+        return false;
+    }
+
+    char m_aLocalPath[IO_MAX_PATH_LENGTH];
+    char m_aWebLink[IO_MAX_PATH_LENGTH];
+    
+    int m_State;
+    // PackInfo
+    char m_aUnloadDesc[512];
+    char m_aFileName[128];
+    char m_aPackageName[64];
+    char m_aPackageID[32];
+};
+
 class CDataController
 {
     IServer *m_pServer;
@@ -130,19 +177,6 @@ class CDataController
     CItemCore *m_pItem;
 
     bool m_Loaded;
-
-    struct CDatapack
-    {
-        inline bool operator==(const CDatapack& Datapack)
-        {
-            return (m_LocalPath == Datapack.m_LocalPath);
-        }
-
-        std::string m_LocalPath;
-        std::string m_WebLink;
-        bool m_Enable;
-        bool m_Reload;
-    };
 
 public:
     IServer *Server() { return m_pServer; }
@@ -165,6 +199,7 @@ public:
     void AddDatapack(const char* pPath, bool IsWeb);
 
     void LoadDatapack(const char* pPath);
+    void PreloadDatapack(CDatapack &Datapack);
 };
 
 extern CDataController g_DataController;

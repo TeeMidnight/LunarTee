@@ -1,11 +1,16 @@
 #include <engine/storage.h>
+#include <engine/external/json/json.hpp>
 
 #include <game/server/gamecontext.h>
+#include <game/version.h>
 
 #include <lunartee/postgresql.h>
 
 #include "datacontroller.h"
-
+// unload description: wrong datapack info
+#define ULDESC_WI "This datapack isn't for the server's version or the info is wrong, please update your server."
+// unload description: maybe not lunartee datapack
+#define ULDESC_MNLTDP "This datapack maybe not for the lunartee, please check it source."
 
 CDataController::CDataController()
 {
@@ -36,47 +41,118 @@ void CDataController::Init(IServer *pServer, IStorage *pStorage, CGameContext *p
 
 void CDataController::AddDatapack(const char* pPath, bool IsWeb)
 {
+    for(auto &Datapack : Datas()->m_Datapacks)
+    {
+        if(str_comp(IsWeb ? Datapack.m_aWebLink : Datapack.m_aLocalPath, pPath) == 0)
+        {
+            return;
+        }
+    }
+
     if(IsWeb)
     {
-        m_Datapacks.push_back(CDatapack{"", pPath, true, true});
+        m_Datapacks.push_back(CDatapack(pPath, IsWeb));
     }else
     {
-        m_Datapacks.push_back(CDatapack{pPath, "", true, true});
+        m_Datapacks.push_back(CDatapack(pPath, IsWeb));
     }
 }
 
-static void DatapacksWeb(const char* pUrl, const char* pPath)
+static void DatapacksWeb(const char* pUrl, const char* pPath, const char* pFile)
 {
     for(auto &Datapack : Datas()->m_Datapacks)
     {
-        if(Datapack.m_WebLink == pUrl)
+        if(str_comp(Datapack.m_aWebLink, pUrl) == 0)
         {
-            Datapack.m_LocalPath = pPath;
-            Datapack.m_Reload = true;
-            break;
+            str_copy(Datapack.m_aLocalPath, pPath);
+            str_copy(Datapack.m_aFileName, pFile);
+            Datapack.m_State = PACKSTATE_ENABLE | PACKSTATE_PRELOAD;
         }
     }
 }
 
+void CDataController::PreloadDatapack(CDatapack &Datapack)
+{
+    const char* pPath = Datapack.m_aLocalPath;
+
+    CUnzip Unzip;
+	Unzip.OpenFile(pPath);
+	Unzip.LoadDirFile();
+    std::string Buffer;
+    if(!Unzip.UnzipFile(Buffer, "datapack.json"))
+    {
+	    fs_remove(pPath);
+        str_copy(Datapack.m_aUnloadDesc, ULDESC_MNLTDP);
+        Datapack.m_State = PACKSTATE_UNLOAD;
+        return;
+    }
+    Unzip.CloseFile();
+
+	nlohmann::json Packinfo = nlohmann::json::parse(Buffer);
+    
+    bool WrongVersion = Packinfo["datapack-version"].get<int>() != DATAPACK_VERSION || !Packinfo.contains("datapack-version");
+    bool NoNameOrID = !Packinfo.contains("package-name") || !Packinfo.contains("package-id");
+    if(WrongVersion || NoNameOrID)
+    {
+        fs_remove(pPath);
+        str_copy(Datapack.m_aUnloadDesc, ULDESC_WI);
+        Datapack.m_State = PACKSTATE_UNLOAD;
+        return;
+    }
+    // move the file to lunartee/datapacks/
+    char aNewPath[128], aNewFullPath[IO_MAX_PATH_LENGTH];
+    str_format(aNewPath, sizeof(aNewPath), "datapacks/%s", Datapack.m_aFileName);
+    Datas()->Storage()->GetCompletePath(IStorage::TYPE_SAVE, aNewPath, aNewFullPath, sizeof(aNewFullPath));
+    fs_rename(pPath, aNewFullPath);
+
+    dbg_msg("yee", "%s", aNewFullPath);
+
+    // load info to datapack
+    str_copy(Datapack.m_aLocalPath, aNewFullPath);
+    str_copy(Datapack.m_aPackageName, Packinfo["package-name"].get<std::string>().c_str());
+    str_copy(Datapack.m_aPackageID, Packinfo["package-id"].get<std::string>().c_str());
+    Datapack.m_State = PACKSTATE_RELOAD | PACKSTATE_ENABLE;
+}
+
 void CDataController::Tick()
 {
+    // remove unloadable packs
+    for(unsigned i = 0; i < m_Datapacks.size(); i ++)
+    {
+        if(!m_Datapacks[i].m_aLocalPath[0] && !m_Datapacks[i].m_aWebLink[0])
+        {
+            m_Datapacks.erase(m_Datapacks.begin() + i);
+            log_warn("data", "Removed a unloadable datapack");
+        }
+    }
+    // check
     for(auto &Datapack : m_Datapacks)
     {
-        if(Datapack.m_Reload && Datapack.m_Enable) // Load this datapack
+        if(Datapack.m_State & PACKSTATE_ENABLE) // Load this datapack
         {
-            if(!Datapack.m_LocalPath.empty())
+            if(Datapack.m_State & PACKSTATE_RELOAD)
             {
-                LoadDatapack(Datapack.m_LocalPath.c_str());
-                log_info("datas", "load %s done", Datapack.m_LocalPath.c_str());
-                Datapack.m_Reload = false;
-            }else if(!Datapack.m_WebLink.empty())
+                if(Datapack.m_aLocalPath[0])
+                {
+                    LoadDatapack(Datapack.m_aLocalPath);
+                    log_info("datas", "load datapack [%s] done", Datapack.m_aPackageID);
+                    Datapack.m_State &= ~PACKSTATE_RELOAD;
+                }else if(Datapack.m_aWebLink[0])
+                {
+                    // predownload to downloads dir
+                    m_pWebDownloader->Download(Datapack.m_aWebLink, "downloads/", DatapacksWeb);
+                    Datapack.m_State &= ~PACKSTATE_RELOAD;
+                }
+            }else if(Datapack.m_State & PACKSTATE_PRELOAD)
             {
-                m_pWebDownloader->Download(Datapack.m_WebLink.c_str(), "datapacks/", DatapacksWeb);
-                Datapack.m_Reload = false;
-            }else
-            {
-                m_Datapacks.erase(std::find(m_Datapacks.begin(), m_Datapacks.end(), Datapack));
-                log_warn("data", "Remove unloadable datapack");
+                if(!Datapack.m_aLocalPath[0])
+                {
+                    m_Datapacks.erase(std::find(m_Datapacks.begin(), m_Datapacks.end(), Datapack));
+                    log_warn("data", "Remove unloadable datapack");
+                }else
+                {
+                    PreloadDatapack(Datapack);
+                }
             }
         }
     }

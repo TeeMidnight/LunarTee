@@ -54,10 +54,10 @@ void CDownloadRequst::Download(const char* pDownloadFile)
 int CDownloadRequst::OnCompletion(int State)
 {
     log_info("webdownload", "download %s to %s done", m_aDownloadFile, m_aDownloadTo);
-
+    
     if(m_pfnCallback)
     {
-        m_pfnCallback(Url(), DestAbsolut()); // DestAbsolut() = file full path
+        m_pfnCallback(Url(), DestAbsolut(), m_aDownloadFile); // DestAbsolut() = file full path
     }
 
 	return CHttpRequest::OnCompletion(State);
