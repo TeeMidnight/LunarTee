@@ -74,7 +74,7 @@ void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
 			pData->m_Needs = Need;
 		}
 
-		nlohmann::json Gives = Item["need"];
+		nlohmann::json Gives = Item["give"];
 		if(Gives.is_array())
 		{
 			CMakeData Give;
