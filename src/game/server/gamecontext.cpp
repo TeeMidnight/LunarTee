@@ -2154,18 +2154,15 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 
 		if(!pSqlResult->size())
 		{
-			nlohmann::json Json;
-			Json.push_back({
-				{"Password", PassHash.c_str()},
-				{"Nickname", Server()->ClientName(ClientID)}
-			});
+			nlohmann::json Json = {{"Password", PassHash.c_str()}, 
+				{"Nickname", Server()->ClientName(ClientID)}};
 			
 			Buffer.clear();
 			Buffer.append("(Username, Data) VALUES ('");
 			Buffer.append(Username);
-			Buffer.append("', ");
+			Buffer.append("', '");
 			Buffer.append(Json.dump());
-			Buffer.append(");");
+			Buffer.append("');");
 
 			Sql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
 			SendChatTarget_Localization(ClientID, _("You are now registered."));
