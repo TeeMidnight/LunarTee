@@ -405,7 +405,7 @@ void CRegister::CProtocol::CJob::Run()
 		log_error(ProtocolToSystem(m_Protocol), "non-JSON response from master");
 		return;
 	}
-	if(Json["status"].is_string())
+	if(!Json["status"].is_string())
 	{
 		log_error(ProtocolToSystem(m_Protocol), "invalid JSON response from master");
 		return;
