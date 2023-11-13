@@ -6,6 +6,8 @@
 #include "ringbuffer.h"
 #include "huffman.h"
 
+#include "netclient.h"
+
 /*
 
 CURRENT:
@@ -92,12 +94,7 @@ enum
 	NET_TOKENCACHE_ADDRESSEXPIRY = NET_SEEDTIME,
 	NET_TOKENCACHE_PACKETEXPIRY = 5,
 };
-enum
-{
-	NET_TOKEN_MAX = 0xffffffff,
-	NET_TOKEN_NONE = NET_TOKEN_MAX,
-	NET_TOKEN_MASK = NET_TOKEN_MAX,
-};
+
 enum
 {
 	NET_TOKENFLAG_ALLOWBROADCAST = 1,
@@ -137,42 +134,6 @@ enum
 typedef int (*NETFUNC_DELCLIENT)(int ClientID, const char* pReason, void *pUser);
 typedef int (*NETFUNC_NEWCLIENT)(int ClientID, void *pUser);
 
-typedef unsigned int TOKEN;
-
-struct CNetChunk
-{
-	// -1 means that it's a connless packet
-	// 0 on the client means the server
-	int m_ClientID;
-	NETADDR m_Address; // only used when cid == -1
-	int m_Flags;
-	int m_DataSize;
-	const void *m_pData;
-};
-
-class CNetChunkHeader
-{
-public:
-	int m_Flags;
-	int m_Size;
-	int m_Sequence;
-
-	unsigned char *Pack(unsigned char *pData);
-	unsigned char *Unpack(unsigned char *pData);
-};
-
-class CNetChunkResend
-{
-public:
-	int m_Flags;
-	int m_DataSize;
-	unsigned char *m_pData;
-
-	int m_Sequence;
-	int64 m_LastSendTime;
-	int64 m_FirstSendTime;
-};
-
 class CNetPacketConstruct
 {
 public:
@@ -184,7 +145,6 @@ public:
 	int m_DataSize;
 	unsigned char m_aChunkData[NET_MAX_PAYLOAD];
 };
-
 
 class CNetBase
 {
@@ -251,14 +211,6 @@ private:
 
 	int m_SeedTime;
 	int64 m_NextSeedTime;
-};
-
-typedef void(*FSendCallback)(int TrackID, void *pUser);
-struct CSendCBData
-{
-	FSendCallback m_pfnCallback;
-	void *m_pCallbackUser;
-	int m_TrackID;
 };
 
 class CNetTokenCache
@@ -527,10 +479,8 @@ public:
 	class CNetBan *NetBan() const { return m_pNetBan; }
 };
 
-
-
 // client side
-class CNetClient : public CNetBase
+class CNetClient : public CMainNetClient::INetClient, public CNetBase
 {
 	CNetConnection m_Connection;
 	CNetRecvUnpacker m_RecvUnpacker;
@@ -538,12 +488,9 @@ class CNetClient : public CNetBase
 	CNetTokenCache m_TokenCache;
 	CNetTokenManager m_TokenManager;
 
-	int m_Flags;
-
 public:
 	// openness
 	bool Open(NETADDR BindAddr, class CConfig *pConfig, class IConsole *pConsole, class IEngine *pEngine, int Flags);
-	void Close();
 
 	// connection state
 	int Disconnect(const char *Reason);
@@ -551,19 +498,20 @@ public:
 
 	// communication
 	int Recv(CNetChunk *pChunk, TOKEN *pResponseToken = 0);
+	int RecvLoop();
 	int Send(CNetChunk *pChunk, TOKEN Token = NET_TOKEN_NONE, CSendCBData *pCallbackData = 0);
-	void PurgeStoredPacket(int TrackID);
+	void PurgeStoredPacket(int TrackID) override;
 
 	// pumping
-	int Update();
+	int Update() override;
 	int Flush();
 
-	int ResetErrorString();
+	int ResetErrorString() override;
 
 	// error and state
-	int State() const;
-	bool GotProblems() const;
-	const char *ErrorString() const;
+	int State() const override;
+	bool GotProblems() const override;
+	const char *ErrorString() const override;
 };
 
 #endif

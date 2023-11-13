@@ -28,14 +28,6 @@ bool CNetClient::Open(NETADDR BindAddr, CConfig *pConfig, IConsole *pConsole, IE
 	return true;
 }
 
-void CNetClient::Close()
-{
-	if(m_Connection.State() != NET_CONNSTATE_OFFLINE)
-		m_Connection.Disconnect("Client shutdown");
-	Shutdown();
-}
-
-
 int CNetClient::Disconnect(const char *pReason)
 {
 	m_Connection.Disconnect(pReason);
@@ -74,7 +66,7 @@ int CNetClient::Recv(CNetChunk *pChunk, TOKEN *pResponseToken)
 
 		// TODO: empty the recvinfo
 		NETADDR Addr;
-		int Result = UnpackPacket(&Addr, m_RecvUnpacker.m_aBuffer, &m_RecvUnpacker.m_Data);
+		int Result = CNetBase::UnpackPacket(&Addr, m_RecvUnpacker.m_aBuffer, &m_RecvUnpacker.m_Data);
 		// no more packets for now
 		if(Result > 0)
 			break;
@@ -113,6 +105,25 @@ int CNetClient::Recv(CNetChunk *pChunk, TOKEN *pResponseToken)
 					return 1;
 				}
 			}
+		}
+	}
+	return 0;
+}
+
+int CNetClient::RecvLoop()
+{
+	CNetChunk Packet;
+	while(Recv(&Packet))
+	{
+		if(Packet.m_Flags&NETSENDFLAG_CONNLESS)
+		{
+			if(m_fProcessConnlessPacket)
+				m_fProcessConnlessPacket(&Packet, m_pMainNetClient->m_pData);
+		}
+		else
+		{
+			if(m_fProcessServerPacket)
+				m_fProcessServerPacket(&Packet, m_pMainNetClient->m_pData);
 		}
 	}
 	return 0;

@@ -1334,9 +1334,15 @@ set_src(ENGINE_SHARED GLOB src/engine/shared
   memheap.h
   netban.cpp
   netban.h
+  netclient.cpp
+  netclient.h
+  network6.cpp
   network.cpp
+  network6.h
   network.h
+  network_client6.cpp
   network_client.cpp
+  network_conn6.cpp
   network_conn.cpp
   network_console.cpp
   network_console_conn.cpp
