@@ -8,6 +8,8 @@
 #include "ringbuffer.h"
 #include "huffman.h"
 
+#include "netclient.h"
+
 namespace network6
 {
 
@@ -87,6 +89,29 @@ enum
 	NET_COMPATIBILITY_SEQ=2,
 
 	NET_ENUM_TERMINATOR
+};
+
+class CNetChunkHeader
+{
+public:
+	int m_Flags;
+	int m_Size;
+	int m_Sequence;
+
+	unsigned char *Pack(unsigned char *pData);
+	unsigned char *Unpack(unsigned char *pData);
+};
+
+class CNetChunkResend
+{
+public:
+	int m_Flags;
+	int m_DataSize;
+	unsigned char *m_pData;
+
+	int m_Sequence;
+	int64 m_LastSendTime;
+	int64 m_FirstSendTime;
 };
 
 class CNetPacketConstruct
@@ -192,15 +217,17 @@ public:
 };
 
 // client side
-class CNetClient : public CMainNetClient::INetClient
+class CNetClient : public INetClient
 {
 	NETADDR m_ServerAddr;
 	CNetConnection m_Connection;
 	CNetRecvUnpacker m_RecvUnpacker;
 	NETSOCKET m_Socket;
+
+	class CConfig *m_pConfig;
 public:
 	// openness
-	bool Open(NETADDR BindAddr, class CConfig *pConfig, class IConsole *pConsole, class IEngine *pEngine, int Flags);
+	bool Open(class CConfig *pConfig, NETADDR BindAddr, class IConsole *pConsole, class IEngine *pEngine, int Flags) override;
 	int Close();
 
 	// connection state
@@ -210,7 +237,9 @@ public:
 	// communication
 	int Recv(CNetChunk *Chunk);
 	int RecvLoop() override;
-	int Send(CNetChunk *Chunk);
+	int Send(CNetChunk *pChunk, TOKEN Token = NET_TOKEN_NONE, CSendCBData *pCallbackData = 0);
+
+	void PurgeStoredPacket(int TrackID) override {};
 
 	// pumping
 	int Update();
@@ -219,10 +248,10 @@ public:
 	int ResetErrorString();
 
 	// error and state
-	int NetType() const { return m_Socket.type; }
-	int State();
-	int GotProblems();
-	const char *ErrorString();
+	int NetType() override { return m_Socket.type; }
+	int State() const override;
+	bool GotProblems() const override;
+	const char *ErrorString() const;
 };
 
 // TODO: both, fix these. This feels like a junk class for stuff that doesn't fit anywere
@@ -238,7 +267,7 @@ public:
 	static int Compress(const void *pData, int DataSize, void *pOutput, int OutputSize);
 	static int Decompress(const void *pData, int DataSize, void *pOutput, int OutputSize);
 
-	static void SendControlMsg(NETSOCKET Socket, NETADDR *pAddr, int Ack, bool UseToken, unsigned Token, int ControlMsg, const void *pExtra, int ExtraSize);
+	static void SendControlMsg(NETSOCKET Socket, NETADDR *pAddr, int Ack, int ControlMsg, const void *pExtra, int ExtraSize, TOKEN Token = NET_TOKEN_NONE);
 	static void SendPacketConnless(NETSOCKET Socket, NETADDR *pAddr, const void *pData, int DataSize);
 	static void SendPacket(NETSOCKET Socket, NETADDR *pAddr, CNetPacketConstruct *pPacket);
 	static int UnpackPacket(unsigned char *pBuffer, int Size, CNetPacketConstruct *pPacket);

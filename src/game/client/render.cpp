@@ -186,6 +186,36 @@ void CRenderTools::RenderTee(CAnimState *pAnim, const CTeeRenderInfo *pInfo, int
 					}
 					Graphics()->QuadsEnd();
 				}
+				
+				// draw xmas hat
+				if(!OutLine && pInfo->m_HatTexture.IsValid())
+				{
+					Graphics()->TextureSet(pInfo->m_HatTexture);
+					Graphics()->QuadsBegin();
+					Graphics()->QuadsSetRotation(pAnim->GetBody()->m_Angle*pi * 2);
+					Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+					int Flag = Direction.x < 0.0f ? SPRITE_FLAG_FLIP_X : 0;
+					switch(pInfo->m_HatSpriteIndex)
+					{
+					case 0:
+						SelectSprite(SPRITE_TEE_HATS_TOP1, Flag, 0, 0);
+						break;
+					case 1:
+						SelectSprite(SPRITE_TEE_HATS_TOP2, Flag, 0, 0);
+						break;
+					case 2:
+						SelectSprite(SPRITE_TEE_HATS_SIDE1, Flag, 0, 0);
+						break;
+					case 3:
+						SelectSprite(SPRITE_TEE_HATS_SIDE2, Flag, 0, 0);
+					}
+					Item = BodyItem;
+					Item.m_Width *= 1.1;
+					Item.m_Y += BaseSize * 0.05;
+					
+					Graphics()->QuadsDraw(&Item, 1);
+					Graphics()->QuadsEnd();
+				}
 
 				// draw eyes
 				Graphics()->TextureSet(pInfo->m_aTextures[SKINPART_EYES]);
@@ -226,33 +256,6 @@ void CRenderTools::RenderTee(CAnimState *pAnim, const CTeeRenderInfo *pInfo, int
 					Graphics()->QuadsDraw(&QuadItem, 1);
 				}
 				Graphics()->QuadsEnd();
-				
-				// draw xmas hat
-				if(!OutLine && pInfo->m_HatTexture.IsValid())
-				{
-					Graphics()->TextureSet(pInfo->m_HatTexture);
-					Graphics()->QuadsBegin();
-					Graphics()->QuadsSetRotation(pAnim->GetBody()->m_Angle*pi * 2);
-					Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-					int Flag = Direction.x < 0.0f ? SPRITE_FLAG_FLIP_X : 0;
-					switch(pInfo->m_HatSpriteIndex)
-					{
-					case 0:
-						SelectSprite(SPRITE_TEE_HATS_TOP1, Flag, 0, 0);
-						break;
-					case 1:
-						SelectSprite(SPRITE_TEE_HATS_TOP2, Flag, 0, 0);
-						break;
-					case 2:
-						SelectSprite(SPRITE_TEE_HATS_SIDE1, Flag, 0, 0);
-						break;
-					case 3:
-						SelectSprite(SPRITE_TEE_HATS_SIDE2, Flag, 0, 0);
-					}
-					Item = BodyItem;
-					Graphics()->QuadsDraw(&Item, 1);
-					Graphics()->QuadsEnd();
-				}
 			}
 
 			// draw feet

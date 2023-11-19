@@ -539,7 +539,7 @@ void CMenus::RenderMenubar(CUIRect Rect)
 
 	if((Client()->State() == IClient::STATE_OFFLINE && m_MenuPage == PAGE_SETTINGS) || (Client()->State() == IClient::STATE_ONLINE && m_GamePage == PAGE_SETTINGS))
 	{
-		int NumButtons = 5;
+		int NumButtons = 6;
 		float Spacing = 3.0f;
 		float ButtonWidth = (Box.w/NumButtons)-(Spacing*(NumButtons-1))/NumButtons;
 		float NotActiveAlpha = Client()->State() == IClient::STATE_ONLINE ? 0.5f : 1.0f;
@@ -572,6 +572,17 @@ void CMenus::RenderMenubar(CUIRect Rect)
 			}
 		}
 
+		Box.VSplitLeft(Spacing, 0, &Box); // little space
+		Box.VSplitLeft(ButtonWidth, &Button, &Box);
+		{
+			static CButtonContainer s_CustomButton;
+			if(DoButton_MenuTabTop(&s_CustomButton, Localize("Customize"), Config()->m_UiSettingsPage == SETTINGS_CUSTOM, &Button,
+				Config()->m_UiSettingsPage == SETTINGS_CUSTOM ? 1.0f : NotActiveAlpha, 1.0f, Corners))
+			{
+				m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_PLAYER);
+				Config()->m_UiSettingsPage = SETTINGS_CUSTOM;
+			}
+		}
 
 		// TODO: replace tee page to something else
 		// Box.VSplitLeft(Spacing, 0, &Box); // little space
@@ -1289,7 +1300,7 @@ void CMenus::RenderMenu(CUIRect Screen)
 			static CButtonContainer s_ButtonTryAgain;
 			if(DoButton_Menu(&s_ButtonTryAgain, Localize("Try again"), 0, &TryAgain) || UI()->ConsumeHotkey(CUI::HOTKEY_ENTER))
 			{
-				Client()->Connect(ServerInfo.m_aHostname);
+				Client()->Connect(ServerInfo.m_aHostname, 1);
 				m_aPasswordPopupServerAddress[0] = '\0';
 			}
 		}

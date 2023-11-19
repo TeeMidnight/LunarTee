@@ -11,6 +11,32 @@
 namespace network6
 {
 
+unsigned char *CNetChunkHeader::Pack(unsigned char *pData)
+{
+	pData[0] = ((m_Flags&3)<<6)|((m_Size>>4)&0x3f);
+	pData[1] = (m_Size&0xf);
+	if(m_Flags&NET_CHUNKFLAG_VITAL)
+	{
+		pData[1] |= (m_Sequence>>2)&0xf0;
+		pData[2] = m_Sequence&0xff;
+		return pData + 3;
+	}
+	return pData + 2;
+}
+
+unsigned char *CNetChunkHeader::Unpack(unsigned char *pData)
+{
+	m_Flags = (pData[0]>>6)&3;
+	m_Size = ((pData[0]&0x3f)<<4) | (pData[1]&0xf);
+	m_Sequence = -1;
+	if(m_Flags&NET_CHUNKFLAG_VITAL)
+	{
+		m_Sequence = ((pData[1]&0xf0)<<2) | pData[2];
+		return pData + 3;
+	}
+	return pData + 2;
+}
+
 void CNetRecvUnpacker::Clear()
 {
 	m_Valid = false;
@@ -106,6 +132,7 @@ void CNetBase::SendPacketConnless(NETSOCKET Socket, NETADDR *pAddr, const void *
 	aBuffer[5] = 0xff;
 	mem_copy(&aBuffer[6], pData, DataSize);
 	net_udp_send(Socket, pAddr, aBuffer, 6+DataSize);
+	dbg_msg("yee", "%s", aBuffer);
 }
 
 void CNetBase::SendPacket(NETSOCKET Socket, NETADDR *pAddr, CNetPacketConstruct *pPacket)
@@ -251,10 +278,10 @@ int CNetBase::UnpackPacket(unsigned char *pBuffer, int Size, CNetPacketConstruct
 }
 
 
-void CNetBase::SendControlMsg(NETSOCKET Socket, NETADDR *pAddr, int Ack, bool UseToken, unsigned Token, int ControlMsg, const void *pExtra, int ExtraSize)
+void CNetBase::SendControlMsg(NETSOCKET Socket, NETADDR *pAddr, int Ack, int ControlMsg, const void *pExtra, int ExtraSize, TOKEN Token)
 {
 	CNetPacketConstruct Construct;
-	Construct.m_Flags = NET_PACKETFLAG_CONTROL|(UseToken?NET_PACKETFLAG_TOKEN:0);
+	Construct.m_Flags = NET_PACKETFLAG_CONTROL | ((Token != NET_TOKEN_NONE) ? NET_PACKETFLAG_TOKEN : 0);
 	Construct.m_Ack = Ack;
 	Construct.m_NumChunks = 0;
 	Construct.m_Token = Token;
@@ -265,35 +292,6 @@ void CNetBase::SendControlMsg(NETSOCKET Socket, NETADDR *pAddr, int Ack, bool Us
 	// send the control message
 	CNetBase::SendPacket(Socket, pAddr, &Construct);
 }
-
-
-
-unsigned char *CNetChunkHeader::Pack(unsigned char *pData)
-{
-	pData[0] = ((m_Flags&3)<<6)|((m_Size>>4)&0x3f);
-	pData[1] = (m_Size&0xf);
-	if(m_Flags&NET_CHUNKFLAG_VITAL)
-	{
-		pData[1] |= (m_Sequence>>2)&0xf0;
-		pData[2] = m_Sequence&0xff;
-		return pData + 3;
-	}
-	return pData + 2;
-}
-
-unsigned char *CNetChunkHeader::Unpack(unsigned char *pData)
-{
-	m_Flags = (pData[0]>>6)&3;
-	m_Size = ((pData[0]&0x3f)<<4) | (pData[1]&0xf);
-	m_Sequence = -1;
-	if(m_Flags&NET_CHUNKFLAG_VITAL)
-	{
-		m_Sequence = ((pData[1]&0xf0)<<2) | pData[2];
-		return pData + 3;
-	}
-	return pData + 2;
-}
-
 
 int CNetBase::IsSeqInBackroom(int Seq, int Ack)
 {

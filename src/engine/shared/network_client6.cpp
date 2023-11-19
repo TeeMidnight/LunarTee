@@ -7,7 +7,7 @@
 namespace network6
 {
 
-bool CNetClient::Open(NETADDR BindAddr, class CConfig *pConfig, class IConsole *pConsole, class IEngine *pEngine, int Flags)
+bool CNetClient::Open(class CConfig *pConfig, NETADDR BindAddr, class IConsole *pConsole, class IEngine *pEngine, int Flags)
 {
 	// open socket
 	NETSOCKET Socket;
@@ -15,10 +15,14 @@ bool CNetClient::Open(NETADDR BindAddr, class CConfig *pConfig, class IConsole *
 	if(!Socket.type)
 		return false;
 
-	// clean it
-	mem_zero(this, sizeof(*this));
-
+	// zero out the whole structure
+	mem_zero(&m_Connection, sizeof(m_Connection));
+	mem_zero(&m_RecvUnpacker, sizeof(m_RecvUnpacker));
+	mem_zero(&m_Socket, sizeof(m_Socket));
+	mem_zero(&m_Flags, sizeof(m_Flags));
+	
 	// init
+	m_pConfig = pConfig;
 	m_Socket = Socket;
 	m_Connection.Init(m_Socket, false);
 	return true;
@@ -48,8 +52,7 @@ int CNetClient::Update()
 
 int CNetClient::Connect(NETADDR *pAddr)
 {
-	m_Connection.Connect(pAddr);
-	return 0;
+	return !m_Connection.Connect(pAddr);
 }
 
 int CNetClient::ResetErrorString()
@@ -103,6 +106,7 @@ int CNetClient::RecvLoop()
 	CNetChunk Packet;
 	while(Recv(&Packet))
 	{
+		dbg_msg("yee", "looping 0.6");
 		if(Packet.m_Flags&network6::NETSENDFLAG_CONNLESS)
 		{
 			if(m_fProcessConnlessPacket)
@@ -117,7 +121,7 @@ int CNetClient::RecvLoop()
 	return 0;
 }
 
-int CNetClient::Send(CNetChunk *pChunk)
+int CNetClient::Send(CNetChunk *pChunk, TOKEN Token, CSendCBData *pCallbackData)
 {
 	if(pChunk->m_DataSize >= NET_MAX_PAYLOAD)
 	{
@@ -128,7 +132,7 @@ int CNetClient::Send(CNetChunk *pChunk)
 	if(pChunk->m_Flags&NETSENDFLAG_CONNLESS)
 	{
 		// send connectionless packet
-		CNetBase::SendPacketConnless(m_Socket, &pChunk->m_Address, pChunk->m_pData, pChunk->m_DataSize);
+		network6::CNetBase::SendPacketConnless(m_Socket, &pChunk->m_Address, pChunk->m_pData, pChunk->m_DataSize);
 	}
 	else
 	{
@@ -146,7 +150,7 @@ int CNetClient::Send(CNetChunk *pChunk)
 	return 0;
 }
 
-int CNetClient::State()
+int CNetClient::State() const
 {
 	if(m_Connection.State() == NET_CONNSTATE_ONLINE)
 		return NETSTATE_ONLINE;
@@ -160,14 +164,14 @@ int CNetClient::Flush()
 	return m_Connection.Flush();
 }
 
-int CNetClient::GotProblems()
+bool CNetClient::GotProblems() const
 {
 	if(time_get() - m_Connection.LastRecvTime() > time_freq())
 		return 1;
 	return 0;
 }
 
-const char *CNetClient::ErrorString()
+const char *CNetClient::ErrorString() const
 {
 	return m_Connection.ErrorString();
 }

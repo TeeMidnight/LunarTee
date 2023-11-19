@@ -39,13 +39,13 @@ public:
 		bool m_Active;
 	} m_FavLookup;
 
-	class CNetClient *m_pNetClient;
+	class CMainNetClient *m_pNetClient;
 	class CConfig *m_pConfig;
 	class IConsole *m_pConsole;
 	class IEngine *m_pEngine;
 
 	CServerBrowserFavorites();
-	void Init(class CNetClient *pNetClient, class IConsole *pConsole, class IEngine *pEngine, class IConfigManager *pConfigManager);
+	void Init(class CMainNetClient *pNetClient, class IConsole *pConsole, class IEngine *pEngine, class IConfigManager *pConfigManager);
 	
 	bool AddFavoriteEx(const char *pHostname, const NETADDR *pAddr, bool DoCheck, const char *pPassword = 0);
 	CFavoriteServer *FindFavoriteByAddr(const NETADDR &Addr, int *Index);

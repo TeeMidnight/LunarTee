@@ -58,7 +58,7 @@ void CNetConnection::AckChunks(int Ack)
 {
 	while(1)
 	{
-		CNetChunkResend *pResend = m_Buffer.First();
+		network6::CNetChunkResend *pResend = m_Buffer.First();
 		if(!pResend)
 			break;
 
@@ -106,7 +106,7 @@ int CNetConnection::QueueChunkEx(int Flags, int DataSize, const void *pData, int
 		Flush();
 
 	// pack all the data
-	CNetChunkHeader Header;
+	network6::CNetChunkHeader Header;
 	Header.m_Flags = Flags;
 	Header.m_Size = DataSize;
 	Header.m_Sequence = Sequence;
@@ -124,7 +124,7 @@ int CNetConnection::QueueChunkEx(int Flags, int DataSize, const void *pData, int
 	if(Flags&NET_CHUNKFLAG_VITAL && !(Flags&NET_CHUNKFLAG_RESEND))
 	{
 		// save packet if we need to resend
-		CNetChunkResend *pResend = m_Buffer.Allocate(sizeof(CNetChunkResend)+DataSize);
+		network6::CNetChunkResend *pResend = m_Buffer.Allocate(sizeof(network6::CNetChunkResend)+DataSize);
 		if(pResend)
 		{
 			pResend->m_Sequence = Sequence;
@@ -158,7 +158,7 @@ void CNetConnection::SendControl(int ControlMsg, const void *pExtra, int ExtraSi
 	// send the control message
 	m_LastSendTime = time_get();
 	bool UseToken = m_UseToken && ControlMsg != NET_CTRLMSG_CONNECT;
-	CNetBase::SendControlMsg(m_Socket, &m_PeerAddr, m_Ack, UseToken, m_Token, ControlMsg, pExtra, ExtraSize);
+	CNetBase::SendControlMsg(m_Socket, &m_PeerAddr, m_Ack, ControlMsg, pExtra, ExtraSize, UseToken ? m_Token : NET_TOKEN_NONE);
 }
 
 void CNetConnection::ResendChunk(CNetChunkResend *pResend)
@@ -329,6 +329,8 @@ int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr)
 					// set the error string
 					SetError(aStr);
 				}
+
+				dbg_msg("conn", "closed reason='%s'", aStr);
 			}
 			return 0;
 		}
@@ -353,6 +355,7 @@ int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr)
 					}
 					m_LastRecvTime = Now;
 					m_State = NET_CONNSTATE_ONLINE;
+					dbg_msg("connection", "got connect+accept, sending accept. connection online");
 				}
 			}
 		}
@@ -362,6 +365,7 @@ int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr)
 	{
 		m_LastRecvTime = Now;
 		AckChunks(pPacket->m_Ack);
+		dbg_msg("connection", "connecting online");
 	}
 
 	return 1;
@@ -406,6 +410,11 @@ int CNetConnection::Update()
 	// send keep alives if nothing has happend for 250ms
 	if(State() == NET_CONNSTATE_ONLINE)
 	{
+		if(time_get()-m_LastSendTime > time_freq()/2) // flush connection after 500ms if needed
+		{
+			int NumFlushedChunks = Flush();
+			dbg_msg("connection", "flushed connection due to timeout. %d chunks.", NumFlushedChunks);
+		}
 		if(Now-m_LastSendTime > Freq)
 			SendControl(NET_CTRLMSG_KEEPALIVE, 0, 0);
 	}

@@ -113,7 +113,9 @@ void CServerBrowserFilter::CServerFilter::Filter()
 			Filtered = true;
 		else if(m_FilterInfo.m_Ping < m_pServerBrowserFilter->m_ppServerlist[i]->m_Info.m_Latency)
 			Filtered = true;
-		else if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_COMPAT_VERSION && str_comp_num(m_pServerBrowserFilter->m_ppServerlist[i]->m_Info.m_aVersion, m_pServerBrowserFilter->m_aNetVersion, 3) != 0)
+		else if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_COMPAT_VERSION7 && str_comp_num(m_pServerBrowserFilter->m_ppServerlist[i]->m_Info.m_aVersion, "0.7", 3) != 0)
+			Filtered = true;
+		else if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_COMPAT_VERSION6 && str_comp_num(m_pServerBrowserFilter->m_ppServerlist[i]->m_Info.m_aVersion, "0.6", 3) != 0)
 			Filtered = true;
 		else if(m_FilterInfo.m_aAddress[0] && !str_find_nocase(m_pServerBrowserFilter->m_ppServerlist[i]->m_Info.m_aAddress, m_FilterInfo.m_aAddress))
 			Filtered = true;
@@ -226,10 +228,11 @@ int CServerBrowserFilter::CServerFilter::GetSortHash() const
 	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_FRIENDS) i |= 1<<8;
 	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_PW) i |= 1<<9;
 	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_FAVORITE) i |= 1<<10;
-	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_COMPAT_VERSION) i |= 1<<11;
-	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_PURE) i |= 1<<12;
-	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_PURE_MAP) i |= 1<<13;
-	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_COUNTRY) i |= 1<<14;
+	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_COMPAT_VERSION7) i |= 1<<11;
+	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_COMPAT_VERSION6) i |= 1<<12;
+	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_PURE) i |= 1<<13;
+	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_PURE_MAP) i |= 1<<14;
+	if(m_FilterInfo.m_SortHash&IServerBrowser::FILTER_COUNTRY) i |= 1<<15;
 	return i;
 }
 

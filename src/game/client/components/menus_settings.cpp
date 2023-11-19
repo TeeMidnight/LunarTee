@@ -61,21 +61,21 @@ bool CMenusKeyBinder::OnInput(IInput::CEvent Event)
 	return false;
 }
 
-void CMenus::RenderHSLPicker(CUIRect MainView)
+bool CMenus::RenderHSLPicker(CUIRect MainView, int* pColorVar, int* pAlphaVar)
 {
 	CUIRect Label, Button, Picker, Sliders;
 
 	// background
 	float Spacing = 2.0f;
 
-	if(!(*CSkins::ms_apUCCVariables[m_TeePartSelected]))
-		return;
+	if(!(*pColorVar))
+		return false;
 
 	MainView.HSplitTop(Spacing, 0, &MainView);
 
 	bool Modified = false;
-	bool UseAlpha = m_TeePartSelected == SKINPART_MARKING;
-	int Color = *CSkins::ms_apColorVariables[m_TeePartSelected];
+	bool UseAlpha = (bool) pAlphaVar;
+	int Color = *pColorVar;
 
 	int Hue, Sat, Lgt, Alp;
 	Hue = (Color>>16)&0xff;
@@ -296,15 +296,13 @@ void CMenus::RenderHSLPicker(CUIRect MainView)
 	if(Modified)
 	{
 		int NewVal = (Hue << 16) + (Sat << 8) + Lgt;
-		for(int p = 0; p < NUM_SKINPARTS; p++)
-		{
-			if(m_TeePartSelected == p)
-				*CSkins::ms_apColorVariables[p] = NewVal;
-		}
+		*pColorVar = NewVal;
+		
 		if(UseAlpha)
-			Config()->m_PlayerColorMarking = (Alp << 24) + NewVal;
-		m_SkinModified = true;
+			*pAlphaVar = (Alp << 24) + NewVal;
+		return true;
 	}
+	return false;
 }
 
 void CMenus::RenderSkinSelection(CUIRect MainView)
@@ -348,6 +346,12 @@ void CMenus::RenderSkinSelection(CUIRect MainView)
 		if(Item.m_Visible)
 		{
 			CTeeRenderInfo Info;
+			if(Config()->m_PlayerXMasHat)
+			{
+				Info.m_HatTexture = m_pClient->m_pSkins->m_XmasHatTexture;
+				Info.m_HatSpriteIndex = 1;
+			}
+
 			for(int p = 0; p < NUM_SKINPARTS; p++)
 			{
 				if(s->m_aUseCustomColors[p])
@@ -359,6 +363,14 @@ void CMenus::RenderSkinSelection(CUIRect MainView)
 				{
 					Info.m_aTextures[p] = s->m_apParts[p]->m_OrgTexture;
 					Info.m_aColors[p] = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				}
+
+				if(Info.m_HatTexture.IsValid())
+				{
+					if(p == SKINPART_BODY && str_comp(s->m_apParts[p]->m_aName, "standard"))
+						Info.m_HatSpriteIndex = CSkins::HAT_OFFSET_SIDE + 1;
+					if(p == SKINPART_DECORATION && !str_comp(s->m_apParts[p]->m_aName, "twinbopp"))
+						Info.m_HatSpriteIndex = CSkins::HAT_OFFSET_SIDE + 1;
 				}
 			}
 
@@ -436,6 +448,12 @@ void CMenus::RenderSkinPartSelection(CUIRect MainView)
 		if(Item.m_Visible)
 		{
 			CTeeRenderInfo Info;
+			if(Config()->m_PlayerXMasHat)
+			{
+				Info.m_HatTexture = m_pClient->m_pSkins->m_XmasHatTexture;
+				Info.m_HatSpriteIndex = 1;
+			}
+
 			for(int j = 0; j < NUM_SKINPARTS; j++)
 			{
 				int SkinPart = m_pClient->m_pSkins->FindSkinPart(j, CSkins::ms_apSkinVariables[j], false);
@@ -455,6 +473,13 @@ void CMenus::RenderSkinPartSelection(CUIRect MainView)
 					else
 						Info.m_aTextures[j] = pSkinPart->m_OrgTexture;
 					Info.m_aColors[j] = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				}
+				if(Info.m_HatTexture.IsValid())
+				{
+					if(j == SKINPART_BODY && str_comp(pSkinPart[j].m_aName, "standard"))
+						Info.m_HatSpriteIndex = CSkins::HAT_OFFSET_SIDE + 1;
+					if(j == SKINPART_DECORATION && !str_comp(pSkinPart[j].m_aName, "twinbopp"))
+						Info.m_HatSpriteIndex = CSkins::HAT_OFFSET_SIDE + 1;
 				}
 			}
 			Info.m_Size = 50.0f;
@@ -1093,7 +1118,8 @@ void CMenus::RenderSettingsTeeCustom(CUIRect MainView)
 	if(s_CustomColors)
 	{
 		Right.Draw(vec4(0.0f, 0.0f, 0.0f, 0.25f));
-		RenderHSLPicker(Picker);
+		m_SkinModified = RenderHSLPicker(Picker, CSkins::ms_apColorVariables[m_TeePartSelected],
+			 m_TeePartSelected == SKINPART_MARKING ? &Config()->m_PlayerColorMarking : nullptr);
 		RenderSkinPartPalette(Palette);
 	}
 }
@@ -1155,6 +1181,11 @@ void CMenus::RenderSettingsPlayer(CUIRect MainView)
 		// validate skin parts for solo mode
 		CTeeRenderInfo OwnSkinInfo;
 		OwnSkinInfo.m_Size = 50.0f;
+		if(Config()->m_PlayerXMasHat)
+		{
+			OwnSkinInfo.m_HatTexture = m_pClient->m_pSkins->m_XmasHatTexture;
+			OwnSkinInfo.m_HatSpriteIndex = 1;
+		}
 
 		char aSkinParts[NUM_SKINPARTS][MAX_SKIN_ARRAY_SIZE];
 		char* apSkinPartsPtr[NUM_SKINPARTS];
@@ -1166,6 +1197,14 @@ void CMenus::RenderSettingsPlayer(CUIRect MainView)
 			apSkinPartsPtr[p] = aSkinParts[p];
 			aUCCVars[p] = *CSkins::ms_apUCCVariables[p];
 			aColorVars[p] = *CSkins::ms_apColorVariables[p];
+
+			if(OwnSkinInfo.m_HatTexture.IsValid())
+			{
+				if(p == SKINPART_BODY && str_comp(apSkinPartsPtr[p], "standard"))
+					OwnSkinInfo.m_HatSpriteIndex = CSkins::HAT_OFFSET_SIDE + 1;
+				if(p == SKINPART_DECORATION && !str_comp(apSkinPartsPtr[p], "twinbopp"))
+					OwnSkinInfo.m_HatSpriteIndex = CSkins::HAT_OFFSET_SIDE + 1;
+			}
 		}
 
 		m_pClient->m_pSkins->ValidateSkinParts(apSkinPartsPtr, aUCCVars, aColorVars, 0);
@@ -1403,6 +1442,32 @@ void CMenus::PopupConfirmDeleteSkin()
 		else
 			PopupMessage(Localize("Error"), Localize("Unable to delete the skin"), Localize("Ok"));
 	}
+}
+
+void CMenus::RenderSettingsCustom(CUIRect MainView)
+{
+	// cut view
+	CUIRect BottomView, Background, Button;
+	MainView.HSplitBottom(80.0f, &MainView, &BottomView);
+	if(this->Client()->State() == IClient::STATE_ONLINE)
+		Background = MainView;
+	else
+		MainView.HSplitTop(20.0f, 0, &Background);
+	Background.Draw(vec4(0.0f, 0.0f, 0.0f, Config()->m_ClMenuAlpha/100.0f), 5.0f, Client()->State() == IClient::STATE_OFFLINE ? CUIRect::CORNER_ALL : CUIRect::CORNER_B);
+	MainView.HSplitTop(20.0f, 0, &MainView);
+	BottomView.HSplitTop(20.f, 0, &BottomView);
+		
+	float ButtonHeight = 20.0f;
+	float Spacing = 2.0f;
+	// player xmas hat
+	MainView.HSplitTop(Spacing, 0, &MainView);
+	MainView.HSplitTop(ButtonHeight, &Button, &MainView);
+	static int s_ButtonXmas = 0;
+	if(DoButton_CheckBox(&s_ButtonXmas, Localize("Use XMas Hat"), Config()->m_PlayerXMasHat, &Button))
+	{
+		Config()->m_PlayerXMasHat ^= 1;
+	}
+		
 }
 
 void CMenus::RenderSettingsControls(CUIRect MainView)
@@ -2062,6 +2127,8 @@ void CMenus::RenderSettings(CUIRect MainView)
 		RenderSettingsPlayer(MainView);
 	else if(Config()->m_UiSettingsPage == SETTINGS_TBD) // TODO: replace removed tee page to something else	
 		Config()->m_UiSettingsPage = SETTINGS_PLAYER; // TODO: remove this
+	else if(Config()->m_UiSettingsPage == SETTINGS_CUSTOM)
+		RenderSettingsCustom(MainView);
 	else if(Config()->m_UiSettingsPage == SETTINGS_CONTROLS)
 		RenderSettingsControls(MainView);
 	else if(Config()->m_UiSettingsPage == SETTINGS_GRAPHICS)

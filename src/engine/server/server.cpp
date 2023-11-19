@@ -1847,13 +1847,13 @@ int main(int argc, const char **argv)
 
 	// create the components
 	int FlagMask = CFGFLAG_SERVER|CFGFLAG_ECON;
-	IEngine *pEngine = CreateEngine("Teeworlds_Server");
+	IEngine *pEngine = CreateEngine("LunarTee_Server");
 	IEngineMap *pEngineMap = CreateEngineMap();
 	IMapChecker *pMapChecker = CreateMapChecker();
 	IGameServer *pGameServer = CreateGameServer();
 	IConsole *pConsole = CreateConsole(CFGFLAG_SERVER|CFGFLAG_ECON);
 	IEngineMasterServer *pEngineMasterServer = CreateEngineMasterServer();
-	IStorage *pStorage = CreateStorage("Teeworlds", IStorage::STORAGETYPE_SERVER, argc, argv);
+	IStorage *pStorage = CreateStorage("LunarTee", IStorage::STORAGETYPE_SERVER, argc, argv);
 	IConfigManager *pConfigManager = CreateConfigManager();
 
 	pServer->InitRegister(&pServer->m_NetServer, pEngineMasterServer, pConfigManager->Values(), pConsole);

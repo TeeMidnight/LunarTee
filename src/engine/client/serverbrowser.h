@@ -19,8 +19,8 @@ public:
 	};
 		
 	CServerBrowser();
-	void Init(class CNetClient *pClient, const char *pNetVersion);
-	void Set(const NETADDR &Addr, int SetType, int Token, const CServerInfo *pInfo);
+	void Init(class CMainNetClient *pClient, const char *pNetVersion);
+	void Set(const NETADDR &Addr, int SetType, int Token, const CServerInfo *pInfo, bool ProtocolSix);
 	void Update();
 
 	// interface functions
@@ -60,7 +60,7 @@ public:
 	void SaveServerlist();
 
 private:
-	class CNetClient *m_pNetClient;
+	class CMainNetClient *m_pNetClient;
 	class CConfig *m_pConfig;
 	class IConsole *m_pConsole;
 	class IStorage *m_pStorage;
@@ -108,7 +108,7 @@ private:
 	int64 m_BroadcastTime;
 	int64 m_MasterRefreshTime;
 
-	CServerEntry *Add(int ServerlistType, const NETADDR &Addr);
+	CServerEntry *Add(int ServerlistType, const NETADDR &Addr, bool ProtocolSix);
 	CServerEntry *Find(int ServerlistType, const NETADDR &Addr);
 	void QueueRequest(CServerEntry *pEntry);
 	void RemoveRequest(CServerEntry *pEntry);

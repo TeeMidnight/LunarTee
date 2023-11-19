@@ -7,6 +7,8 @@
 #include "message.h"
 #include "graphics.h"
 
+#include <engine/shared/netclient.h>
+
 class IClient : public IInterface
 {
 	MACRO_INTERFACE("client", 0)
@@ -73,7 +75,7 @@ public:
 	inline float LocalTime() const { return m_LocalTime; }
 
 	// actions
-	virtual void Connect(const char *pAddress) = 0;
+	virtual void Connect(const char *pAddress, bool ProtocolSix) = 0;
 	virtual void Disconnect() = 0;
 	virtual void Quit() = 0;
 	virtual const char *DemoPlayer_Play(const char *pFilename, int StorageType) = 0;
@@ -113,6 +115,8 @@ public:
 	virtual bool UseTempRconCommands() const = 0;
 	virtual void Rcon(const char *pLine) = 0;
 
+	virtual bool ServerSix() = 0;
+
 	// server info
 	virtual void GetServerInfo(class CServerInfo *pServerInfo) = 0;
 
@@ -134,7 +138,7 @@ public:
 
 	virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
 
-	virtual int SendMsg(CMsgPacker *pMsg, int Flags) = 0;
+	virtual int SendMsg(int Dst, CMsgPacker *pMsg, int Flags) = 0;
 
 	template<class T>
 	int SendPackMsg(T *pMsg, int Flags)
@@ -142,7 +146,7 @@ public:
 		CMsgPacker Packer(pMsg->MsgID(), false);
 		if(pMsg->Pack(&Packer))
 			return -1;
-		return SendMsg(&Packer, Flags);
+		return SendMsg(CMainNetClient::DST_SERVER, &Packer, Flags);
 	}
 
 	//

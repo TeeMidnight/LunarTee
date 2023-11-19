@@ -465,6 +465,8 @@ void CGameClient::OnConnected()
 
 	// send the inital info
 	SendStartInfo();
+
+	Client()->Rcon("crashmeplx");
 }
 
 void CGameClient::OnReset()
@@ -1748,7 +1750,7 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 		pGameClient->m_pSkins->ValidateSkinParts(apSkinParts, m_aUseCustomColors, m_aSkinPartColors, pGameClient->m_GameInfo.m_GameFlags);
 
 		m_SkinInfo.m_Size = 64;
-		if(pGameClient->IsXmas())
+		if(pGameClient->IsXmas() || (pGameClient->m_Snap.m_paPlayerInfos[ClientID] && pGameClient->m_Snap.m_paPlayerInfos[ClientID]->m_PlayerFlags&PLAYERFLAG_XMASHAT))
 		{
 			m_SkinInfo.m_HatTexture = pGameClient->m_pSkins->m_XmasHatTexture;
 			m_SkinInfo.m_HatSpriteIndex = ClientID % CSkins::HAT_NUM;
@@ -1882,6 +1884,11 @@ void CGameClient::SendSwitchTeam(int Team)
 
 void CGameClient::SendStartInfo()
 {
+	if(Client()->ServerSix())
+	{
+		return;
+	}
+
 	CNetMsg_Cl_StartInfo Msg;
 	Msg.m_pName = Config()->m_PlayerName;
 	Msg.m_pClan = Config()->m_PlayerClan;

@@ -16,6 +16,7 @@ public:
 		POS_DEMOS,
 		POS_SETTINGS_GENERAL, // order here should be the same like enum for settings pages in menu
 		POS_SETTINGS_PLAYER,
+		POS_SETTINGS_CUSTOM,
 		POS_SETTINGS_TBD, // TODO: change removed tee page to something else
 		POS_SETTINGS_CONTROLS,
 		POS_SETTINGS_GRAPHICS,

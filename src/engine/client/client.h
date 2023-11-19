@@ -75,8 +75,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 		PREDICTION_MARGIN=1000/50/2, // magic network prediction value
 	};
 
-	class CNetClient m_NetClient;
-	class CNetClient m_ContactClient;
+	class CMainNetClient m_NetClient;
 	class CDemoPlayer m_DemoPlayer;
 	class CDemoRecorder m_DemoRecorder;
 	class CServerBrowser m_ServerBrowser;
@@ -85,6 +84,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 
 	char m_aServerAddressStr[256];
 	char m_aServerPassword[128];
+	bool m_ServerSix;
 
 	unsigned m_SnapshotParts;
 	int64 m_LocalStartTime;
@@ -207,7 +207,7 @@ public:
 	CClient();
 
 	// ----- send functions -----
-	virtual int SendMsg(CMsgPacker *pMsg, int Flags);
+	virtual int SendMsg(int Dst, CMsgPacker *pMsg, int Flags);
 
 	void SendInfo();
 	void SendEnterGame();
@@ -239,11 +239,12 @@ public:
 	virtual void EnterGame();
 	void OnClientOnline();
 
-	virtual void Connect(const char *pAddress);
+	virtual void Connect(const char *pAddress, bool ProtocolSix);
 	void DisconnectWithReason(const char *pReason);
 	virtual void Disconnect();
 	const char *ServerAddress() const { return m_aServerAddressStr; }
 
+	virtual bool ServerSix() { return m_ServerSix; }
 
 	virtual void GetServerInfo(CServerInfo *pServerInfo);
 
@@ -267,8 +268,11 @@ public:
 	const char *LoadMapSearch(const char *pMapName, const SHA256_DIGEST *pWantedSha256, int WantedCrc);
 
 	int UnpackServerInfo(CUnpacker *pUnpacker, CServerInfo *pInfo, int *pToken);
+	int UnpackServerInfo6(CUnpacker *pUnpacker, CServerInfo *pInfo, int *pToken);
 	void ProcessConnlessPacket(CNetChunk *pPacket);
 	void ProcessServerPacket(CNetChunk *pPacket);
+	void ProcessConnlessPacket6(CNetChunk *pPacket);
+	void ProcessServerPacket6(CNetChunk *pPacket);
 
 	const char *GetCurrentMapName() const { return m_aCurrentMap; }
 	const char *GetCurrentMapPath() const { return m_aCurrentMapPath; }

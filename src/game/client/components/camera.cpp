@@ -25,6 +25,7 @@ CCamera::CCamera()
 	m_Positions[POS_DEMOS] = vec2(1500.0f, 500.0f);
 	m_Positions[POS_SETTINGS_GENERAL] = vec2(500.0f, 1000.0f);
 	m_Positions[POS_SETTINGS_PLAYER] = vec2(600.0f, 1000.0f);
+	m_Positions[POS_SETTINGS_CUSTOM] = vec2(700.0f, 1000.0f);
 	m_Positions[POS_SETTINGS_TBD] = vec2(700.0f, 1000.0f);
 	m_Positions[POS_SETTINGS_CONTROLS] = vec2(800.0f, 1000.0f);
 	m_Positions[POS_SETTINGS_GRAPHICS] = vec2(900.0f, 1000.0f);

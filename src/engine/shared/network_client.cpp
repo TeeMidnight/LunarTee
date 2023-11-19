@@ -5,7 +5,7 @@
 #include "network.h"
 
 
-bool CNetClient::Open(NETADDR BindAddr, CConfig *pConfig, IConsole *pConsole, IEngine *pEngine, int Flags)
+bool CNetClient::Open(CConfig *pConfig, NETADDR BindAddr, IConsole *pConsole, IEngine *pEngine, int Flags)
 {
 	// open socket
 	NETSOCKET Socket;
@@ -13,9 +13,13 @@ bool CNetClient::Open(NETADDR BindAddr, CConfig *pConfig, IConsole *pConsole, IE
 	if(!Socket.type)
 		return false;
 
-	// clean it
-	mem_zero(this, sizeof(*this));
-
+	// zero out the whole structure
+	mem_zero(&m_Connection, sizeof(m_Connection));
+	mem_zero(&m_RecvUnpacker, sizeof(m_RecvUnpacker));
+	mem_zero(&m_TokenCache, sizeof(m_TokenCache));
+	mem_zero(&m_TokenManager, sizeof(m_TokenManager));
+	mem_zero(&m_Flags, sizeof(m_Flags));
+	
 	// init
 	Init(Socket, pConfig, pConsole, pEngine);
 	m_Connection.Init(this, false);
@@ -24,7 +28,7 @@ bool CNetClient::Open(NETADDR BindAddr, CConfig *pConfig, IConsole *pConsole, IE
 	m_TokenCache.Init(this, &m_TokenManager);
 
 	m_Flags = Flags;
-
+	
 	return true;
 }
 
@@ -46,8 +50,7 @@ int CNetClient::Update()
 
 int CNetClient::Connect(NETADDR *pAddr)
 {
-	m_Connection.Connect(pAddr);
-	return 0;
+	return !m_Connection.Connect(pAddr);
 }
 
 int CNetClient::ResetErrorString()

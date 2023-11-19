@@ -33,10 +33,10 @@ CMenus::CColumn CMenus::ms_aBrowserCols[] = {  // Localize("Server"); Localize("
 	{COL_BROWSER_PING,		IServerBrowser::SORT_PING,			"Ping",		1, 40.0f,  0, {0}, {0}, TEXTALIGN_CENTER},
 };
 
-CServerFilterInfo CMenus::CBrowserFilter::ms_FilterStandard = {IServerBrowser::FILTER_COMPAT_VERSION|IServerBrowser::FILTER_PURE|IServerBrowser::FILTER_PURE_MAP, 999, -1, 0, {{0}}, {0}, {0}};
-CServerFilterInfo CMenus::CBrowserFilter::ms_FilterRace = {IServerBrowser::FILTER_COMPAT_VERSION, 999, -1, 0, {{"Race"}}, {false}, {0}};
-CServerFilterInfo CMenus::CBrowserFilter::ms_FilterFavorites = {IServerBrowser::FILTER_COMPAT_VERSION|IServerBrowser::FILTER_FAVORITE, 999, -1, 0, {{0}}, {0}, {0}};
-CServerFilterInfo CMenus::CBrowserFilter::ms_FilterAll = {IServerBrowser::FILTER_COMPAT_VERSION, 999, -1, 0, {{0}}, {0}, {0}};
+CServerFilterInfo CMenus::CBrowserFilter::ms_FilterStandard = {IServerBrowser::FILTER_COMPAT_VERSION7|IServerBrowser::FILTER_PURE|IServerBrowser::FILTER_PURE_MAP, 999, -1, 0, {{0}}, {0}, {0}};
+CServerFilterInfo CMenus::CBrowserFilter::ms_FilterRace = {IServerBrowser::FILTER_COMPAT_VERSION7, 999, -1, 0, {{"Race"}}, {false}, {0}};
+CServerFilterInfo CMenus::CBrowserFilter::ms_FilterFavorites = {IServerBrowser::FILTER_COMPAT_VERSION7|IServerBrowser::FILTER_COMPAT_VERSION6|IServerBrowser::FILTER_FAVORITE, 999, -1, 0, {{0}}, {0}, {0}};
+CServerFilterInfo CMenus::CBrowserFilter::ms_FilterAll = {IServerBrowser::FILTER_COMPAT_VERSION7|IServerBrowser::FILTER_COMPAT_VERSION6, 999, -1, 0, {{0}}, {0}, {0}};
 
 static CLocConstString s_aDifficultyLabels[] = {
 	"Casual",
@@ -1098,7 +1098,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 						m_SidebarTab = SIDEBAR_TAB_INFO;
 					UpdateServerBrowserAddress(); // update now instead of using flag because of connect
 					if(Input()->MouseDoubleClick())
-						Client()->Connect(GetServerBrowserAddress());
+						Client()->Connect(GetServerBrowserAddress(), 0);
 				}
 			}
 
@@ -1467,7 +1467,7 @@ void CMenus::RenderServerbrowserFriendTab(CUIRect View)
 					m_AddressSelection |= ADDR_SELECTION_CHANGE | ADDR_SELECTION_RESET_SERVER_IF_NOT_FOUND | ADDR_SELECTION_REVEAL;
 					if(Input()->MouseDoubleClick())
 					{
-						Client()->Connect(GetServerBrowserAddress());
+						Client()->Connect(GetServerBrowserAddress(), 0);
 					}
 				}
 			}
@@ -1635,8 +1635,16 @@ void CMenus::RenderServerbrowserFilterTab(CUIRect View)
 
 	ServerFilter.HSplitTop(LineSize, &Button, &ServerFilter);
 	static int s_BrFilterCompatversion = 0;
-	if(DoButton_CheckBox(&s_BrFilterCompatversion, Localize("Compatible version"), FilterInfo.m_SortHash&IServerBrowser::FILTER_COMPAT_VERSION, &Button))
-		NewSortHash ^= IServerBrowser::FILTER_COMPAT_VERSION;
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "%s (0.7)", Localize("Compatible version"));
+	if(DoButton_CheckBox(&s_BrFilterCompatversion, aBuf, FilterInfo.m_SortHash&IServerBrowser::FILTER_COMPAT_VERSION7, &Button))
+		NewSortHash ^= IServerBrowser::FILTER_COMPAT_VERSION7;
+
+	ServerFilter.HSplitTop(LineSize, &Button, &ServerFilter);
+	static int s_BrFilterCompatversion6 = 0;
+	str_format(aBuf, sizeof(aBuf), "%s (0.6)", Localize("Compatible version"));
+	if(DoButton_CheckBox(&s_BrFilterCompatversion6, aBuf, FilterInfo.m_SortHash&IServerBrowser::FILTER_COMPAT_VERSION6, &Button))
+		NewSortHash ^= IServerBrowser::FILTER_COMPAT_VERSION6;
 
 	ServerFilter.HSplitTop(LineSize, &Button, &ServerFilter);
 	const bool Locked = pFilter->Custom() == CBrowserFilter::FILTER_STANDARD;
@@ -1984,7 +1992,8 @@ void CMenus::RenderDetailScoreboard(CUIRect View, const CServerInfo *pInfo, int 
 	s_pLastInfo = pInfo;
 
 	const float RowWidth = (RowCount == 0) ? View.w : (View.w * 0.25f);
-	const float FontSize = Config()->m_UiWideview ? 8.0f : 7.0f;
+	const float FontSize = Config()->m_UiWideview ? 10.0f : 9.0f;
+	const float ScoreFontSize = Config()->m_UiWideview ? 8.0f : 7.0f;
 	const vec4 HighlightColor = vec4(TextHighlightColor.r, TextHighlightColor.g, TextHighlightColor.b, TextColor.a);
 	float LineHeight = 20.0f;
 
@@ -2039,7 +2048,7 @@ void CMenus::RenderDetailScoreboard(CUIRect View, const CServerInfo *pInfo, int 
 		if(s_ScrollRegion.IsRectClipped(Name))
 			continue;
 
-		Name.Draw(vec4(1.0f, 1.0f, 1.0f, (Count % 2 ? 1 : 2)*0.05f));
+		Name.Draw(vec4(1.0f, 1.0f, 1.0f, (Count % 2 ? 1 : 2)*0.1f));
 
 		// friend
 		if(UI()->DoButtonLogic(&pInfo->m_aClients[i], &Name))
@@ -2066,10 +2075,10 @@ void CMenus::RenderDetailScoreboard(CUIRect View, const CServerInfo *pInfo, int 
 		// score
 		if(!(pInfo->m_aClients[i].m_PlayerType&CServerInfo::CClient::PLAYERFLAG_SPEC))
 		{
-			Score.y += (Score.h - FontSize/CUI::ms_FontmodHeight)/2.0f;
+			Score.y += (Score.h - ScoreFontSize/CUI::ms_FontmodHeight)/2.0f;
 			char aTemp[16];
 			FormatScore(aTemp, sizeof(aTemp), pInfo->m_Flags&IServerBrowser::FLAG_TIMESCORE, &pInfo->m_aClients[i]);
-			UI()->DoLabel(&Score, aTemp, FontSize, TEXTALIGN_LEFT);
+			UI()->DoLabel(&Score, aTemp, ScoreFontSize, TEXTALIGN_LEFT);
 		}
 
 		// name
@@ -2114,7 +2123,7 @@ void CMenus::RenderServerbrowserBottomBox(CUIRect MainView)
 {
 	// same size like tabs in top but variables not really needed
 	float Spacing = 3.0f;
-	float ButtonWidth = MainView.w/2.0f-Spacing/2.0f;
+	float ButtonWidth = MainView.w/3.0f-Spacing/2.0f;
 
 	// render background
 	RenderBackgroundShadow(&MainView, true);
@@ -2135,9 +2144,19 @@ void CMenus::RenderServerbrowserBottomBox(CUIRect MainView)
 	MainView.VSplitLeft(Spacing, 0, &MainView); // little space
 	MainView.VSplitLeft(ButtonWidth, &Button, &MainView);
 	static CButtonContainer s_JoinButton;
-	if(DoButton_Menu(&s_JoinButton, Localize("Connect"), 0, &Button) || UI()->ConsumeHotkey(CUI::HOTKEY_ENTER))
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "%s (0.7)", Localize("Connect"));
+	if(DoButton_Menu(&s_JoinButton, aBuf, 0, &Button) || UI()->ConsumeHotkey(CUI::HOTKEY_ENTER))
 	{
-		Client()->Connect(GetServerBrowserAddress());
+		Client()->Connect(GetServerBrowserAddress(), 0);
+	}
+	MainView.VSplitLeft(Spacing, 0, &MainView); // little space
+	MainView.VSplitLeft(ButtonWidth, &Button, &MainView);
+	static CButtonContainer s_JoinButton6;
+	str_format(aBuf, sizeof(aBuf), "%s (0.6)", Localize("Connect"));
+	if(DoButton_Menu(&s_JoinButton6, aBuf, 0, &Button))
+	{
+		Client()->Connect(GetServerBrowserAddress(), 1);
 	}
 }
 
@@ -2245,8 +2264,8 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 	// connect box
 	float Spacing = 3.0f;
 	float ButtonWidth = (BottomBox.w/6.0f)-(Spacing*5.0)/6.0f;
-	BottomBox.VSplitRight(20.0f, &BottomBox, 0);
-	BottomBox.VSplitRight(ButtonWidth*2.0f+Spacing, 0, &BottomBox);
+	//BottomBox.VSplitRight(20.0f, &BottomBox, 0);
+	BottomBox.VSplitRight(ButtonWidth*3.0f+Spacing*2.0f, 0, &BottomBox);
 
 	RenderServerbrowserBottomBox(BottomBox);
 }

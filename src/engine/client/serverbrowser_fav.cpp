@@ -26,7 +26,7 @@ CServerBrowserFavorites::CServerBrowserFavorites()
 	m_FavLookup.m_Active = false;
 }
 
-void CServerBrowserFavorites::Init(CNetClient *pNetClient, IConsole *pConsole, IEngine *pEngine, IConfigManager *pConfigManager)
+void CServerBrowserFavorites::Init(CMainNetClient *pNetClient, IConsole *pConsole, IEngine *pEngine, IConfigManager *pConfigManager)
 {
 	m_pNetClient = pNetClient;
 	m_pConfig = pConfigManager->Values();
@@ -231,7 +231,7 @@ const NETADDR *CServerBrowserFavorites::UpdateFavorites()
 		{
 			if(m_aFavoriteServers[i].m_State <= FAVSTATE_LOOKUPCHECK)
 			{
-				m_pEngine->HostLookup(&m_FavLookup.m_HostLookup, m_aFavoriteServers[i].m_aHostname, m_pNetClient->NetType());
+				m_pEngine->HostLookup(&m_FavLookup.m_HostLookup, m_aFavoriteServers[i].m_aHostname, m_pNetClient->NetType(CMainNetClient::DST_MASTER07));
 				m_FavLookup.m_FavoriteIndex = i;
 				--m_FavLookup.m_LookupCount;
 				m_FavLookup.m_Active = true;

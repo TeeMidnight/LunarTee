@@ -3,7 +3,6 @@
 #ifndef ENGINE_SHARED_NETWORK_H
 #define ENGINE_SHARED_NETWORK_H
 
-#include "ringbuffer.h"
 #include "huffman.h"
 
 #include "netclient.h"
@@ -84,6 +83,8 @@ enum
 	NET_PACKETFLAG_RESEND=2,
 	NET_PACKETFLAG_COMPRESSION=4,
 	NET_PACKETFLAG_CONNLESS=8,
+	
+	NET_PACKETFLAG_EXTENDED = 1 << 6,
 
 	NET_MAX_PACKET_CHUNKS=256,
 
@@ -134,6 +135,29 @@ enum
 typedef int (*NETFUNC_DELCLIENT)(int ClientID, const char* pReason, void *pUser);
 typedef int (*NETFUNC_NEWCLIENT)(int ClientID, void *pUser);
 
+class CNetChunkHeader
+{
+public:
+	int m_Flags;
+	int m_Size;
+	int m_Sequence;
+
+	unsigned char *Pack(unsigned char *pData);
+	unsigned char *Unpack(unsigned char *pData);
+};
+
+class CNetChunkResend
+{
+public:
+	int m_Flags;
+	int m_DataSize;
+	unsigned char *m_pData;
+
+	int m_Sequence;
+	int64 m_LastSendTime;
+	int64 m_FirstSendTime;
+};
+
 class CNetPacketConstruct
 {
 public:
@@ -144,6 +168,14 @@ public:
 	int m_NumChunks;
 	int m_DataSize;
 	unsigned char m_aChunkData[NET_MAX_PAYLOAD];
+};
+
+typedef void(*FSendCallback)(int TrackID, void *pUser);
+struct CSendCBData
+{
+	FSendCallback m_pfnCallback;
+	void *m_pCallbackUser;
+	int m_TrackID;
 };
 
 class CNetBase
@@ -161,11 +193,11 @@ class CNetBase
 
 	class CConfig *m_pConfig;
 	class IEngine *m_pEngine;
-	NETSOCKET m_Socket;
 	IOHANDLE m_DataLogSent;
 	IOHANDLE m_DataLogRecv;
 	CHuffman m_Huffman;
 	unsigned char m_aRequestTokenBuf[NET_TOKENREQUEST_DATASIZE];
+	NETSOCKET m_Socket;
 
 public:
 	CNetBase();
@@ -480,7 +512,7 @@ public:
 };
 
 // client side
-class CNetClient : public CMainNetClient::INetClient, public CNetBase
+class CNetClient : public INetClient, public CNetBase
 {
 	CNetConnection m_Connection;
 	CNetRecvUnpacker m_RecvUnpacker;
@@ -490,11 +522,13 @@ class CNetClient : public CMainNetClient::INetClient, public CNetBase
 
 public:
 	// openness
-	bool Open(NETADDR BindAddr, class CConfig *pConfig, class IConsole *pConsole, class IEngine *pEngine, int Flags);
+	bool Open(class CConfig *pConfig, NETADDR BindAddr, class IConsole *pConsole, class IEngine *pEngine, int Flags);
 
 	// connection state
 	int Disconnect(const char *Reason);
 	int Connect(NETADDR *Addr);
+
+	int NetType() override { return CNetBase::NetType(); }
 
 	// communication
 	int Recv(CNetChunk *pChunk, TOKEN *pResponseToken = 0);

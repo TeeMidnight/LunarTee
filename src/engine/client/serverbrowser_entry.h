@@ -20,6 +20,8 @@ public:
 	int m_TrackID;
 	class CServerInfo m_Info;
 
+	bool m_ProtocolSix; // teeuniverse-old-draft
+
 	CServerEntry *m_pNextIp; // ip hashed list
 
 	CServerEntry *m_pPrevReq; // request list

@@ -7,6 +7,8 @@
 
 #include <engine/shared/config.h>
 #include <engine/shared/memheap.h>
+#include <engine/shared/netclient.h>
+#include <engine/shared/network6.h>
 #include <engine/shared/network.h>
 #include <engine/shared/packer.h>
 #include <engine/shared/jsonwriter.h>
@@ -84,7 +86,7 @@ CServerBrowser::CServerBrowser()
 	m_MasterRefreshTime = 0;
 }
 
-void CServerBrowser::Init(class CNetClient *pNetClient, const char *pNetVersion)
+void CServerBrowser::Init(class CMainNetClient *pNetClient, const char *pNetVersion)
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	m_pConfig = pConfigManager->Values();
@@ -98,7 +100,7 @@ void CServerBrowser::Init(class CNetClient *pNetClient, const char *pNetVersion)
 	m_ServerBrowserFilter.Init(Config(), Kernel()->RequestInterface<IFriends>(), pNetVersion);
 }
 
-void CServerBrowser::Set(const NETADDR &Addr, int SetType, int Token, const CServerInfo *pInfo)
+void CServerBrowser::Set(const NETADDR &Addr, int SetType, int Token, const CServerInfo *pInfo, bool ProtocolSix)
 {
 	CServerEntry *pEntry = 0;
 	switch(SetType)
@@ -112,7 +114,7 @@ void CServerBrowser::Set(const NETADDR &Addr, int SetType, int Token, const CSer
 
 			if(!Find(IServerBrowser::TYPE_INTERNET, Addr))
 			{
-				pEntry = Add(IServerBrowser::TYPE_INTERNET, Addr);
+				pEntry = Add(IServerBrowser::TYPE_INTERNET, Addr, ProtocolSix);
 				QueueRequest(pEntry);
 			}
 		}
@@ -124,7 +126,7 @@ void CServerBrowser::Set(const NETADDR &Addr, int SetType, int Token, const CSer
 
 			if(!Find(IServerBrowser::TYPE_INTERNET, Addr))
 			{
-				pEntry = Add(IServerBrowser::TYPE_INTERNET, Addr);
+				pEntry = Add(IServerBrowser::TYPE_INTERNET, Addr, ProtocolSix);
 				QueueRequest(pEntry);
 			}
 		}
@@ -138,15 +140,27 @@ void CServerBrowser::Set(const NETADDR &Addr, int SetType, int Token, const CSer
 			{
 				Type = IServerBrowser::TYPE_INTERNET;
 				pEntry = Find(Type, Addr);
-				if(pEntry && (pEntry->m_InfoState != CServerEntry::STATE_PENDING || Token != pEntry->m_CurrentToken))
-					pEntry = 0;
+				if(pEntry)
+				{
+					if(pEntry->m_InfoState != CServerEntry::STATE_PENDING)
+						pEntry = 0;
+					else if(ProtocolSix)
+					{
+						char TokenChar;
+						mem_copy(&TokenChar, &pEntry->m_CurrentToken, 1);
+						if(Token != (int)TokenChar)
+							pEntry = 0;
+					}
+					else if(Token != pEntry->m_CurrentToken)
+						pEntry = 0;		
+				}	
 			}
 
 			// lan entry
 			if(!pEntry && (m_RefreshFlags&IServerBrowser::REFRESHFLAG_LAN) && m_BroadcastTime+time_freq() >= time_get())
 			{
 				Type = IServerBrowser::TYPE_LAN;
-				pEntry = Add(Type, Addr);
+				pEntry = Add(Type, Addr, ProtocolSix);
 			}
 
 			// set info
@@ -184,7 +198,6 @@ void CServerBrowser::Update()
 
 		mem_zero(&Packet, sizeof(Packet));
 		Packet.m_ClientID = -1;
-		Packet.m_Flags = NETSENDFLAG_CONNLESS;
 		Packet.m_DataSize = sizeof(SERVERBROWSE_GETLIST);
 		Packet.m_pData = SERVERBROWSE_GETLIST;
 
@@ -194,7 +207,12 @@ void CServerBrowser::Update()
 				continue;
 
 			Packet.m_Address = m_pMasterServer->GetAddr(i);
-			m_pNetClient->Send(&Packet);
+			Packet.m_Flags = NETSENDFLAG_CONNLESS;
+			m_pNetClient->Send(CMainNetClient::DST_MASTER07, &Packet);
+
+			Packet.m_Address.port = MASTERSERVER_PORT6;
+			Packet.m_Flags = network6::NETSENDFLAG_CONNLESS;
+			m_pNetClient->Send(CMainNetClient::DST_MASTER06, &Packet);
 		}
 
 		m_MasterRefreshTime = Now;
@@ -298,20 +316,31 @@ void CServerBrowser::Refresh(int RefreshFlags)
 		Packer.AddRaw(SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO));
 		Packer.AddInt(m_CurrentLanToken);
 
+		unsigned char Buffer[sizeof(SERVERBROWSE_GETINFO)+1];
+		mem_copy(Buffer, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO));
+		Buffer[sizeof(SERVERBROWSE_GETINFO)] = m_CurrentLanToken;
+
 		/* do the broadcast version */
 		CNetChunk Packet;
 		mem_zero(&Packet, sizeof(Packet));
-		Packet.m_Address.type = m_pNetClient->NetType()|NETTYPE_LINK_BROADCAST;
 		Packet.m_ClientID = -1;
 		Packet.m_Flags = NETSENDFLAG_CONNLESS;
-		Packet.m_DataSize = Packer.Size();
-		Packet.m_pData = Packer.Data();
 		m_BroadcastTime = time_get();
 
 		for(int Port = LAN_PORT_BEGIN; Port <= LAN_PORT_END; Port++)
 		{
 			Packet.m_Address.port = Port;
-			m_pNetClient->Send(&Packet);
+			
+			Packet.m_Address.type = m_pNetClient->NetType(CMainNetClient::DST_MASTER07)|NETTYPE_LINK_BROADCAST;	
+			Packet.m_DataSize = Packer.Size();
+			Packet.m_pData = Packer.Data();
+			m_pNetClient->Send(CMainNetClient::DST_MASTER07, &Packet);
+
+			Packet.m_Address.type = m_pNetClient->NetType(CMainNetClient::DST_MASTER06)|NETTYPE_LINK_BROADCAST;
+			
+			Packet.m_DataSize = sizeof(Buffer);
+			Packet.m_pData = Buffer;
+			m_pNetClient->Send(CMainNetClient::DST_MASTER06, &Packet);
 		}
 
 		if(Config()->m_Debug)
@@ -323,7 +352,8 @@ void CServerBrowser::Refresh(int RefreshFlags)
 		// clear out everything
 		for(CServerEntry *pEntry = m_pFirstReqServer; pEntry; pEntry = pEntry->m_pNextReq)
 		{
-			m_pNetClient->PurgeStoredPacket(pEntry->m_TrackID);
+			if(!pEntry->m_ProtocolSix)
+				m_pNetClient->PurgeStoredPacket(CMainNetClient::DST_MASTER07, pEntry->m_TrackID);
 		}
 		m_aServerlist[IServerBrowser::TYPE_INTERNET].Clear();
 		if(m_ActServerlistType == IServerBrowser::TYPE_INTERNET)
@@ -335,7 +365,7 @@ void CServerBrowser::Refresh(int RefreshFlags)
 		m_NeedRefresh = true;
 		for(int i = 0; i < m_ServerBrowserFavorites.m_NumFavoriteServers; i++)
 			if(m_ServerBrowserFavorites.m_aFavoriteServers[i].m_State >= CServerBrowserFavorites::FAVSTATE_ADDR)
-				Set(m_ServerBrowserFavorites.m_aFavoriteServers[i].m_Addr, SET_FAV_ADD, -1, 0);
+				Set(m_ServerBrowserFavorites.m_aFavoriteServers[i].m_Addr, SET_FAV_ADD, -1, 0, 0);
 	}
 }
 
@@ -437,7 +467,7 @@ const char *CServerBrowser::GetFavoritePassword(const char *pAddress)
 }
 
 // manipulate entries
-CServerEntry *CServerBrowser::Add(int ServerlistType, const NETADDR &Addr)
+CServerEntry *CServerBrowser::Add(int ServerlistType, const NETADDR &Addr, bool ProtocolSix)
 {
 	// create new pEntry
 	CServerEntry *pEntry = (CServerEntry *)m_aServerlist[ServerlistType].m_ServerlistHeap.Allocate(sizeof(CServerEntry));
@@ -448,6 +478,7 @@ CServerEntry *CServerBrowser::Add(int ServerlistType, const NETADDR &Addr)
 	pEntry->m_InfoState = CServerEntry::STATE_INVALID;
 	pEntry->m_CurrentToken = GetNewToken();
 	pEntry->m_Info.m_NetAddr = Addr;
+	pEntry->m_ProtocolSix = ProtocolSix;
 
 	pEntry->m_Info.m_Latency = 999;
 	net_addr_str(&Addr, pEntry->m_Info.m_aAddress, sizeof(pEntry->m_Info.m_aAddress), true);
@@ -564,25 +595,46 @@ void CServerBrowser::RequestImpl(const NETADDR &Addr, CServerEntry *pEntry)
 		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", aBuf);
 	}
 
-	CPacker Packer;
-	Packer.Reset();
-	Packer.AddRaw(SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO));
-	Packer.AddInt(pEntry ? pEntry->m_CurrentToken : m_CurrentLanToken);
+	if(pEntry && pEntry->m_ProtocolSix)
+	{
+		unsigned char Buffer[sizeof(SERVERBROWSE_GETINFO)+1];
+		mem_copy(Buffer, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO));
+		Buffer[sizeof(SERVERBROWSE_GETINFO)] = pEntry ? pEntry->m_CurrentToken : m_CurrentLanToken;
 
-	CNetChunk Packet;
-	Packet.m_ClientID = -1;
-	Packet.m_Address = Addr;
-	Packet.m_Flags = NETSENDFLAG_CONNLESS;
-	Packet.m_DataSize = Packer.Size();
-	Packet.m_pData = Packer.Data();
-	CSendCBData Data;
-	Data.m_pfnCallback = CBFTrackPacket;
-	Data.m_pCallbackUser = this;
-	m_pNetClient->Send(&Packet, NET_TOKEN_NONE, &Data);
+		CNetChunk Packet;
+		Packet.m_ClientID = -1;
+		Packet.m_Address = Addr;
+		Packet.m_Flags = network6::NETSENDFLAG_CONNLESS;
+		Packet.m_DataSize = sizeof(Buffer);
+		Packet.m_pData = Buffer;
+
+		m_pNetClient->Send(CMainNetClient::DST_MASTER06, &Packet);
+	}
+	else
+	{
+		CPacker Packer;
+		Packer.Reset();
+		Packer.AddRaw(SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO));
+		Packer.AddInt(pEntry ? pEntry->m_CurrentToken : m_CurrentLanToken);
+		
+		CNetChunk Packet;
+		Packet.m_ClientID = -1;
+		Packet.m_Address = Addr;
+		Packet.m_Flags = NETSENDFLAG_CONNLESS;
+		Packet.m_DataSize = Packer.Size();
+		Packet.m_pData = Packer.Data();
+	
+		CSendCBData Data;
+		Data.m_pfnCallback = CBFTrackPacket;
+		Data.m_pCallbackUser = this;
+
+		m_pNetClient->Send(CMainNetClient::DST_MASTER07, &Packet, NET_TOKEN_NONE, &Data);
+		if(pEntry)
+			pEntry->m_TrackID = Data.m_TrackID;
+	}
 
 	if(pEntry)
 	{
-		pEntry->m_TrackID = Data.m_TrackID;
 		pEntry->m_RequestTime = time_get();
 		pEntry->m_InfoState = CServerEntry::STATE_PENDING;
 	}
@@ -636,11 +688,12 @@ void CServerBrowser::LoadServerlist()
 	const json_value &rEntry = (*pJsonData)["serverlist"];
 	for(unsigned i = 0; i < rEntry.u.array.length; ++i)
 	{
-		if(rEntry[i].type == json_string)
+		if(rEntry[i].type == json_object)
 		{
+			const json_value &rCurrent = rEntry[i];
 			NETADDR Addr = { 0 };
-			if(!net_addr_from_str(&Addr, rEntry[i]))
-				Set(Addr, SET_MASTER_ADD, -1, 0);
+			if(!net_addr_from_str(&Addr, rCurrent["address"]))
+				Set(Addr, SET_MASTER_ADD, -1, 0, rCurrent["protocol-six"]);
 		}
 	}
 
@@ -659,7 +712,16 @@ void CServerBrowser::SaveServerlist()
 	Writer.WriteAttribute("serverlist");
 	Writer.BeginArray();
 	for(int i = 0; i < m_aServerlist[IServerBrowser::TYPE_INTERNET].m_NumServers; ++i)
+	{
+		Writer.BeginObject();
+		Writer.WriteAttribute("address");
 		Writer.WriteStrValue(m_aServerlist[IServerBrowser::TYPE_INTERNET].m_ppServerlist[i]->m_Info.m_aAddress);
+
+		Writer.WriteAttribute("protocol-six");
+		Writer.WriteBoolValue(m_aServerlist[IServerBrowser::TYPE_INTERNET].m_ppServerlist[i]->m_ProtocolSix);
+		Writer.EndObject();
+	}
+
 	Writer.EndArray();
 	Writer.EndObject();
 }

@@ -90,6 +90,7 @@ private:
 		SETTINGS_GENERAL=0,
 		SETTINGS_PLAYER,
 		SETTINGS_TBD, // TODO: replace this removed tee page
+		SETTINGS_CUSTOM,
 		SETTINGS_CONTROLS,
 		SETTINGS_GRAPHICS,
 		SETTINGS_SOUND,
@@ -562,7 +563,8 @@ private:
 	// found in menus_settings.cpp
 	void RenderLanguageSelection(CUIRect MainView, bool Header=true);
 	void RenderThemeSelection(CUIRect MainView, bool Header=true);
-	void RenderHSLPicker(CUIRect MainView);
+	// Return is Modified
+	bool RenderHSLPicker(CUIRect MainView, int* pColorVar, int* pAlphaVar=nullptr);
 	void RenderSkinSelection(CUIRect MainView);
 	void RenderSkinPartSelection(CUIRect MainView);
 	void RenderSkinPartPalette(CUIRect MainView);
@@ -572,6 +574,7 @@ private:
 	void RenderSettingsTeeBasic(CUIRect MainView);
 	void RenderSettingsTeeCustom(CUIRect MainView);
 	void PopupConfirmDeleteSkin();
+	void RenderSettingsCustom(CUIRect MainView);
 	void RenderSettingsControls(CUIRect MainView);
 	void RenderSettingsGraphics(CUIRect MainView);
 	void RenderSettingsSound(CUIRect MainView);

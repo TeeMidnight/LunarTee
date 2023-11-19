@@ -9,13 +9,12 @@
 
 #include <engine/shared/config.h>
 
-CMainNetClient::CMainNetClient(CConfig *pConfig, class IEngine *pEngine) :
+CMainNetClient::CMainNetClient() :
 	m_pData(0),
-	m_DstServerID(-1),
-    m_pEngine(pEngine),
-    m_pConfig(pConfig)
+	m_DstServerID(-1)
 {
-	
+	for(auto &NetClient : m_apNetClient)
+		NetClient = nullptr;
 }
 
 CMainNetClient::~CMainNetClient()
@@ -27,8 +26,10 @@ CMainNetClient::~CMainNetClient()
 	}
 }
 
-void CMainNetClient::Init(IMasterServer *pMasterServer, IConsole *pConsole)
+void CMainNetClient::Init(class CConfig *pConfig, class IEngine *pEngine, IMasterServer *pMasterServer, IConsole *pConsole)
 {
+	m_pConfig = pConfig;
+	m_pEngine = pEngine;
 	m_pMasterServer = pMasterServer;
 	m_pConsole = pConsole;
 }
@@ -71,6 +72,9 @@ bool CMainNetClient::Connect(int Dst, NETADDR *pAddr)
 
 bool CMainNetClient::Disconnect(int Dst, const char* pReason)
 {
+	if(Dst == DST_SERVER && m_DstServerID == -1)
+		return false;
+
 	if(Dst == DST_SERVER)
 		Dst = m_DstServerID;
 	
@@ -82,18 +86,21 @@ bool CMainNetClient::Disconnect(int Dst, const char* pReason)
 
 bool CMainNetClient::Update()
 {
-	for(int i=0; i<NUM_DST; i++)
+	for(int i = 0; i < NUM_DST; i ++)
 	{
 		m_apNetClient[i]->Update();
 	}
+	return true;
 }
 
 bool CMainNetClient::RecvLoop()
 {
-	for(int i=0; i<NUM_DST; i++)
+	for(int i = 0; i < NUM_DST; i ++)
 	{
-		m_apNetClient[i]->RecvLoop();
+		if(m_apNetClient[i])
+			m_apNetClient[i]->RecvLoop();
 	}
+	return true;
 }
 
 bool CMainNetClient::Send(int Dst, CNetChunk *pChunk, TOKEN Token, CSendCBData *pCallbackData)
@@ -149,6 +156,12 @@ const char* CMainNetClient::ErrorString(int Dst) const
 		return m_apNetClient[Dst]->ErrorString();
 	
 	return 0;
+}
+
+void CMainNetClient::PurgeStoredPacket(int Dst, int TrackID)
+{
+	if(m_apNetClient[Dst])
+		m_apNetClient[Dst]->PurgeStoredPacket(TrackID);
 }
 
 void CMainNetClient::ResetErrorString(int Dst)
