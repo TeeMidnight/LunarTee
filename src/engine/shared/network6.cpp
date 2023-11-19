@@ -132,7 +132,6 @@ void CNetBase::SendPacketConnless(NETSOCKET Socket, NETADDR *pAddr, const void *
 	aBuffer[5] = 0xff;
 	mem_copy(&aBuffer[6], pData, DataSize);
 	net_udp_send(Socket, pAddr, aBuffer, 6+DataSize);
-	dbg_msg("yee", "%s", aBuffer);
 }
 
 void CNetBase::SendPacket(NETSOCKET Socket, NETADDR *pAddr, CNetPacketConstruct *pPacket)

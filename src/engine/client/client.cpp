@@ -1775,8 +1775,6 @@ void CClient::ProcessServerPacket6(CNetChunk *pPacket)
 	if(Unpacker.Error())
 		return;
 
-	dbg_msg("yee", "%d", Msg);
-
 	if(Sys)
 	{
 		// system message

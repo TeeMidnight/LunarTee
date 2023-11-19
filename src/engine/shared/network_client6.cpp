@@ -106,7 +106,6 @@ int CNetClient::RecvLoop()
 	CNetChunk Packet;
 	while(Recv(&Packet))
 	{
-		dbg_msg("yee", "looping 0.6");
 		if(Packet.m_Flags&network6::NETSENDFLAG_CONNLESS)
 		{
 			if(m_fProcessConnlessPacket)
