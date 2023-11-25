@@ -86,6 +86,11 @@ int CNetClient::Recv(CNetChunk *pChunk)
 				pChunk->m_Address = Addr;
 				pChunk->m_DataSize = m_RecvUnpacker.m_Data.m_DataSize;
 				pChunk->m_pData = m_RecvUnpacker.m_Data.m_aChunkData;
+				if(m_RecvUnpacker.m_Data.m_Flags & NET_PACKETFLAG_EXTENDED)
+				{
+					pChunk->m_Flags |= NETSENDFLAG_EXTENDED;
+					mem_copy(((CNetChunk6 *) pChunk)->m_aExtraData, m_RecvUnpacker.m_Data.m_aExtraData, sizeof(((CNetChunk6 *) pChunk)->m_aExtraData));
+				}
 				return 1;
 			}
 			else
@@ -103,7 +108,7 @@ int CNetClient::Recv(CNetChunk *pChunk)
 
 int CNetClient::RecvLoop()
 {
-	CNetChunk Packet;
+	CNetChunk6 Packet;
 	while(Recv(&Packet))
 	{
 		if(Packet.m_Flags&network6::NETSENDFLAG_CONNLESS)
@@ -131,7 +136,8 @@ int CNetClient::Send(CNetChunk *pChunk, TOKEN Token, CSendCBData *pCallbackData)
 	if(pChunk->m_Flags&NETSENDFLAG_CONNLESS)
 	{
 		// send connectionless packet
-		network6::CNetBase::SendPacketConnless(m_Socket, &pChunk->m_Address, pChunk->m_pData, pChunk->m_DataSize);
+		network6::CNetBase::SendPacketConnless(m_Socket, &pChunk->m_Address, pChunk->m_pData, pChunk->m_DataSize,
+			pChunk->m_Flags & NETSENDFLAG_EXTENDED, ((CNetChunk6 *) pChunk)->m_aExtraData);
 	}
 	else
 	{

@@ -10,6 +10,7 @@
 
 class CServerBrowser : public IServerBrowser
 {
+	friend class CClient;
 public:
 	enum
 	{
@@ -58,6 +59,8 @@ public:
 	
 	void LoadServerlist();
 	void SaveServerlist();
+
+	void OnServerInfoUpdate(const NETADDR &Addr, int Token, const CServerInfo *pInfo);
 
 private:
 	class CMainNetClient *m_pNetClient;

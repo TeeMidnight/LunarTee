@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <base/math.h>
+#include <base/hash_ctxt.h>
 #include <base/system.h>
 
 #include <engine/external/json-parser/json.h>
@@ -27,6 +28,7 @@
 
 
 static const char *s_pFilename = "serverlist.json";
+static unsigned char s_aTokenSeed[16];
 
 inline int AddrHash(const NETADDR *pAddr)
 {
@@ -40,6 +42,26 @@ inline int AddrHash(const NETADDR *pAddr)
 inline int GetNewToken()
 {
 	return random_int();
+}
+
+static int GenerateToken(const NETADDR &Addr)
+{
+	SHA256_CTX Sha256;
+	sha256_init(&Sha256);
+	sha256_update(&Sha256, s_aTokenSeed, sizeof(s_aTokenSeed));
+	sha256_update(&Sha256, (unsigned char *)&Addr, sizeof(Addr));
+	SHA256_DIGEST Digest = sha256_finish(&Sha256);
+	return (Digest.data[0] << 16) | (Digest.data[1] << 8) | Digest.data[2];
+}
+
+static int GetBasicToken(int Token)
+{
+	return Token & 0xff;
+}
+
+static int GetExtraToken(int Token)
+{
+	return Token >> 8;
 }
 
 CServerBrowser::CServerlist::~CServerlist()
@@ -84,6 +106,8 @@ CServerBrowser::CServerBrowser()
 	m_ActServerlistType = 0;
 	m_BroadcastTime = 0;
 	m_MasterRefreshTime = 0;
+
+	secure_random_fill(s_aTokenSeed, sizeof(s_aTokenSeed));
 }
 
 void CServerBrowser::Init(class CMainNetClient *pNetClient, const char *pNetVersion)
@@ -300,6 +324,8 @@ void CServerBrowser::SetType(int Type)
 void CServerBrowser::Refresh(int RefreshFlags)
 {
 	m_RefreshFlags |= RefreshFlags;
+
+	secure_random_fill(s_aTokenSeed, sizeof(s_aTokenSeed));
 
 	if(RefreshFlags&IServerBrowser::REFRESHFLAG_LAN)
 	{
@@ -521,10 +547,24 @@ CServerEntry *CServerBrowser::Add(int ServerlistType, const NETADDR &Addr, bool 
 
 CServerEntry *CServerBrowser::Find(int ServerlistType, const NETADDR &Addr)
 {
-	for(CServerEntry *pEntry = m_aServerlist[ServerlistType].m_aServerlistIp[AddrHash(&Addr)]; pEntry; pEntry = pEntry->m_pNextIp)
+	if(ServerlistType != IServerBrowser::TYPE_ALL)
+		for(CServerEntry *pEntry = m_aServerlist[ServerlistType].m_aServerlistIp[AddrHash(&Addr)]; pEntry; pEntry = pEntry->m_pNextIp)
+		{
+			if(net_addr_comp(&pEntry->m_Addr, &Addr, true) == 0)
+				return pEntry;
+		}
+	else
 	{
-		if(net_addr_comp(&pEntry->m_Addr, &Addr, true) == 0)
-			return pEntry;
+		for(CServerEntry *pEntry = m_aServerlist[IServerBrowser::TYPE_INTERNET].m_aServerlistIp[AddrHash(&Addr)]; pEntry; pEntry = pEntry->m_pNextIp)
+		{
+			if(net_addr_comp(&pEntry->m_Addr, &Addr, true) == 0)
+				return pEntry;
+		}
+		for(CServerEntry *pEntry = m_aServerlist[IServerBrowser::TYPE_LAN].m_aServerlistIp[AddrHash(&Addr)]; pEntry; pEntry = pEntry->m_pNextIp)
+		{
+			if(net_addr_comp(&pEntry->m_Addr, &Addr, true) == 0)
+				return pEntry;
+		}
 	}
 	return (CServerEntry*)0;
 }
@@ -597,16 +637,21 @@ void CServerBrowser::RequestImpl(const NETADDR &Addr, CServerEntry *pEntry)
 
 	if(pEntry && pEntry->m_ProtocolSix)
 	{
+		int Token = GenerateToken(Addr);
+		
 		unsigned char Buffer[sizeof(SERVERBROWSE_GETINFO)+1];
 		mem_copy(Buffer, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO));
-		Buffer[sizeof(SERVERBROWSE_GETINFO)] = pEntry ? pEntry->m_CurrentToken : m_CurrentLanToken;
+		Buffer[sizeof(SERVERBROWSE_GETINFO)] = GetBasicToken(Token);
 
-		CNetChunk Packet;
+		CNetChunk6 Packet;
 		Packet.m_ClientID = -1;
 		Packet.m_Address = Addr;
-		Packet.m_Flags = network6::NETSENDFLAG_CONNLESS;
+		Packet.m_Flags = network6::NETSENDFLAG_CONNLESS | network6::NETSENDFLAG_EXTENDED;
 		Packet.m_DataSize = sizeof(Buffer);
 		Packet.m_pData = Buffer;
+		mem_zero(&Packet.m_aExtraData, sizeof(Packet.m_aExtraData));
+		Packet.m_aExtraData[0] = GetExtraToken(Token) >> 8;
+		Packet.m_aExtraData[1] = GetExtraToken(Token) & 0xff;
 
 		m_pNetClient->Send(CMainNetClient::DST_MASTER06, &Packet);
 	}
@@ -724,4 +769,68 @@ void CServerBrowser::SaveServerlist()
 
 	Writer.EndArray();
 	Writer.EndObject();
+}
+
+void CServerBrowser::OnServerInfoUpdate(const NETADDR &Addr, int Token, const CServerInfo *pInfo)
+{
+	int BasicToken = Token;
+	int ExtraToken = 0;
+	if(pInfo->m_Type == SERVERINFO_EXTENDED)
+	{
+		BasicToken = Token & 0xff;
+		ExtraToken = Token >> 8;
+	}
+
+	CServerEntry *pEntry = Find(IServerBrowser::TYPE_INTERNET, Addr);
+	if(!pEntry)
+	{
+		pEntry = Find(IServerBrowser::TYPE_LAN, Addr);
+
+		NETADDR Broadcast;
+		mem_zero(&Broadcast, sizeof(Broadcast));
+		Broadcast.type = m_pNetClient->NetType(CMainNetClient::DST_MASTER06) | NETTYPE_LINK_BROADCAST;
+		int TokenBC = GenerateToken(Broadcast);
+		bool Drop = false;
+		Drop = Drop || BasicToken != GetBasicToken(TokenBC);
+		Drop = Drop || (pInfo->m_Type == SERVERINFO_EXTENDED && ExtraToken != GetExtraToken(TokenBC));
+		if(Drop)
+		{
+			return;
+		}
+
+		if(!pEntry)
+			pEntry = Add(IServerBrowser::TYPE_LAN, Addr, 1);
+
+		SetInfo(IServerBrowser::TYPE_LAN, pEntry, *pInfo);
+		pEntry->m_Info.m_Latency = minimum(static_cast<int>((time_get() - m_BroadcastTime) * 1000 / time_freq()), 999);
+	}
+	else
+	{
+		if(!pEntry)
+		{
+			return;
+		}
+		int TokenAddr = GenerateToken(Addr);
+		bool Drop = false;
+		Drop = Drop || BasicToken != GetBasicToken(TokenAddr);
+		Drop = Drop || (pInfo->m_Type == SERVERINFO_EXTENDED && ExtraToken != GetExtraToken(TokenAddr));
+		if(Drop)
+		{
+			return;
+		}
+
+		if(pEntry->m_RequestTime > 0)
+		{
+			SetInfo(IServerBrowser::TYPE_INTERNET, pEntry, *pInfo);
+
+			int Latency = minimum(static_cast<int>((time_get() - pEntry->m_RequestTime) * 1000 / time_freq()), 999);
+		
+			pEntry->m_Info.m_Latency = Latency;
+		
+			pEntry->m_RequestTime = -1; // Request has been answered
+		}
+	}
+
+	RemoveRequest(pEntry);
+	RequestResort();
 }

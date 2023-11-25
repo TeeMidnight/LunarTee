@@ -4,6 +4,7 @@
 #define ENGINE_SERVERBROWSER_H
 
 #include <engine/shared/protocol.h>
+#include <stdint.h>
 
 #include "kernel.h"
 
@@ -47,9 +48,12 @@ public:
 	int m_ServerIndex;
 
 	NETADDR m_NetAddr;
+	uint64_t m_ReceivedPackets;
+	int m_NumReceivedClients;
 
 	int m_QuickSearchHit;
 	int m_FriendState;
+	int m_Type;
 
 	int m_MaxClients;
 	int m_NumClients;
@@ -129,6 +133,7 @@ public:
 
 		TYPE_INTERNET=0,
 		TYPE_LAN,
+		TYPE_ALL, // only find
 		NUM_TYPES,
 
 		REFRESHFLAG_INTERNET=1,

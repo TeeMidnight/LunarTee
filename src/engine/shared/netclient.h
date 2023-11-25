@@ -24,7 +24,10 @@ struct CNetChunk
 	int m_Flags;
 	int m_DataSize;
 	const void *m_pData;
-	// ddnet 0.6
+};
+
+struct CNetChunk6 : public CNetChunk
+{
 	unsigned char m_aExtraData[4];
 };
 
