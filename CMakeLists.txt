@@ -1112,11 +1112,23 @@ set(EXPECTED_DATA
   ui/file_icons.png
   ui/gametypes/ctf.png
   ui/gametypes/dm.png
+  ui/gametypes/ddrace.png
+  ui/gametypes/ddracenetwork.png
+  ui/gametypes/f-ddrace.png
+  ui/gametypes/fng.png
+  ui/gametypes/fng2.png
+  ui/gametypes/fng2+.png
+  ui/gametypes/infclassr.png
   ui/gametypes/lms.png
   ui/gametypes/lts.png
   ui/gametypes/mod.png
+  ui/gametypes/openfng.png
   ui/gametypes/race.png
+  ui/gametypes/solofng.png
+  ui/gametypes/solofng2+.png
+  ui/gametypes/trainfng.png
   ui/gametypes/tdm.png
+  ui/gametypes/zcatch.png
   ui/gui_buttons.png
   ui/gui_cursor.png
   ui/gui_icons.png
