@@ -266,11 +266,7 @@ int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr)
 			{
 				return 0;
 			}
-			if(pPacket->m_aChunkData[0] == NET_CTRLMSG_CONNECTACCEPT)
-			{
-				return 0;
-			}
-			else
+			if(pPacket->m_aChunkData[0] != NET_CTRLMSG_CONNECTACCEPT)
 			{
 				return 0;
 			}
@@ -410,11 +406,6 @@ int CNetConnection::Update()
 	// send keep alives if nothing has happend for 250ms
 	if(State() == NET_CONNSTATE_ONLINE)
 	{
-		if(time_get()-m_LastSendTime > time_freq()/2) // flush connection after 500ms if needed
-		{
-			int NumFlushedChunks = Flush();
-			dbg_msg("connection", "flushed connection due to timeout. %d chunks.", NumFlushedChunks);
-		}
 		if(Now-m_LastSendTime > Freq)
 			SendControl(NET_CTRLMSG_KEEPALIVE, 0, 0);
 	}
