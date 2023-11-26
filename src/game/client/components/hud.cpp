@@ -474,7 +474,7 @@ void CHud::RenderWarmupTimer()
 			}
 			else
 			{
-				str_format(aBuf, sizeof(aBuf), Localize("waiting for more players"));
+				str_format(aBuf, sizeof(aBuf), Localize("wait for more players"));
 				if(m_WarmupHideTick == 0)
 					m_WarmupHideTick = time_get();
 			}
