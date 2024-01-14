@@ -117,9 +117,6 @@ int CControls::SnapInput(int *pData)
 		m_InputData.m_PlayerFlags = PLAYERFLAG_CHATTING;
 	else
 		m_InputData.m_PlayerFlags = 0;
-	
-	if(Config()->m_PlayerXMasHat)
-		m_InputData.m_PlayerFlags |= PLAYERFLAG_XMASHAT;
 
 	if(m_pClient->m_pScoreboard->IsActive())
 		m_InputData.m_PlayerFlags |= PLAYERFLAG_SCOREBOARD;

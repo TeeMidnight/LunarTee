@@ -346,12 +346,6 @@ void CMenus::RenderSkinSelection(CUIRect MainView)
 		if(Item.m_Visible)
 		{
 			CTeeRenderInfo Info;
-			if(Config()->m_PlayerXMasHat)
-			{
-				Info.m_HatTexture = m_pClient->m_pSkins->m_XmasHatTexture;
-				Info.m_HatSpriteIndex = 1;
-			}
-
 			for(int p = 0; p < NUM_SKINPARTS; p++)
 			{
 				if(s->m_aUseCustomColors[p])
@@ -448,12 +442,6 @@ void CMenus::RenderSkinPartSelection(CUIRect MainView)
 		if(Item.m_Visible)
 		{
 			CTeeRenderInfo Info;
-			if(Config()->m_PlayerXMasHat)
-			{
-				Info.m_HatTexture = m_pClient->m_pSkins->m_XmasHatTexture;
-				Info.m_HatSpriteIndex = 1;
-			}
-
 			for(int j = 0; j < NUM_SKINPARTS; j++)
 			{
 				int SkinPart = m_pClient->m_pSkins->FindSkinPart(j, CSkins::ms_apSkinVariables[j], false);
@@ -1181,11 +1169,6 @@ void CMenus::RenderSettingsPlayer(CUIRect MainView)
 		// validate skin parts for solo mode
 		CTeeRenderInfo OwnSkinInfo;
 		OwnSkinInfo.m_Size = 50.0f;
-		if(Config()->m_PlayerXMasHat)
-		{
-			OwnSkinInfo.m_HatTexture = m_pClient->m_pSkins->m_XmasHatTexture;
-			OwnSkinInfo.m_HatSpriteIndex = 1;
-		}
 
 		char aSkinParts[NUM_SKINPARTS][MAX_SKIN_ARRAY_SIZE];
 		char* apSkinPartsPtr[NUM_SKINPARTS];
@@ -1459,15 +1442,6 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 		
 	float ButtonHeight = 20.0f;
 	float Spacing = 2.0f;
-	// player xmas hat
-	MainView.HSplitTop(Spacing, 0, &MainView);
-	MainView.HSplitTop(ButtonHeight, &Button, &MainView);
-	static int s_ButtonXmas = 0;
-	if(DoButton_CheckBox(&s_ButtonXmas, Localize("Use XMas Hat"), Config()->m_PlayerXMasHat, &Button))
-	{
-		Config()->m_PlayerXMasHat ^= 1;
-	}
-		
 }
 
 void CMenus::RenderSettingsControls(CUIRect MainView)

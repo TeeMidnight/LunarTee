@@ -1363,6 +1363,7 @@ set_src(ENGINE_SHARED GLOB src/engine/shared
   packer.cpp
   packer.h
   protocol.h
+  protocol6.h
   ringbuffer.cpp
   ringbuffer.h
   snapshot.cpp
@@ -1692,33 +1693,6 @@ target_link_libraries(${TARGET_VERSIONSRV} ${LIBS})
 list(APPEND TARGETS_OWN ${TARGET_MASTERSRV} ${TARGET_VERSIONSRV})
 list(APPEND TARGETS_LINK ${TARGET_MASTERSRV} ${TARGET_VERSIONSRV})
 
-set(TARGETS_TOOLS)
-set_src(TOOLS GLOB src/tools
-  crapnet.cpp
-  fake_server.cpp
-  map_resave.cpp
-  map_version.cpp
-  packetgen.cpp
-)
-foreach(ABS_T ${TOOLS})
-  file(RELATIVE_PATH T "${PROJECT_SOURCE_DIR}/src/tools/" ${ABS_T})
-  if(T MATCHES "\\.cpp$")
-    string(REGEX REPLACE "\\.cpp$" "" TOOL "${T}")
-    add_executable(${TOOL} EXCLUDE_FROM_ALL
-      ${DEPS}
-      src/tools/${TOOL}.cpp
-      ${EXTRA_TOOL_SRC}
-      $<TARGET_OBJECTS:engine-shared>
-    )
-    target_link_libraries(${TOOL} ${LIBS})
-    list(APPEND TARGETS_TOOLS ${TOOL})
-  endif()
-endforeach()
-
-list(APPEND TARGETS_OWN ${TARGETS_TOOLS})
-list(APPEND TARGETS_LINK ${TARGETS_TOOLS})
-
-add_custom_target(tools DEPENDS ${TARGETS_TOOLS})
 add_custom_target(everything DEPENDS ${TARGETS_OWN})
 
 ########################################################################

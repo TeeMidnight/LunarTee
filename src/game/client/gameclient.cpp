@@ -1750,7 +1750,7 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 		pGameClient->m_pSkins->ValidateSkinParts(apSkinParts, m_aUseCustomColors, m_aSkinPartColors, pGameClient->m_GameInfo.m_GameFlags);
 
 		m_SkinInfo.m_Size = 64;
-		if(pGameClient->IsXmas() || (pGameClient->m_Snap.m_paPlayerInfos[ClientID] && pGameClient->m_Snap.m_paPlayerInfos[ClientID]->m_PlayerFlags&PLAYERFLAG_XMASHAT))
+		if(pGameClient->IsXmas())
 		{
 			m_SkinInfo.m_HatTexture = pGameClient->m_pSkins->m_XmasHatTexture;
 			m_SkinInfo.m_HatSpriteIndex = ClientID % CSkins::HAT_NUM;
