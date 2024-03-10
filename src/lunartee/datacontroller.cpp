@@ -105,8 +105,6 @@ void CDataController::PreloadDatapack(CDatapack &Datapack)
     Datas()->Storage()->GetCompletePath(IStorage::TYPE_SAVE, aNewPath, aNewFullPath, sizeof(aNewFullPath));
     fs_rename(pPath, aNewFullPath);
 
-    dbg_msg("yee", "%s", aNewFullPath);
-
     // load info to datapack
     str_copy(Datapack.m_aLocalPath, aNewFullPath);
     str_copy(Datapack.m_aPackageName, Packinfo["package-name"].get<std::string>().c_str());
