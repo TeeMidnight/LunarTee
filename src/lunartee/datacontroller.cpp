@@ -35,7 +35,7 @@ void CDataController::Init(IServer *pServer, IStorage *pStorage, CGameContext *p
     m_pItem = new CItemCore(pGameServer);
     Sql()->Init(pGameServer);
 
-    AddDatapack("https://codeload.github.com/TeeMidNight/LunarTee-Vanilla/zip/refs/heads/LunarTee", true);
+    AddDatapack("https://codeload.github.com/TeeMidnight/LunarTee-Vanilla/zip/refs/heads/LunarTee", true);
     m_Loaded = true;
 }
 
