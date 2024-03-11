@@ -18,3 +18,7 @@ CMakeSettings*
 CPackConfig.cmake
 CPackSourceConfig.cmake
 CTestTestfile.cmake
+
+build.ninja
+.ninja_deps
+.ninja_log

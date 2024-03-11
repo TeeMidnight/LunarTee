@@ -82,6 +82,10 @@ void CMenu::RegisterMain()
             {
                 pThis->GetMenuPage("CRAFT")->m_pfnCallback(ClientID, "SHOW", "", 
                     pThis->GetMenuPage("CRAFT")->m_pUserData);
+            }else if(str_comp(pCmd, "INVENTORY") == 0)
+            {
+                pThis->GetMenuPage("INVENTORY")->m_pfnCallback(ClientID, "SHOW", "", 
+                    pThis->GetMenuPage("INVENTORY")->m_pUserData);
             }
         };
         
