@@ -37,7 +37,11 @@ void CSqlConnection::Disconnect()
 {
 	try
 	{
-		m_pConnection->close();
+		#if PQXX_VERSION_MAJOR >= 7
+			m_pConnection->close();
+		#else
+			m_pConnection->disconnect();
+		#endif
 	}
 	catch (const std::exception &e)
 	{
