@@ -87,7 +87,7 @@ void CSql::CreateTables()
 			
 			pConnection->Connect();
 
-			if (pConnection->Connection()->is_open()) 
+			if (pConnection->IsOpen()) 
 			{
 				CSqlWork *pWork = new CSqlWork(pConnection->Connection());
 				std::string ExecBuffer;
@@ -131,7 +131,7 @@ SqlResult *CSql::Execute(const char* pExec)
 			
 			pConnection->Connect();
 
-			if (pConnection->Connection()->is_open()) 
+			if(pConnection->IsOpen()) 
 			{
 				CSqlWork *pWork = new CSqlWork(pConnection->Connection());
 				m_pResult = pWork->Commit(pExec);

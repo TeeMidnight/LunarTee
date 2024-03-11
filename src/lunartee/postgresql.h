@@ -37,6 +37,7 @@ public:
 
 	SqlConnection *Connect();
 	void Disconnect();
+	bool IsOpen() { return m_pConnection ? m_pConnection->is_open() : false; }
 };
 
 class CSqlWork
