@@ -41,6 +41,7 @@ public:
     void AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true, bool SendChat = false);
     void SetInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true);
     void SetInvItemNumThread(const char *pItemName, int Num, int ClientID);
+    void SyncInvItem(int ClientID);
     void ClearInv(int ClientID, bool Database = true);
 };
 

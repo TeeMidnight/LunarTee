@@ -37,7 +37,7 @@ void CSqlConnection::Disconnect()
 {
 	try
 	{
-		m_pConnection->disconnect();
+		m_pConnection->close();
 	}
 	catch (const std::exception &e)
 	{

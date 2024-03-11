@@ -2224,6 +2224,8 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 				{
 					SendChatTarget_Localization(ClientID, _("You are now logged in."));
 					m_apPlayers[ClientID]->Login(Iter["UserID"].as<int>());
+
+					Datas()->Item()->SyncInvItem(ClientID);
 					
 					s_LoginMutex.unlock();
 					return;
