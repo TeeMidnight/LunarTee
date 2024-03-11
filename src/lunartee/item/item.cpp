@@ -170,9 +170,28 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 	pThis->Menu()->UpdateMenu(ClientID, Options, "CRAFT");
 }
 
+void CItemCore::MenuInventory(int ClientID, const char* pCmd, const char* pReason, void *pUserData)
+{
+	CItemCore *pThis = (CItemCore *) pUserData;
+
+	std::vector<CMenuOption> Options;
+
+	Options.push_back(CMenuOption(_("Inventory"), 0, "#### {STR} ####"));
+
+	char aBuf[128];
+	for(auto& Item : pThis->GetInventory(ClientID))
+	{
+		str_format(aBuf, sizeof(aBuf), "%s x%d", pThis->Menu()->Localize(Item.first.c_str()), Item.second);
+		Options.push_back(CMenuOption(aBuf, "", "= {STR}"));
+	}
+
+	pThis->Menu()->UpdateMenu(ClientID, Options, "INVENTORY");
+}
+
 void CItemCore::RegisterMenu()
 {
     Menu()->Register("CRAFT", "MAIN", this, MenuCraft);
+    Menu()->Register("INVENTORY", "MAIN", this, MenuInventory);
 }
 
 void CItemCore::InitWeapon(std::string Buffer)

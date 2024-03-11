@@ -69,6 +69,7 @@ void CMenu::RegisterMain()
                 Options.push_back(CMenuOption(_("Main Menu"), 0, "#### {STR} ####"));
 
                 Options.push_back(CMenuOption(_("Craft"), "CRAFT"));
+                Options.push_back(CMenuOption(_("Inventory"), "INVENTORY"));
                 Options.push_back(CMenuOption(_("Language"), "LANGUAGE"));
 
                 pThis->UpdateMenu(ClientID, Options, "MAIN");

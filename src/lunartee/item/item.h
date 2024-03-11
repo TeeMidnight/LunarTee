@@ -20,6 +20,7 @@ class CItemCore
     const char* GetTypesByStr(const char *pStr);
 
     static void MenuCraft(int ClientID, const char* pCmd, const char* pReason, void *pUserData);
+    static void MenuInventory(int ClientID, const char* pCmd, const char* pReason, void *pUserData);
     void RegisterMenu();
 
 public:
