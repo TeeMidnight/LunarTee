@@ -179,7 +179,7 @@ void CItemCore::MenuInventory(int ClientID, const char* pCmd, const char* pReaso
 	Options.push_back(CMenuOption(_("Inventory"), 0, "#### {STR} ####"));
 
 	char aBuf[128];
-	for(auto& Item : pThis->GetInventory(ClientID))
+	for(auto& Item : *(pThis->GetInventory(ClientID)))
 	{
 		str_format(aBuf, sizeof(aBuf), "%s x%d", pThis->Menu()->Localize(Item.first.c_str()), Item.second);
 		Options.push_back(CMenuOption(aBuf, "", "= {STR}"));
