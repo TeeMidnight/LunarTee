@@ -2074,7 +2074,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		if(m_vpBotPlayers[i]->GameWorld() != m_apPlayers[ClientID]->GameWorld())
 			continue;
 
-		if(distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos) > 6000.0f)
+		if(distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos) > 2e5)
 			continue;
 			
 		std::pair<float,int> temp;
