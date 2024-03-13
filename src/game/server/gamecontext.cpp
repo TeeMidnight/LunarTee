@@ -2152,6 +2152,12 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
 			Buffer.c_str(), "*");
 
+		if(!pSqlResult)
+		{
+			s_RegisterMutex.unlock();
+			return;
+		}
+
 		if(!pSqlResult->size())
 		{
 			nlohmann::json Json = {{"Password", PassHash.c_str()}, 
@@ -2202,6 +2208,12 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 
 		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
 			Buffer.c_str(), "*");
+
+		if(!pSqlResult)
+		{
+			s_LoginMutex.unlock();
+			return;
+		}
 
 		if(!pSqlResult->size())
 		{

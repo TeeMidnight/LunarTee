@@ -307,6 +307,12 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_itemdata",
 			Buffer.c_str(), "*");
 
+		if(!pSqlResult)
+		{
+			s_ItemMutex.unlock();
+			return;
+		}
+
 		if(!pSqlResult->size())
 		{
 			Buffer.clear();
@@ -349,7 +355,7 @@ void CItemCore::SyncInvItem(int ClientID)
 
 	std::thread Thread([this, ClientID]()
 	{
-		s_ItemMutex.lock();
+		s_SyncMutex.lock();
 
 		auto pOwner = GameServer()->m_apPlayers[ClientID];
 		int UserID = pOwner->GetUserID();
@@ -362,6 +368,12 @@ void CItemCore::SyncInvItem(int ClientID)
 		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_itemdata",
 			Buffer.c_str(), "*");
 
+		if(!pSqlResult)
+		{
+			s_SyncMutex.unlock();
+			return;
+		}
+
 		if(pSqlResult->size())
 		{
 			for(SqlResult::const_iterator Iter = pSqlResult->begin(); Iter != pSqlResult->end(); ++ Iter)
@@ -370,7 +382,7 @@ void CItemCore::SyncInvItem(int ClientID)
 			}
 		}
 
-		s_ItemMutex.unlock();
+		s_SyncMutex.unlock();
 	});
 	Thread.detach();
 	return;
