@@ -177,11 +177,11 @@ void CLocalization::LoadDatapack(class CUnzip *pUnzip, std::string Buffer)
 				pLanguage = (* m_vpLanguages.rbegin());
 			}
 
-			std::string Buffer;
+			std::string FileBuffer;
 			char aPath[IO_MAX_PATH_LENGTH];
 			str_format(aPath, sizeof(aPath), "translations/%s.lang", aPath);
-			if(pUnzip->UnzipFile(Buffer, aPath))
-				pLanguage->Load(this, Storage(), Buffer);
+			if(pUnzip->UnzipFile(FileBuffer, aPath))
+				pLanguage->Load(this, Storage(), FileBuffer);
 			else
 				continue;
 
