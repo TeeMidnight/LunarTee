@@ -93,6 +93,8 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 	bool Success = Load(pLocalization, pStorage, io_read_all_str(File));
 
 	io_close(File);
+
+	return Success;
 }
 
 const char *CLocalization::CLanguage::Localize(const char *pText) const
