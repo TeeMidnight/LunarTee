@@ -36,6 +36,7 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 	bool isEndOfFile = false;
 
 	std::size_t StartPos = 0;
+	std::size_t TempPos = 0;
 
 	std::string Key;
 
@@ -44,11 +45,20 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 		isEndOfFile = true;
 
 		//Load one line
-		std::size_t TempPos = StartPos;
-		StartPos = FileStr.find_first_of('\n', StartPos);
-		if(StartPos != std::string::npos)
+		StartPos = FileStr.find_first_of('\n', TempPos);
+		if(TempPos < FileStr.size())
 		{
-			str_copy(FileLine, FileStr.substr(TempPos, StartPos - TempPos - 1).c_str());
+			if(StartPos == FileStr.npos)
+			{
+				StartPos = FileStr.size();
+			}
+
+			str_copy(FileLine, FileStr.substr(TempPos, StartPos - TempPos).c_str(), StartPos - TempPos + 1);
+			
+			if(StartPos == 0)
+				TempPos = 1;
+			else
+				TempPos = StartPos + 1;
 			isEndOfFile = false;
 		}
 
@@ -69,6 +79,7 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 			{
 				std::string Value = FileLine + 3;
 				m_Translations.insert(std::pair(Key, Value));
+				dbg_msg("yee", "%s %s", Key.c_str(), Value.c_str());
 			}
 		}
 	}
@@ -159,17 +170,19 @@ void CLocalization::LoadDatapack(class CUnzip *pUnzip, std::string Buffer)
 	nlohmann::json rStart = nlohmann::json::parse(Buffer);
 	if(rStart.is_array())
 	{
+		dbg_msg("localization", "loading a datapack language");
 		for(auto& Current : rStart)
 		{
 			CLanguage *pLanguage = nullptr;
 			auto Iter = find_if(m_vpLanguages.begin(), m_vpLanguages.end(), 
 				[Current](CLocalization::CLanguage *a)
 				{
-					return str_comp(a->GetFilename(), Current["file"].get<std::string>().c_str());
+					return (str_comp(a->GetFilename(), Current["file"].get<std::string>().c_str()) == 0);
 				});
 			if(Iter != m_vpLanguages.end())
 			{
 				pLanguage = *Iter;
+				dbg_msg("localization", "find language '%s' as origin", pLanguage->GetName());
 			}
 			else
 			{
@@ -181,7 +194,7 @@ void CLocalization::LoadDatapack(class CUnzip *pUnzip, std::string Buffer)
 
 			std::string FileBuffer;
 			char aPath[IO_MAX_PATH_LENGTH];
-			str_format(aPath, sizeof(aPath), "translations/%s.lang", aPath);
+			str_format(aPath, sizeof(aPath), "translations/%s.lang", Current["file"].get<std::string>().c_str());
 			if(pUnzip->UnzipFile(FileBuffer, aPath))
 				pLanguage->Load(this, Storage(), FileBuffer);
 			else

@@ -48,6 +48,9 @@ LunarTee translation
 = Invalid spectator id {INT} used
 ## 无效的旁观者ID {INT}
 
+= Inventory
+## 物品栏
+
 = Kick voting requires {INT} players on the server
 ## 发起踢出投票至少需要{INT}名玩家在线
 
