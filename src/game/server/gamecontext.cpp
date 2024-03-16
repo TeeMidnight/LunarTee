@@ -2065,7 +2065,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		}
 		else
 		{
-			Dist[Dist.size()-1].first = 3e3;
+			Dist[Dist.size()-1].first = 3e3 + 1;
 		}
 	}
 
@@ -2083,6 +2083,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 
 		Dist.push_back(temp);
 	}
+	std::sort(Dist.begin(), Dist.end(), distCompare);
 
 	for(int i = 1; i < MaxClients - 1; i++)
 	{
