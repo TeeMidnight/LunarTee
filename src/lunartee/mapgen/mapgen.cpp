@@ -312,16 +312,12 @@ void CMapGen::GenerateGameLayer()
 	m_pGameTiles = new CTile[Width*Height];
 	m_pBackGroundTiles = new CTile[Width*Height];
 
-	srand(time(0) + rand());
-	const siv::PerlinNoise::seed_type UnhookableSeed = (unsigned int) clamp(rand(), 0, RAND_MAX);
-	const siv::PerlinNoise UnhookablePerlin{ UnhookableSeed };
-	
-	srand(time(0) + rand());
-	const siv::PerlinNoise::seed_type AirSeed = (unsigned int) clamp(rand(), 0, RAND_MAX);
-	const siv::PerlinNoise AirPerlin{ AirSeed };
+	srand(time(0));
+	const siv::PerlinNoise::seed_type Seed = (unsigned int) clamp(rand(), 0, RAND_MAX);
+	const siv::PerlinNoise Perlin{ Seed };
 	
 	// fill tiles to solid
-	auto FillThread = [this, Width, Height, UnhookablePerlin, AirPerlin](int ChunkX, int ChunkY)
+	auto FillThread = [this, Width, Height, Perlin](int ChunkX, int ChunkY)
 	{
 		CTile *pTiles = m_pGameTiles;
 		for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x ++)
@@ -350,7 +346,7 @@ void CMapGen::GenerateGameLayer()
 					{
 						continue;
 					}
-					const double noise = UnhookablePerlin.octave2D_01((x * 0.01), (y * 0.01), 4, 0.6);
+					const double noise = Perlin.octave2D_01((x * 0.01), (y * 0.01), 4, 0.6);
 					if(noise < 0.2f)
 					{
 						pTiles[y * Width + x].m_Index = TILE_NOHOOK;
@@ -363,7 +359,7 @@ void CMapGen::GenerateGameLayer()
 		{
 			int NoiseX = (x ? ((x < Width - 1) ? x : (Width - 2)) : 1);
 
-			int GenerateHeight = maximum(1, (int) (clamp(AirPerlin.octave2D_01((NoiseX * 0.01), 0, 4), (double)0.f, (double)0.9f) * Height - 1));
+			int GenerateHeight = maximum(1, (int) (clamp(Perlin.octave2D_01((NoiseX * 0.01), 0, 4), (double)0.f, (double)0.9f) * Height - 1));
 			for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y ++)
 			{
 				if(y < GenerateHeight)
