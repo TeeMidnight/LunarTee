@@ -33,6 +33,8 @@ public:
 		inline const char *GetFilename() const { return m_aFilename; }
 		inline const char *GetName() const { return m_aName; }
 		inline bool IsLoaded() const { return m_Loaded; }
+
+		bool Load(CLocalization* pLocalization, class IStorage* pStorage, std::string FileStr);
 		bool Load(CLocalization* pLocalization, class IStorage* pStorage);
 		const char *Localize(const char *pKey) const;
 	};
@@ -53,6 +55,7 @@ public:
 	
 	virtual bool InitConfig(int argc, const char ** argv);
 	virtual bool Init();
+	virtual void LoadDatapack(class CUnzip *pUnzip, std::string Buffer);
 
 	//localize
 	const char *Localize(const char *pLanguageCode, const char *pText);

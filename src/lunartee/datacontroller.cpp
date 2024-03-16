@@ -206,6 +206,10 @@ void CDataController::LoadDatapack(const char* pPath)
     std::string Buffer;
     if(Unzip.UnzipFile(Buffer, "weapons.json"))
         Item()->InitWeapon(Buffer);
+
+    std::string Buffer;
+    if(Unzip.UnzipFile(Buffer, "translation/index.json"))
+        Server()->Localization()->LoadDatapack(&Unzip, Buffer);
     // Load bots
     Unzip.ListDir("bots", LoadBots, this);
 }

@@ -5,6 +5,8 @@
 #include <engine/shared/config.h>
 #include <engine/storage.h>
 
+#include <lunartee/datacontroller.h>
+
 #include <cstdarg>
 
 CLocalization::CLanguage::CLanguage() :
@@ -28,19 +30,12 @@ CLocalization::CLanguage::CLanguage(const char *pName, const char *pFilename, co
 
 CLocalization::CLanguage::~CLanguage() = default;
 
-bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pStorage)
+bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pStorage, std::string FileStr)
 {
-	// read file data into buffer
-	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "./data/server_lang/%s.lang", m_aFilename);
-	
-	IOHANDLE File = pStorage->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
-
-	if(!File)
-		return false;
-
 	char FileLine[512];
 	bool isEndOfFile = false;
+
+	std::size_t StartPos = 0;
 
 	std::string Key;
 
@@ -50,21 +45,13 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 
 		//Load one line
 		int FileLineLength = 0;
-		char c;
-		while(io_read(File, &c, 1))
+		std::size_t TempPos = StartPos;
+		StartPos = FileStr.find_first_of('\n', StartPos);
+		if(StartPos != std::string::npos)
 		{
+			str_copy(FileLine, FileStr.substr(TempPos, StartPos - TempPos).c_str());
 			isEndOfFile = false;
-
-			if(c == '\n') 
-				break;
-			else
-			{
-				FileLine[FileLineLength] = c;
-				FileLineLength++;
-			}
 		}
-
-		FileLine[FileLineLength] = 0;
 
 		//Get the key
 		static const char MsgIdKey[] = "= ";
@@ -87,11 +74,25 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 		}
 	}
 
-	io_close(File);
-
 	m_Loaded = true;
 	
 	return true;
+}
+
+bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pStorage)
+{
+	// read file data into buffer
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "./data/server_lang/%s.lang", m_aFilename);
+	
+	IOHANDLE File = pStorage->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
+
+	if(!File)
+		return false;
+
+	bool Success = Load(pLocalization, pStorage, io_read_all_str(File));
+
+	io_close(File);
 }
 
 const char *CLocalization::CLanguage::Localize(const char *pText) const
@@ -150,6 +151,46 @@ bool CLocalization::Init()
 	}
 	
 	return true;
+}
+
+static bool Compare(CLocalization::CLanguage *a, CLocalization::CLanguage *b)
+{
+	return (str_comp(a->GetFilename(), b->GetFilename()) == 0);
+}
+
+void CLocalization::LoadDatapack(class CUnzip *pUnzip, std::string Buffer)
+{
+	nlohmann::json rStart = nlohmann::json::parse(Buffer);
+	if(rStart.is_array())
+	{
+		for(auto& Current : rStart)
+		{
+			CLanguage *pLanguage = nullptr;
+			auto Iter = find(m_vpLanguages.begin(), m_vpLanguages.end(), Compare);
+			if(Iter != m_vpLanguages.end())
+				pLanguage = *Iter;
+			else
+			{
+				m_vpLanguages.push_back(new CLanguage(Current["name"].get<std::string>().c_str(),
+					Current["file"].get<std::string>().c_str(), Current["parent"].empty() ? "" : Current["parent"].get<std::string>().c_str()));
+
+				pLanguage = (* m_vpLanguages.rbegin());
+			}
+
+			std::string Buffer;
+			char aPath[IO_MAX_PATH_LENGTH];
+			str_format(aPath, sizeof(aPath), "translations/%s.lang", aPath);
+			if(pUnzip->UnzipFile(Buffer, aPath))
+				pLanguage->Load(this, Storage(), Buffer);
+			else
+				continue;
+
+			if(str_comp(g_Config.m_SvDefaultLanguage, Current["file"].get<std::string>().c_str()) == 0)
+			{
+				m_pMainLanguage = (* m_vpLanguages.rbegin());
+			}
+		}
+	}
 }
 
 const char *CLocalization::LocalizeWithDepth(const char *pLanguageCode, const char *pText, int Depth)
