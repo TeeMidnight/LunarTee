@@ -44,7 +44,6 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 		isEndOfFile = true;
 
 		//Load one line
-		int FileLineLength = 0;
 		std::size_t TempPos = StartPos;
 		StartPos = FileStr.find_first_of('\n', StartPos);
 		if(StartPos != std::string::npos)
