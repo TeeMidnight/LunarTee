@@ -16,7 +16,7 @@
 #define GAME_NETVERSION "0.6 626fce9a778df4d4" //the std game version
 
 #define DDNET_VERSIONNR 17100
-#define DATAPACK_VERSION 1
+#define DATAPACK_VERSION 2
 
 #endif
 #endif
