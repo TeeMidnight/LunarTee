@@ -79,7 +79,6 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 			{
 				std::string Value = FileLine + 3;
 				m_Translations.insert(std::pair(Key, Value));
-				dbg_msg("yee", "%s %s", Key.c_str(), Value.c_str());
 			}
 		}
 	}
