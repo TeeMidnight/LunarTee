@@ -48,7 +48,7 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 		StartPos = FileStr.find_first_of('\n', StartPos);
 		if(StartPos != std::string::npos)
 		{
-			str_copy(FileLine, FileStr.substr(TempPos, StartPos - TempPos).c_str());
+			str_copy(FileLine, FileStr.substr(TempPos, StartPos - TempPos - 1).c_str());
 			isEndOfFile = false;
 		}
 
