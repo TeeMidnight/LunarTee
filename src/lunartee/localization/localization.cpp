@@ -153,11 +153,6 @@ bool CLocalization::Init()
 	return true;
 }
 
-static bool Compare(CLocalization::CLanguage *a, CLocalization::CLanguage *b)
-{
-	return (str_comp(a->GetFilename(), b->GetFilename()) == 0);
-}
-
 void CLocalization::LoadDatapack(class CUnzip *pUnzip, std::string Buffer)
 {
 	nlohmann::json rStart = nlohmann::json::parse(Buffer);
@@ -166,9 +161,15 @@ void CLocalization::LoadDatapack(class CUnzip *pUnzip, std::string Buffer)
 		for(auto& Current : rStart)
 		{
 			CLanguage *pLanguage = nullptr;
-			auto Iter = find(m_vpLanguages.begin(), m_vpLanguages.end(), Compare);
+			auto Iter = find_if(m_vpLanguages.begin(), m_vpLanguages.end(), 
+				[Current](CLocalization::CLanguage *a)
+				{
+					return str_comp(a->GetFilename(), Current["file"].get<std::string>().c_str())
+				});
 			if(Iter != m_vpLanguages.end())
+			{
 				pLanguage = *Iter;
+			}
 			else
 			{
 				m_vpLanguages.push_back(new CLanguage(Current["name"].get<std::string>().c_str(),
