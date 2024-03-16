@@ -164,7 +164,7 @@ void CLocalization::LoadDatapack(class CUnzip *pUnzip, std::string Buffer)
 			auto Iter = find_if(m_vpLanguages.begin(), m_vpLanguages.end(), 
 				[Current](CLocalization::CLanguage *a)
 				{
-					return str_comp(a->GetFilename(), Current["file"].get<std::string>().c_str())
+					return str_comp(a->GetFilename(), Current["file"].get<std::string>().c_str());
 				});
 			if(Iter != m_vpLanguages.end())
 			{
