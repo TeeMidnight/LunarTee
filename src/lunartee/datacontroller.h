@@ -3,8 +3,6 @@
 
 #include <zip.h>
 
-#include "item/item.h"
-
 #include "webdownloader.h"
 
 class IServer;
@@ -174,7 +172,7 @@ class CDataController
     IStorage *m_pStorage;
     class CGameContext *m_pGameServer;
     CWebDownloader *m_pWebDownloader;
-    CItemCore *m_pItem;
+    class CItemCore *m_pItem;
 
     bool m_Loaded;
 
@@ -183,7 +181,7 @@ public:
     IStorage *Storage() { return m_pStorage; }
     class CGameContext *GameServer() { return m_pGameServer; }
     CWebDownloader *Downloader() { return m_pWebDownloader; }
-    CItemCore *Item() { return m_pItem; }
+    class CItemCore *Item() { return m_pItem; }
 
     bool Loaded() { return m_Loaded; }
 

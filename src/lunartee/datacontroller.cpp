@@ -6,6 +6,8 @@
 
 #include <lunartee/postgresql.h>
 
+#include "item/item.h"
+
 #include "datacontroller.h"
 // unload description: wrong datapack info
 #define ULDESC_WI "This datapack isn't for the server's version or the info is wrong, please update your server."
