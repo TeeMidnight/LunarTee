@@ -2153,7 +2153,7 @@ int CServer::Run()
 	}
 
 	IEngine *pEngine = Kernel()->RequestInterface<IEngine>();
-	m_pRegister = CreateRegister(m_pConsole, pEngine, g_Config.m_SvPort, m_NetServer.GetGlobalToken());
+	m_pRegister = CreateRegister(&g_Config, m_pConsole, pEngine, g_Config.m_SvPort, m_NetServer.GetGlobalToken());
 
 	m_NetServer.SetCallbacks(NewClientCallback, NewClientNoAuthCallback, ClientRejoinCallback, DelClientCallback, this);
 
