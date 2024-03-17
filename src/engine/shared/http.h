@@ -1,9 +1,12 @@
 #ifndef ENGINE_SHARED_HTTP_H
 #define ENGINE_SHARED_HTTP_H
 
+#include <base/hash_ctxt.h>
+
+#include <engine/shared/jobs.h>
+
 #include <algorithm>
 #include <atomic>
-#include <engine/shared/jobs.h>
 
 #include <engine/external/json/json.hpp>
 
@@ -56,12 +59,15 @@ class CHttpRequest : public IJob
 	size_t m_BodyLength = 0;
 
 	CTimeout m_Timeout = CTimeout{0, 0, 0, 0};
-	int64_t  m_MaxResponseSize = -1;
+	int64_t m_MaxResponseSize = -1;
 	REQUEST m_Type = REQUEST::GET;
+
+	SHA256_CTX m_ActualSha256;
+	SHA256_DIGEST m_ExpectedSha256 = SHA256_ZEROED;
 
 	bool m_WriteToFile = false;
 
-	uint64_t  m_ResponseLength = 0;
+	uint64_t m_ResponseLength = 0;
 
 	// If `m_WriteToFile` is false.
 	size_t m_BufferSize = 0;
@@ -102,10 +108,11 @@ public:
 	~CHttpRequest();
 
 	void Timeout(CTimeout Timeout) { m_Timeout = Timeout; }
-	void MaxResponseSize(int64_t  MaxResponseSize) { m_MaxResponseSize = MaxResponseSize; }
+	void MaxResponseSize(int64_t MaxResponseSize) { m_MaxResponseSize = MaxResponseSize; }
 	void LogProgress(HTTPLOG LogProgress) { m_LogProgress = LogProgress; }
 	void IpResolve(IPRESOLVE IpResolve) { m_IpResolve = IpResolve; }
 	void WriteToFile(IStorage *pStorage, const char *pDest, int StorageType);
+	void ExpectSha256(const SHA256_DIGEST &Sha256) { m_ExpectedSha256 = Sha256; }
 	void Head() { m_Type = REQUEST::HEAD; }
 	void Post(const unsigned char *pData, size_t DataLength)
 	{
@@ -145,23 +152,6 @@ public:
 		{
 			return nullptr;
 		}
-	}
-
-	const char *DestAbsolut()
-	{
-		if(m_WriteToFile)
-		{
-			return m_aDestAbsolute;
-		}
-		else
-		{
-			return nullptr;
-		}
-	}
-
-	const char *Url()
-	{
-		return m_aUrl;
 	}
 
 	double Current() const { return m_Current.load(std::memory_order_relaxed); }

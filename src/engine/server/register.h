@@ -1,7 +1,7 @@
 #ifndef ENGINE_SERVER_REGISTER_H
 #define ENGINE_SERVER_REGISTER_H
 
-class CConfig;
+class CConfiguration;
 class IConsole;
 class IEngine;
 struct CNetChunk;
@@ -23,6 +23,6 @@ public:
 	virtual void OnShutdown() = 0;
 };
 
-IRegister *CreateRegister(IConsole *pConsole, IEngine *pEngine, int ServerPort, unsigned SixupSecurityToken);
+IRegister *CreateRegister(CConfiguration *pConfig, IConsole *pConsole, IEngine *pEngine, int ServerPort, unsigned SixupSecurityToken);
 
 #endif

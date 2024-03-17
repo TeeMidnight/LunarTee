@@ -127,6 +127,7 @@ bool HttpHasIpresolveBug()
 CHttpRequest::CHttpRequest(const char *pUrl)
 {
 	str_copy(m_aUrl, pUrl);
+	sha256_init(&m_ActualSha256);
 }
 
 CHttpRequest::~CHttpRequest()
@@ -308,10 +309,13 @@ size_t CHttpRequest::OnData(char *pData, size_t DataSize)
 {
 	// Need to check for the maximum response size here as curl can only
 	// guarantee it if the server sets a Content-Length header.
-	if(m_MaxResponseSize >= 0 && m_ResponseLength + DataSize > (uint64_t )m_MaxResponseSize)
+	if(m_MaxResponseSize >= 0 && m_ResponseLength + DataSize > (uint64_t)m_MaxResponseSize)
 	{
 		return 0;
 	}
+
+	sha256_update(&m_ActualSha256, pData, DataSize);
+
 	if(!m_WriteToFile)
 	{
 		if(DataSize == 0)
@@ -358,6 +362,23 @@ int CHttpRequest::OnCompletion(int State)
 {
 	if(m_Abort)
 		State = HTTP_ABORTED;
+
+	if(State == HTTP_DONE && m_ExpectedSha256 != SHA256_ZEROED)
+	{
+		const SHA256_DIGEST ActualSha256 = sha256_finish(&m_ActualSha256);
+		if(ActualSha256 != m_ExpectedSha256)
+		{
+			if(g_Config.m_DbgCurl || m_LogProgress >= HTTPLOG::FAILURE)
+			{
+				char aActualSha256[SHA256_MAXSTRSIZE];
+				sha256_str(ActualSha256, aActualSha256, sizeof(aActualSha256));
+				char aExpectedSha256[SHA256_MAXSTRSIZE];
+				sha256_str(m_ExpectedSha256, aExpectedSha256, sizeof(aExpectedSha256));
+				dbg_msg("http", "SHA256 mismatch: got=%s, expected=%s, url=%s", aActualSha256, aExpectedSha256, m_aUrl);
+			}
+			State = HTTP_ERROR;
+		}
+	}
 
 	if(m_WriteToFile)
 	{
@@ -409,8 +430,5 @@ nlohmann::json CHttpRequest::ResultJson()
 		return nullptr;
 	}
 
-	char aBuf[1024];
-	str_copy(aBuf, (char *) pResult, ResultLength);
-
-	return nlohmann::json::parse(aBuf);
+	return nlohmann::json::parse(pResult);
 }
