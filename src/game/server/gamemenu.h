@@ -79,7 +79,7 @@ private:
 	void PreviousPage(int ClientID);
 	CMenuOption *FindOption(const char *pDesc, int ClientID);
 
-	std::pair<std::vector<CMenuOption>, CMenuPage> m_vPlayerMenu[MAX_CLIENTS];
+	std::pair<std::vector<CMenuOption>, CMenuPage> m_avPlayerMenu[MAX_CLIENTS];
 	std::vector<CMenuPage> m_vMenuPages;
 
 public:

@@ -21,13 +21,13 @@ const char *CMenu::Localize(const char *pText) const
 
 CMenuOption *CMenu::FindOption(const char *pDesc, int ClientID)
 {
-	auto i = std::find_if(m_vPlayerMenu[ClientID].first.begin(), m_vPlayerMenu[ClientID].first.end(),
+	auto i = std::find_if(m_avPlayerMenu[ClientID].first.begin(), m_avPlayerMenu[ClientID].first.end(),
         [pDesc](CMenuOption Option)
         {
             return !str_comp(Option.m_aOption, pDesc);
         });
 
-    if(i != m_vPlayerMenu[ClientID].first.end())
+    if(i != m_avPlayerMenu[ClientID].first.end())
     {
         return &(*i);
     }
@@ -124,7 +124,7 @@ void CMenu::RegisterLanguage()
 
 void CMenu::PreviousPage(int ClientID)
 {
-    CMenuPage *pPage = GetMenuPage(m_vPlayerMenu[ClientID].second.m_aParentName);
+    CMenuPage *pPage = GetMenuPage(m_avPlayerMenu[ClientID].second.m_aParentName);
 
     if(!pPage)
         return;
@@ -142,7 +142,7 @@ void CMenu::UpdateMenu(int ClientID, std::vector<CMenuOption> Options, const cha
         CNetMsg_Sv_VoteClearOptions Msg;
 	    Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
         
-        m_vPlayerMenu[ClientID].first.clear();
+        m_avPlayerMenu[ClientID].first.clear();
     }
     
     str_copy(m_aLanguageCode, GameServer()->m_apPlayers[ClientID]->GetLanguage());
@@ -171,8 +171,8 @@ void CMenu::UpdateMenu(int ClientID, std::vector<CMenuOption> Options, const cha
     }
     
     // append
-    m_vPlayerMenu[ClientID].first = Options;
-    m_vPlayerMenu[ClientID].second = *Page;
+    m_avPlayerMenu[ClientID].first = Options;
+    m_avPlayerMenu[ClientID].second = *Page;
 }
 
 bool CMenu::UseOptions(const char *pDesc, const char *pReason, int ClientID)
@@ -194,7 +194,7 @@ bool CMenu::UseOptions(const char *pDesc, const char *pReason, int ClientID)
         if(str_comp(pOption->m_aCmd, "PREPAGE") == 0)
             PreviousPage(ClientID);
         else 
-            m_vPlayerMenu[ClientID].second.m_pfnCallback(ClientID, pOption->m_aCmd, pReason, m_vPlayerMenu[ClientID].second.m_pUserData);
+            m_avPlayerMenu[ClientID].second.m_pfnCallback(ClientID, pOption->m_aCmd, pReason, m_avPlayerMenu[ClientID].second.m_pUserData);
     }
     GameServer()->CreateSoundGlobal(SOUND_WEAPON_NOAMMO, ClientID);
     return true;
