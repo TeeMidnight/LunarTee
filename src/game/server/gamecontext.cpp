@@ -2074,9 +2074,9 @@ void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)
 			EscapeJson(aCSkinName, sizeof(aCSkinName), TeeInfo.m_SkinName));
 	}
 	str_format(aBuf, BufSize,
-		",\"skin\":"
+		",\"skin\":{"
 		"%s"
-		","
+		"},"
 		"\"afk\":false,"
 		"\"team\":%d",
 		aJsonSkin,

@@ -1817,10 +1817,11 @@ void CServer::UpdateRegisterServerInfo()
 		}
 	}
 
-	int MaxPlayers = max(m_NetServer.MaxClients() - g_Config.m_SvSpectatorSlots, PlayerCount);
-	int MaxClients = max(m_NetServer.MaxClients(), ClientCount);
+	int MaxPlayers = maximum(m_NetServer.MaxClients() - g_Config.m_SvSpectatorSlots, PlayerCount);
+	int MaxClients = maximum(m_NetServer.MaxClients(), ClientCount);
 	char aName[256];
 	char aGameType[32];
+	char aMapName[64];
 	char aVersion[64];
 	char aMapSha256[SHA256_MAXSTRSIZE];
 
@@ -1847,7 +1848,7 @@ void CServer::UpdateRegisterServerInfo()
 		JsonBool(g_Config.m_Password[0]),
 		EscapeJson(aGameType, sizeof(aGameType), GameServer()->GameType()),
 		EscapeJson(aName, sizeof(aName), g_Config.m_SvName),
-		m_vMapDatas[0].m_aCurrentMap,
+		EscapeJson(aMapName, sizeof(aMapName), m_vMapDatas[0].m_aCurrentMap),
 		aMapSha256,
 		m_vMapDatas[0].m_CurrentMapSize,
 		EscapeJson(aVersion, sizeof(aVersion), GameServer()->Version()));
@@ -1863,7 +1864,7 @@ void CServer::UpdateRegisterServerInfo()
 			char aExtraPlayerInfo[512];
 			GameServer()->OnUpdatePlayerServerInfo(aExtraPlayerInfo, sizeof(aExtraPlayerInfo), i);
 
-			char aClientInfo[256];
+			char aClientInfo[1024];
 			str_format(aClientInfo, sizeof(aClientInfo),
 				"%s{"
 				"\"name\":\"%s\","
