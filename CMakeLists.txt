@@ -5,25 +5,6 @@ file(STRINGS src/game/version.h VERSION_LINE
   REGEX "^#define GAME_RELEASE_VERSION "
 )
 
-file(STRINGS src/game/version.h MOD_VERSION_LINE
-  LIMIT_COUNT 1
-  REGEX "^#define MOD_VERSION "
-)
-
-if(MOD_VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\"")
-  set(MOD_VERSION_MAJOR ${CMAKE_MATCH_1})
-  set(MOD_VERSION_MINOR ${CMAKE_MATCH_2})
-  set(MOD_VERSION_PATCH ${CMAKE_MATCH_3})
-elseif(MOD_VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\"")
-  set(MOD_VERSION_MAJOR ${CMAKE_MATCH_1})
-  set(MOD_VERSION_MINOR ${CMAKE_MATCH_2})
-  set(MOD_VERSION_PATCH "0")
-else()
-  message(FATAL_ERROR "Couldn't parse mod version from src/game/version.h")
-endif()
-
-set(MOD_VERSION "${MOD_VERSION_MAJOR}.${MOD_VERSION_MINOR}.${MOD_VERSION_PATCH}")
-
 if(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\"")
   set(VERSION_MAJOR ${CMAKE_MATCH_1})
   set(VERSION_MINOR ${CMAKE_MATCH_2})
