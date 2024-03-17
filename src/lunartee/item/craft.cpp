@@ -54,7 +54,7 @@ void CCraftCore::CraftItem(const char *pMakeItem, int ClientID)
 		return;
 	}
 
-	Makeable=true;
+	Makeable = true;
 
 	for(int i = 0; i < NUM_LUNARTEE_WEAPONS; i ++)
 	{
