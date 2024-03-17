@@ -59,6 +59,7 @@ void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
 		str_copy(pData->m_aName, Item["name"].get<std::string>().c_str());
 
 		nlohmann::json Needs = Item["need"];
+		pData->m_Needs.m_vDatas.clear();
 		if(Needs.is_array())
 		{
 			pData->m_Makeable = true;
@@ -73,10 +74,11 @@ void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
 		}
 
 		nlohmann::json Gives = Item["give"];
+		pData->m_Gives.m_vDatas.clear();
 		if(Gives.is_array())
 		{
 			pData->m_Makeable = true;
-			for(auto& Current : Needs)
+			for(auto& Current : Gives)
 			{
 				bool SendChat = true;
 				if(!Current["sendchat"].empty())
