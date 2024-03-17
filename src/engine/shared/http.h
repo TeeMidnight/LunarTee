@@ -154,6 +154,23 @@ public:
 		}
 	}
 
+	const char *DestAbsolut()
+	{
+		if(m_WriteToFile)
+		{
+			return m_aDestAbsolute;
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+	const char *Url()
+	{
+		return m_aUrl;
+	}
+
 	double Current() const { return m_Current.load(std::memory_order_relaxed); }
 	double Size() const { return m_Size.load(std::memory_order_relaxed); }
 	int Progress() const { return m_Progress.load(std::memory_order_relaxed); }
