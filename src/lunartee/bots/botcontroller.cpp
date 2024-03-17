@@ -67,7 +67,7 @@ void CBotController::OnCreateBot()
     
 	for(int i = 0; i < (int) GameServer()->m_vpWorlds.size(); i ++)
 	{
-		int NeedSpawn = GameServer()->m_vpWorlds[i]->Collision()->GetWidth()/16;
+		int NeedSpawn = GameServer()->m_vpWorlds[i]->Collision()->GetWidth()/32;
 		int BotNum = GameServer()->GetBotNum(GameServer()->m_vpWorlds[i]);
 		while(BotNum < NeedSpawn)
 		{	
