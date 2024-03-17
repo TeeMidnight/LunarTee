@@ -182,7 +182,7 @@ void CItemCore::MenuInventory(int ClientID, const char* pCmd, const char* pReaso
 	for(auto& Item : *(pThis->GetInventory(ClientID)))
 	{
 		str_format(aBuf, sizeof(aBuf), "%s x%d", pThis->Menu()->Localize(Item.first.c_str()), Item.second);
-		Options.push_back(CMenuOption(aBuf, "", "= {STR}"));
+		Options.push_back(CMenuOption(aBuf, "SHOW", "= {STR}"));
 	}
 
 	pThis->Menu()->UpdateMenu(ClientID, Options, "INVENTORY");
