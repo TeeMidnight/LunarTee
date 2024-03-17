@@ -1986,33 +1986,100 @@ void CGameContext::CreateBot(CGameWorld *pGameWorld, CBotData BotData)
 	m_vpBotPlayers.push_back(new CPlayer(pGameWorld, m_FirstFreeBotID, 0, BotData));
 }
 
+static char EscapeJsonChar(char c)
+{
+	switch(c)
+	{
+	case '\"': return '\"';
+	case '\\': return '\\';
+	case '\b': return 'b';
+	case '\n': return 'n';
+	case '\r': return 'r';
+	case '\t': return 't';
+	// Don't escape '\f', who uses that. :)
+	default: return 0;
+	}
+}
+
+static char *EscapeJson(char *pBuffer, int BufferSize, const char *pString)
+{
+	dbg_assert(BufferSize > 0, "can't null-terminate the string");
+	// Subtract the space for null termination early.
+	BufferSize--;
+
+	char *pResult = pBuffer;
+	while(BufferSize && *pString)
+	{
+		char c = *pString;
+		pString++;
+		char Escaped = EscapeJsonChar(c);
+		if(Escaped)
+		{
+			if(BufferSize < 2)
+			{
+				break;
+			}
+			*pBuffer++ = '\\';
+			*pBuffer++ = Escaped;
+			BufferSize -= 2;
+		}
+		// Assuming ASCII/UTF-8, "if control character".
+		else if((unsigned char)c < 0x20)
+		{
+			// \uXXXX
+			if(BufferSize < 6)
+			{
+				break;
+			}
+			str_format(pBuffer, BufferSize, "\\u%04x", c);
+			pBuffer += 6;
+			BufferSize -= 6;
+		}
+		else
+		{
+			*pBuffer++ = c;
+			BufferSize--;
+		}
+	}
+	*pBuffer = 0;
+	return pResult;
+}
+
 void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)
 {
 	if(!m_apPlayers[ID])
 		return;
 
+	char aCSkinName[64];
+
 	CPlayer::CTeeInfo &TeeInfo = m_apPlayers[ID]->m_TeeInfos;
 
-	nlohmann::json SkinJson;
-
-	SkinJson.push_back({{ "name", TeeInfo.m_SkinName }});
-
+	char aJsonSkin[400];
+	aJsonSkin[0] = '\0';
 	// 0.6
 	if(TeeInfo.m_UseCustomColor)
 	{
-		SkinJson.push_back({ 
-			{ "color_body", TeeInfo.m_ColorBody},
-			{ "color_feet", TeeInfo.m_ColorFeet},
-		});
+		str_format(aJsonSkin, sizeof(aJsonSkin),
+			"\"name\":\"%s\","
+			"\"color_body\":%d,"
+			"\"color_feet\":%d",
+			EscapeJson(aCSkinName, sizeof(aCSkinName), TeeInfo.m_SkinName),
+			TeeInfo.m_ColorBody,
+			TeeInfo.m_ColorFeet);
 	}
-
+	else
+	{
+		str_format(aJsonSkin, sizeof(aJsonSkin),
+			"\"name\":\"%s\"",
+			EscapeJson(aCSkinName, sizeof(aCSkinName), TeeInfo.m_SkinName));
+	}
 	str_format(aBuf, BufSize,
 		",\"skin\":"
 		"%s"
 		","
 		"\"afk\":false,"
 		"\"team\":%d",
-		SkinJson.dump().c_str(),
+		aJsonSkin,
 		m_apPlayers[ID]->GetTeam());
 }
 
