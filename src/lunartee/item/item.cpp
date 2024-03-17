@@ -61,7 +61,6 @@ void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
 		nlohmann::json Needs = Item["need"];
 		if(Needs.is_array())
 		{
-			CMakeData Need;
 			pData->m_Makeable = true;
 			for(auto& Current : Needs)
 			{
@@ -69,15 +68,13 @@ void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
 				if(!Current["sendchat"].empty())
 					SendChat = Current["sendchat"].get<bool>();
 				
-				Need.m_vDatas.push_back(std::make_tuple(Current["name"], Current["num"], SendChat));
+				pData->m_Needs.m_vDatas.push_back(std::make_tuple(Current["name"], Current["num"], SendChat));
 			}
-			pData->m_Needs = Need;
 		}
 
 		nlohmann::json Gives = Item["give"];
 		if(Gives.is_array())
 		{
-			CMakeData Give;
 			pData->m_Makeable = true;
 			for(auto& Current : Needs)
 			{
@@ -85,9 +82,8 @@ void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
 				if(!Current["sendchat"].empty())
 					SendChat = Current["sendchat"].get<bool>();
 				
-				Give.m_vDatas.push_back(std::make_tuple(Current["name"], Current["num"], SendChat));
+				pData->m_Gives.m_vDatas.push_back(std::make_tuple(Current["name"], Current["num"], SendChat));
 			}
-			pData->m_Gives = Give;
 		}
 	}
 }
