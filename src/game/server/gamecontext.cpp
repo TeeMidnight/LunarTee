@@ -2093,11 +2093,6 @@ int CGameContext::GetOneWorldPlayerNum(int ClientID) const
 	return GetOneWorldPlayerNum(FindWorldWithClientID(ClientID));
 }
 
-bool distCompare(std::pair<float, int> a, std::pair<float, int> b)
-{
-	return (a.first < b.first);
-}
-
 void CGameContext::UpdatePlayerMaps(int ClientID)
 {
 	if(Server()->Tick() % g_Config.m_SvMapUpdateRate != 0)
@@ -2141,7 +2136,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		if(m_vpBotPlayers[i]->GameWorld() != m_apPlayers[ClientID]->GameWorld())
 			continue;
 
-		if(distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos) > 2e4)
+		if(distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos) > 6e3)
 			continue;
 			
 		std::pair<float,int> temp;
@@ -2150,7 +2145,6 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 
 		Dist.push_back(temp);
 	}
-	std::sort(Dist.begin(), Dist.end(), distCompare);
 
 	for(int i = 1; i < MaxClients - 1; i++)
 	{
