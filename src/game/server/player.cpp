@@ -356,7 +356,7 @@ void CPlayer::OnDisconnect(const char *pReason)
 
 	if(Server()->ClientIngame(m_ClientID))
 	{
-		GameServer()->SendChatTarget_Localization(-1, "'%s' left the server", Server()->ClientName(m_ClientID));
+		GameServer()->SendChatTarget_Localization(-1, _("'{STR}' left the server"), Server()->ClientName(m_ClientID));
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", m_ClientID, Server()->ClientName(m_ClientID));
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
