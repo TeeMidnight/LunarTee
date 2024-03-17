@@ -270,9 +270,7 @@ void CGameController::Snap(int SnappingClient)
 	if(m_SuddenDeath)
 		pGameInfoObj->m_GameStateFlags |= GAMESTATEFLAG_SUDDENDEATH;
 
-	time_t timeNow = time(NULL);
-	tm *pNowTime = localtime(&timeNow);
-	pGameInfoObj->m_RoundStartTick = Server()->Tick() - (pNowTime->tm_sec + (pNowTime->tm_min + pNowTime->tm_hour * 60) * 60) * 50;
+	pGameInfoObj->m_RoundStartTick = m_RoundStartTick;
 	pGameInfoObj->m_WarmupTimer = 0;
 
 	pGameInfoObj->m_ScoreLimit = 0;
