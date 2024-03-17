@@ -74,15 +74,18 @@ void CMenu::RegisterMain()
 
                 pThis->UpdateMenu(ClientID, Options, "MAIN");
                 return;
-            }else if(str_comp(pCmd, "LANGUAGE") == 0)
+            }
+            else if(str_comp(pCmd, "LANGUAGE") == 0)
             {
                 pThis->GetMenuPage("LANGUAGE")->m_pfnCallback(ClientID, "SHOW", "", 
                     pThis->GetMenuPage("LANGUAGE")->m_pUserData);
-            }else if(str_comp(pCmd, "CRAFT") == 0)
+            }
+            else if(str_comp(pCmd, "CRAFT") == 0)
             {
                 pThis->GetMenuPage("CRAFT")->m_pfnCallback(ClientID, "SHOW", "", 
                     pThis->GetMenuPage("CRAFT")->m_pUserData);
-            }else if(str_comp(pCmd, "INVENTORY") == 0)
+            }
+            else if(str_comp(pCmd, "INVENTORY") == 0)
             {
                 pThis->GetMenuPage("INVENTORY")->m_pfnCallback(ClientID, "SHOW", "", 
                     pThis->GetMenuPage("INVENTORY")->m_pUserData);
@@ -176,9 +179,13 @@ bool CMenu::UseOptions(const char *pDesc, const char *pReason, int ClientID)
 {
     if(!GameServer()->m_apPlayers[ClientID])
         return false;
+    
     auto pOption = FindOption(pDesc, ClientID);
+    
     if(pOption == 0x0)
+    {
         return false;
+    }
 
     str_copy(m_aLanguageCode, GameServer()->m_apPlayers[ClientID]->GetLanguage());
 
@@ -187,7 +194,7 @@ bool CMenu::UseOptions(const char *pDesc, const char *pReason, int ClientID)
         if(str_comp(pOption->m_aCmd, "PREPAGE") == 0)
             PreviousPage(ClientID);
         else 
-            m_vPlayerMenu->second.m_pfnCallback(ClientID, pOption->m_aCmd, pReason, m_vPlayerMenu->second.m_pUserData);
+            m_vPlayerMenu[ClientID].second.m_pfnCallback(ClientID, pOption->m_aCmd, pReason, m_vPlayerMenu[ClientID].second.m_pUserData);
     }
     GameServer()->CreateSoundGlobal(SOUND_WEAPON_NOAMMO, ClientID);
     return true;
