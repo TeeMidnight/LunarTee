@@ -429,6 +429,7 @@ nlohmann::json CHttpRequest::ResultJson()
 	{
 		return nullptr;
 	}
+	pResult[ResultLength] = 0;
 
 	return nlohmann::json::parse((char *) pResult, nullptr, false);
 }
