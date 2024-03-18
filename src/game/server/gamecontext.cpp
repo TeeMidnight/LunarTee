@@ -2298,6 +2298,7 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 				{
 					SendChatTarget_Localization(ClientID, _("You are now logged in."));
 					m_apPlayers[ClientID]->Login(Iter["UserID"].as<int>());
+					m_apPlayers[ClientID]->m_Datas = Json;
 
 					Datas()->Item()->SyncInvItem(ClientID);
 					
@@ -2315,6 +2316,44 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 
 		SendChatTarget_Localization(ClientID, _("Wrong password!"));
 		s_LoginMutex.unlock();
+	});
+	Thread.detach();
+
+	return;
+}
+
+static std::mutex s_UpdateMutex;
+void CGameContext::UpdatePlayerData(int ClientID)
+{
+	if(!m_apPlayers[ClientID])
+	{
+		return;
+	}
+
+	if(m_apPlayers[ClientID]->GetUserID() == -1)
+	{
+		return;
+	}
+
+	std::thread Thread([this, ClientID]()
+	{
+		s_UpdateMutex.lock();
+
+		std::string Buffer;
+
+		int ID = m_apPlayers[ClientID]->GetUserID();
+
+		Buffer.clear();
+		Buffer.append("Data = '");
+		Buffer.append(m_apPlayers[ClientID]->m_Datas.dump());
+		Buffer.append("'");
+		Buffer.append(" WHERE UserID = ");
+		Buffer.append(std::to_string(ID));
+		Buffer.append(";");
+
+		Sql()->Execute<SqlType::UPDATE>("lt_playerdata", Buffer.c_str());
+
+		s_UpdateMutex.unlock();
 	});
 	Thread.detach();
 

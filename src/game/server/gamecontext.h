@@ -247,6 +247,7 @@ public:
 
 	void Register(const char* pUsername, const char* pPassHash, int ClientID);
 	void Login(const char* pUsername, const char* pPassHash, int ClientID);
+	void UpdatePlayerData(int ClientID);
 };
 
 #endif

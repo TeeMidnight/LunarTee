@@ -7,6 +7,8 @@
 #include "entities/character.h"
 #include "gamecontext.h"
 
+#include <engine/external/json/json.hpp>
+
 // player object
 class CPlayer
 {
@@ -126,6 +128,7 @@ private:
 	void HandleTuningParams(); //This function will send the new parameters if needed
 
 public:
+	nlohmann::json m_Datas;
 
 	CTuningParams* GetNextTuningParams() { return &m_NextTuningParams; };
 	CGameContext *GameServer() const { return m_pGameServer; }

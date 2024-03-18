@@ -69,6 +69,8 @@ void CPlayer::Reset()
 		SetLanguage(Server()->GetClientLanguage(m_ClientID));
 		Server()->ClearIdMap(m_ClientID);
 	}
+	
+	m_Datas.clear();
 
 	m_ShowClientID = 0;
 
@@ -237,6 +239,7 @@ void CPlayer::Snap(int SnappingClient)
 	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, id, sizeof(CNetObj_DDNetPlayer)));
 	if(!pDDNetPlayer)
 		return;
+
 	pDDNetPlayer->m_AuthLevel = 0;
 	pDDNetPlayer->m_Flags = 0;
 
@@ -245,6 +248,9 @@ void CPlayer::Snap(int SnappingClient)
 		IServer::CClientInfo Info;
 		Server()->GetClientInfo(m_ClientID, &Info);
 		pDDNetPlayer->m_AuthLevel = Info.m_Authed;
+	
+		if(!m_Datas["donor"].empty())
+			pDDNetPlayer->m_AuthLevel = m_Datas["donor"].get<bool>();
 	}
 
 	if(m_Sit)
@@ -511,4 +517,9 @@ void CPlayer::Login(int UserID)
 {
 	m_UserID = UserID;
 	SetTeam(0); // join game
+
+	if(!m_Datas["donor"].empty() && m_Datas["donor"].get<bool>())
+	{
+		GameServer()->SendChatTarget_Localization(-1, _("Welcome donor '{STR}' back the world!"), Server()->ClientName(m_ClientID));
+	}
 }

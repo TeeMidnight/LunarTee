@@ -135,6 +135,9 @@ LunarTee translation
 = Wait for current vote to end before calling a new one.
 ## 等待当前投票结束再发起一个新的
 
+= Welcome donor '{STR}' back the world!
+## 欢迎赞助者'{STR}'返回世界!
+
 = Wrong nickname!
 ## 错误的昵称!
 
