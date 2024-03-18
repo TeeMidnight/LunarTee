@@ -406,12 +406,17 @@ void CCharacter::ResetInput()
 void CCharacter::HandleEvents()
 {
 	// handle death-tiles and leaving gamelayer
-	if((Collision()->IsCollision(m_Pos.x, m_Pos.y, m_ProximityRadius/3.f, TILE_DEATH)
-		|| GameLayerClipped(m_Pos)) 
+	if((Collision()->IsCollision(m_Pos.x, m_Pos.y, m_ProximityRadius/3.f, TILE_DEATH)) 
 		&& Server()->Tick() >= m_NextDmgTick)
 	{
 		m_NextDmgTick = Server()->Tick() + Server()->TickSpeed() * 0.1;
 		TakeDamage(vec2(0, 0), 1, GetCID(), WEAPON_WORLD);
+	}
+	
+	if(GameLayerClipped(m_Pos))
+	{
+		Die(GetCID(), WEAPON_WORLD);
+		return;
 	}
 
 	if(Collision()->IsCollision(m_Pos.x, m_Pos.y, m_ProximityRadius/3.f, TILE_MOONCENTER) 
