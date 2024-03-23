@@ -22,7 +22,7 @@
 #include "player.h"
 #include "define.h"
 
-#include <bitset>
+#include <unordered_map>
 /*
 	Tick
 		Game Context (CGameContext::tick)
@@ -110,7 +110,7 @@ public:
 
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
-	std::map<int, CPlayer*> m_pBotPlayers;
+	std::unordered_map<int, CPlayer*> m_pBotPlayers;
 
 	CGameController *m_pController;
 	CBotController *m_pBotController;
