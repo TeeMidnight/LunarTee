@@ -936,7 +936,9 @@ void CCharacter::DoBotActions()
 
 	if(!NeedActive())
 	{
+		bool BotPickable = Pickable();
 		mem_zero(&m_Botinfo, sizeof(CBotInfo));
+		m_Botinfo.m_Pickable = BotPickable;
 		return;
 	}
 	if(Pickable())
