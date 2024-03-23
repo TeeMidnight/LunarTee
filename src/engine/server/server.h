@@ -18,6 +18,7 @@
 #include <engine/shared/uuid_manager.h>
 
 #include <list>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -184,7 +185,8 @@ public:
 
 	CDemoRecorder m_DemoRecorder;
 
-	std::vector<CMapData> m_vMapDatas;
+	std::map<CUuid, CMapData> m_MapDatas;
+	CMapData *m_pMainMapData;
 
 	bool m_Active;
 
@@ -320,7 +322,7 @@ public:
 	void RegenerateMap() override;
 	bool IsActive() override;
 
-	void ChangeClientMap(int ClientID, int MapID) override;
+	void ChangeClientMap(int ClientID, CUuid *pMapID) override;
 	int GetLoadedMapNum() const override;
 
 	int GetOneWorldPlayerNum(int ClientID) const override;

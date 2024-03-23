@@ -296,13 +296,6 @@ int CMapGen::AddExternalImage(const char *pImageName, int Width, int Height)
 	return m_NumImages-1;
 }
 
-static int GetTile(CTile *pTiles, int x, int y)
-{
-	int Index = y * CHUNK_SIZE * MAP_CHUNK_WIDTH + x;
-
-	return pTiles[Index].m_Index;
-}
-
 void CMapGen::GenerateGameLayer()
 {
 	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;

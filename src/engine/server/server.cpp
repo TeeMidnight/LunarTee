@@ -323,6 +323,8 @@ CServer::CServer() : m_DemoRecorder(&m_SnapshotDelta)
 
 	m_Active = false;
 
+	m_pMainMapData = nullptr;
+
 	Init();
 }
 
@@ -892,7 +894,7 @@ int CServer::NewClientNoAuthCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
 	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_pMapData = &pThis->m_vMapDatas[0];
+	pThis->m_aClients[ClientID].m_pMapData = pThis->m_pMainMapData;
 
 	memset(&pThis->m_aClients[ClientID].m_Addr, 0, sizeof(NETADDR));
 	pThis->m_aClients[ClientID].Reset();
@@ -917,7 +919,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
 	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_pMapData = &pThis->m_vMapDatas[0];
+	pThis->m_aClients[ClientID].m_pMapData = pThis->m_pMainMapData;
 	
 	pThis->m_aClients[ClientID].Reset();
 	return 0;
@@ -945,7 +947,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_pMapData = &pThis->m_vMapDatas[0];
+	pThis->m_aClients[ClientID].m_pMapData = pThis->m_pMainMapData;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
 
 	return 0;
@@ -1523,12 +1525,12 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 			p.AddString(aBuf, 64);
 		}
 	}
-	p.AddString(m_vMapDatas[0].m_aCurrentMap, 32);
+	p.AddString(m_pMainMapData->m_aCurrentMap, 32);
 
 	if(Type == SERVERINFO_EXTENDED)
 	{
-		ADD_INT(p, m_vMapDatas[0].m_CurrentMapCrc);
-		ADD_INT(p, m_vMapDatas[0].m_CurrentMapSize);
+		ADD_INT(p, m_pMainMapData->m_CurrentMapCrc);
+		ADD_INT(p, m_pMainMapData->m_CurrentMapSize);
 	}
 
 	// gametype
@@ -1825,7 +1827,7 @@ void CServer::UpdateRegisterServerInfo()
 	char aVersion[64];
 	char aMapSha256[SHA256_MAXSTRSIZE];
 
-	sha256_str(m_vMapDatas[0].m_CurrentMapSha256, aMapSha256, sizeof(aMapSha256));
+	sha256_str(m_pMainMapData->m_CurrentMapSha256, aMapSha256, sizeof(aMapSha256));
 
 	char aInfo[16384];
 	str_format(aInfo, sizeof(aInfo),
@@ -1848,9 +1850,9 @@ void CServer::UpdateRegisterServerInfo()
 		JsonBool(g_Config.m_Password[0]),
 		EscapeJson(aGameType, sizeof(aGameType), GameServer()->GameType()),
 		EscapeJson(aName, sizeof(aName), g_Config.m_SvName),
-		EscapeJson(aMapName, sizeof(aMapName), m_vMapDatas[0].m_aCurrentMap),
+		EscapeJson(aMapName, sizeof(aMapName), m_pMainMapData->m_aCurrentMap),
 		aMapSha256,
-		m_vMapDatas[0].m_CurrentMapSize,
+		m_pMainMapData->m_CurrentMapSize,
 		EscapeJson(aVersion, sizeof(aVersion), GameServer()->Version()));
 
 	bool FirstPlayer = true;
@@ -2015,13 +2017,9 @@ void CServer::RegenerateMap()
 
 int CServer::LoadMap(const char *pMapName)
 {
-	for(auto MapData : m_vMapDatas)
-	{
-		if(str_comp(MapData.m_aCurrentMap, pMapName) == 0)
-		{
-			return 0;
-		}
-	}
+	CUuid Uuid = CalculateUuid(pMapName);
+	if(m_MapDatas.count(Uuid))
+		return 0;
 
 	m_MapReload = false;
 	//DATAFILE *df;
@@ -2053,7 +2051,10 @@ int CServer::LoadMap(const char *pMapName)
 		MapData.m_CurrentMapCrc = MapData.m_pMap->Crc();
 	}
 
-	m_vMapDatas.push_back(MapData);
+	m_MapDatas[Uuid] = MapData;
+	if(m_MapDatas.size() == 1)
+		m_pMainMapData = &m_MapDatas[Uuid];
+
 	return 1;
 }
 
@@ -2321,12 +2322,12 @@ int CServer::Run()
 
 	m_pRegister->OnShutdown();
 	
-	for(auto &Data : m_vMapDatas)
+	for(auto &Data : m_MapDatas)
 	{
-		Data.m_pMap->Unload();
+		Data.second.m_pMap->Unload();
 
-		if(Data.m_pCurrentMapData)
-			free(Data.m_pCurrentMapData);
+		if(Data.second.m_pCurrentMapData)
+			free(Data.second.m_pCurrentMapData);
 	}
 	return 0;
 }
@@ -2382,7 +2383,7 @@ void CServer::DemoRecorder_HandleAutoStart()
 		char aDate[20];
 		str_timestamp(aDate, sizeof(aDate));
 		str_format(aFilename, sizeof(aFilename), "demos/%s_%s.demo", "auto/autorecord", aDate);
-		m_DemoRecorder.Start(Storage(), m_pConsole, aFilename, GameServer()->NetVersion(), m_vMapDatas[0].m_aCurrentMap, m_vMapDatas[0].m_CurrentMapCrc, "server");
+		m_DemoRecorder.Start(Storage(), m_pConsole, aFilename, GameServer()->NetVersion(), m_pMainMapData->m_aCurrentMap, m_pMainMapData->m_CurrentMapCrc, "server");
 		if(g_Config.m_SvAutoDemoMax)
 		{
 			// clean up auto recorded demos
@@ -2410,7 +2411,7 @@ void CServer::ConRecord(IConsole::IResult *pResult, void *pUser)
 		str_timestamp(aDate, sizeof(aDate));
 		str_format(aFilename, sizeof(aFilename), "demos/demo_%s.demo", aDate);
 	}
-	pServer->m_DemoRecorder.Start(pServer->Storage(), pServer->Console(), aFilename, pServer->GameServer()->NetVersion(), pServer->m_vMapDatas[0].m_aCurrentMap, pServer->m_vMapDatas[0].m_CurrentMapCrc, "server");
+	pServer->m_DemoRecorder.Start(pServer->Storage(), pServer->Console(), aFilename, pServer->GameServer()->NetVersion(), pServer->m_pMainMapData->m_aCurrentMap, pServer->m_pMainMapData->m_CurrentMapCrc, "server");
 }
 
 void CServer::ConStopRecord(IConsole::IResult *pResult, void *pUser)
@@ -2693,12 +2694,12 @@ bool CServer::IsActive()
 	return m_Active;
 }
 
-void CServer::ChangeClientMap(int ClientID, int MapID)
+void CServer::ChangeClientMap(int ClientID, CUuid *pMapID)
 {
 	if(m_aClients[ClientID].m_State <= CClient::STATE_AUTH)
 		return;
 
-	m_aClients[ClientID].m_pMapData = &m_vMapDatas[MapID];
+	m_aClients[ClientID].m_pMapData = &m_MapDatas[*pMapID];
 	
 	SendMap(ClientID);
 	m_aClients[ClientID].Reset();
@@ -2707,7 +2708,7 @@ void CServer::ChangeClientMap(int ClientID, int MapID)
 
 int CServer::GetLoadedMapNum() const
 {
-	return (int) m_vMapDatas.size();
+	return (int) m_MapDatas.size();
 }
 
 int CServer::GetOneWorldPlayerNum(int ClientID) const

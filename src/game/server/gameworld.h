@@ -57,8 +57,6 @@ public:
 	CGameWorld();
 	~CGameWorld();
 
-	char m_aWorldName[128];
-
 	void SetGameServer(CGameContext *pGameServer);
 
 	CEntity *FindFirst(int Type);

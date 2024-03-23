@@ -234,7 +234,7 @@ void CUnzip::ListItem(CZipItem* pItem, UNZIP_LISTDIR_CALLBACK pfnCallback, void 
 
 void CUnzip::LoadDirFile()
 {
-    for(zip_int64_t i = 0; i < zip_get_num_files(m_pFile); i ++)
+    for(zip_int64_t i = 0; i < zip_get_num_entries(m_pFile, 0); i ++)
     {
         char aPath[IO_MAX_PATH_LENGTH];
         str_copy(aPath, zip_get_name(m_pFile, i, ZIP_FL_ENC_GUESS));

@@ -119,6 +119,9 @@ void CGameWorld::RemoveEntity(CEntity *pEnt)
 //
 void CGameWorld::Snap(int SnappingClient)
 {
+	if(GameServer()->m_apPlayers[SnappingClient]->GameWorld() != this)
+		return;
+
 	SnapSpawnPoint(SnappingClient); // snap spawn point
 
 	for(int i = 0; i < NUM_ENTTYPES; i++)

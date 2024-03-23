@@ -65,14 +65,14 @@ void CBotController::OnCreateBot()
         return;
     }
     
-	for(int i = 0; i < (int) GameServer()->m_vpWorlds.size(); i ++)
+	for(auto& pWorld : GameServer()->m_pWorlds)
 	{
-		int NeedSpawn = GameServer()->m_vpWorlds[i]->Collision()->GetWidth()/24;
-		int BotNum = GameServer()->GetBotNum(GameServer()->m_vpWorlds[i]);
+		int NeedSpawn = pWorld.second->Collision()->GetWidth()/24;
+		int BotNum = GameServer()->GetBotNum(pWorld.second);
 		while(BotNum < NeedSpawn)
 		{	
 			CBotData Data = RandomBotData();
-			GameServer()->CreateBot(GameServer()->m_vpWorlds[i], Data);
+			GameServer()->CreateBot(pWorld.second, Data);
 
 			BotNum ++;
 		}

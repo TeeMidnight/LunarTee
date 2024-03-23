@@ -11,6 +11,7 @@
 #include <engine/shared/jobs.h>
 
 class IMap;
+class CUuid;
 
 class IServer : public IInterface
 {
@@ -189,7 +190,7 @@ public:
 
 	virtual bool IsActive() = 0;
 
-	virtual void ChangeClientMap(int ClientID, int MapID) = 0;
+	virtual void ChangeClientMap(int ClientID, CUuid *pMapID) = 0;
 	virtual int GetLoadedMapNum() const = 0;
 
 	virtual int GetOneWorldPlayerNum(int ClientID) const = 0;

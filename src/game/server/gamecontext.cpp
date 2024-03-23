@@ -61,6 +61,8 @@ void CGameContext::Construct(int Resetting)
 	m_LockTeams = 0;
 	m_ChatResponseTargetID = -1;
 
+	m_pMainWorld = nullptr;
+
 	if(Resetting==NO_RESET)
 		m_pVoteOptionHeap = new CHeap();
 }
@@ -79,10 +81,10 @@ CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		delete m_apPlayers[i];
-	for(auto &pPlayer : m_vpBotPlayers)
-		delete pPlayer;
-	for(auto &pWorld : m_vpWorlds)
-		delete pWorld;
+	for(auto &pPlayer : m_pBotPlayers)
+		delete pPlayer.second;
+	for(auto &pWorld : m_pWorlds)
+		delete pWorld.second;
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
 	if(!m_Resetting)
@@ -117,34 +119,22 @@ void CGameContext::Clear()
 	m_Tuning = Tuning;
 }
 
-int CGameContext::FindWorldIDWithWorld(CGameWorld *pGameWorld) const
-{
-	for(int i = 0; i < (int) m_vpWorlds.size(); i ++)
-	{
-		if(m_vpWorlds[i] == pGameWorld)
-		{
-			return i;
-		}
-	}
-
-	return -1;
-}
-
 CGameWorld *CGameContext::CreateNewWorld(IMap *pMap, const char *WorldName)
 {
-	m_vpWorlds.push_back(new CGameWorld());
-	int ID = m_vpWorlds.size() - 1;
+	CUuid Uuid = CalculateUuid(WorldName);
+	m_pWorlds[Uuid] = new CGameWorld();
 
-	m_vpWorlds[ID]->SetGameServer(this);
+	m_pWorlds[Uuid]->SetGameServer(this);
 
-	m_vpWorlds[ID]->Layers()->Init(pMap);
-	m_vpWorlds[ID]->Collision()->Init(m_vpWorlds[ID]->Layers());
+	m_pWorlds[Uuid]->Layers()->Init(pMap);
+	m_pWorlds[Uuid]->Collision()->Init(m_pWorlds[Uuid]->Layers());
 
-	m_vpWorlds[ID]->InitSpawnPos();
+	m_pWorlds[Uuid]->InitSpawnPos();
 
-	str_copy(m_vpWorlds[ID]->m_aWorldName, WorldName);
+	if(m_pWorlds.size() == 1)
+		m_pMainWorld = m_pWorlds[Uuid];
 
-	return m_vpWorlds[ID];
+	return m_pWorlds[Uuid];
 }
 
 class CCharacter *CGameContext::GetPlayerChar(int ClientID)
@@ -183,34 +173,26 @@ CGameWorld *CGameContext::FindWorldWithClientID(int ClientID) const
 
 CGameWorld *CGameContext::FindWorldWithMap(IMap *pMap)
 {
-	if(m_vpWorlds.size() == 0)
+	if(m_pWorlds.size() == 0)
 		return nullptr;
 		
-	auto i = std::find_if(m_vpWorlds.begin(), m_vpWorlds.end(), 
-		[pMap](CGameWorld *pGameWorld)
+	auto i = std::find_if(m_pWorlds.begin(), m_pWorlds.end(), 
+		[pMap](std::pair<CUuid, CGameWorld*> GameWorld)
 		{
-			return pGameWorld->Layers()->Map() == pMap;
+			return GameWorld.second->Layers()->Map() == pMap;
 		});
 
-	if(i != m_vpWorlds.end())
-		return *i;
+	if(i != m_pWorlds.end())
+		return (*i).second;
 	
 	return nullptr;
 }
 
 CGameWorld *CGameContext::FindWorldWithName(const char *WorldName)
 {
-	if(m_vpWorlds.size() == 0)
-		return nullptr;
-
-	auto i = std::find_if(m_vpWorlds.begin(), m_vpWorlds.end(), 
-		[WorldName](CGameWorld *pGameWorld)
-		{
-			return !str_comp(pGameWorld->m_aWorldName, WorldName);
-		});
-
-	if(i != m_vpWorlds.end())
-		return *i;
+	CUuid Uuid = CalculateUuid(WorldName);
+	if(m_pWorlds.count(Uuid))
+		return m_pWorlds[Uuid];
 	
 	return nullptr;
 }
@@ -616,22 +598,18 @@ void CGameContext::OnTick()
 		}
 	}
 
-	for(int i = 0; i < (int) m_vpBotPlayers.size(); i++)
+	for(auto& pBotPlayer : m_pBotPlayers)
 	{
-		if(m_vpBotPlayers[i])
+		if(pBotPlayer.second)
 		{
-			m_vpBotPlayers[i]->Tick();
-		}else
-		{
-			m_vpBotPlayers.erase(m_vpBotPlayers.begin() + i);
-			i --;
+			pBotPlayer.second->Tick();
 		}
 	}
 
-	for(int i = 0; i < (int) m_vpWorlds.size(); i ++)
+	for(auto& pWorld : m_pWorlds)
 	{
-		m_vpWorlds[i]->m_Core.m_Tuning = m_Tuning;
-		m_vpWorlds[i]->Tick();
+		pWorld.second->m_Core.m_Tuning = m_Tuning;
+		pWorld.second->Tick();
 	}
 	
 	m_pBotController->Tick();
@@ -736,7 +714,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d", ClientID, Server()->ClientName(ClientID), m_apPlayers[ClientID]->GetTeam());
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
-	if(FindWorldIDWithWorld((m_apPlayers[ClientID]->GameWorld())) == 0)
+	if(m_apPlayers[ClientID]->GameWorld() == m_pMainWorld)
 	{
 		SendChatTarget_Localization(-1, _("'{STR}' entered the server"), Server()->ClientName(ClientID));
 
@@ -1506,29 +1484,22 @@ void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
 
-void CGameContext::ConNextWorld(IConsole::IResult *pResult, void *pUserData)
+void CGameContext::ConToWorld(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext* pSelf = (CGameContext*) pUserData;
+
 	int ClientID = pResult->GetClientID();
 	if(!pSelf->m_apPlayers[ClientID])
 		return;
-	
-	int MapID = pSelf->FindWorldIDWithWorld(pSelf->m_apPlayers[ClientID]->GameWorld()) + 1;
 
-	if(MapID >= pSelf->Server()->GetLoadedMapNum())
-		MapID = 0;
+	CUuid Uuid = CalculateUuid(pResult->GetString(0));
+	if(!pSelf->m_pWorlds.count(Uuid))
+		return;
 
 	pSelf->m_apPlayers[ClientID]->KillCharacter();
 	pSelf->m_apPlayers[ClientID]->m_LoadingMap = true;
 	
-	pSelf->Server()->ChangeClientMap(ClientID, MapID);
-}
-
-void CGameContext::ConMapRegenerate(IConsole::IResult *pResult, void *pUserData)
-{
-	// CGameContext* pSelf = (CGameContext*) pUserData;
-	// pSelf->Server()->RegenerateMap();
-	// pSelf->SendChatTarget_Localization(-1, "Map will regenerate!");
+	pSelf->Server()->ChangeClientMap(ClientID, &Uuid);
 }
 
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -1758,8 +1729,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, ConForceVote, this, "Force a voting option");
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
-	Console()->Register("next_world", "", CFGFLAG_SERVER, ConNextWorld, this, "go to next world");
-	Console()->Register("regenerate_map", "", CFGFLAG_SERVER, ConMapRegenerate, this, "regenerate map");
+	Console()->Register("to_world", "r", CFGFLAG_SERVER, ConToWorld, this, "go to next world");
 	
 	Console()->Register("about", "", CFGFLAG_CHAT, ConAbout, this, "Show information about the mod");
 
@@ -1823,8 +1793,8 @@ void CGameContext::OnSnap(int ClientID)
 
 	if(!m_apPlayers[ClientID])
 	{
-		for(int i = 0; i < (int) m_vpWorlds.size(); i ++)
-			m_vpWorlds[i]->Snap(ClientID);
+		for(auto& pWorld : m_pWorlds)
+			pWorld.second->Snap(ClientID);
 	}
 	else
 	{
@@ -1835,9 +1805,9 @@ void CGameContext::OnSnap(int ClientID)
 	m_pController->Snap(ClientID);
 	m_Events.Snap(ClientID);
 
-	for(int i = 0; i < (int) m_vpBotPlayers.size(); i ++)
+	for(auto& pBotPlayer : m_pBotPlayers)
 	{
-		m_vpBotPlayers[i]->SnapBot(ClientID);
+		pBotPlayer.second->SnapBot(ClientID);
 	}
 
 	for(int i = 0; i < MAX_CLIENTS; i ++)
@@ -1896,21 +1866,18 @@ int CGameContext::GetPlayerNum() const
 
 CPlayer *CGameContext::GetBotWithCID(int ClientID)
 {
-	for(int i = 0; i < (int) m_vpBotPlayers.size(); i ++)
-	{
-		if(m_vpBotPlayers[i]->GetCID() == ClientID)
-			return m_vpBotPlayers[i];
-	}
-	return 0x0;
+	if(m_pBotPlayers.count(ClientID))
+		return m_pBotPlayers[ClientID];
+	return nullptr;
 }
 
 int CGameContext::GetBotNum(CGameWorld *pGameWorld) const
 {
 	int Num = 0;
-	for(int i = 0; i < (int) m_vpBotPlayers.size(); i ++)
+	for(auto& pBotPlayer : m_pBotPlayers)
 	{
-		if(m_vpBotPlayers[i]->GameWorld() == pGameWorld && 
-			( m_vpBotPlayers[i]->GetCharacter() && !m_vpBotPlayers[i]->GetCharacter()->Pickable()))
+		if(pBotPlayer.second->GameWorld() == pGameWorld && 
+			(pBotPlayer.second->GetCharacter() && !pBotPlayer.second->GetCharacter()->Pickable()))
 			Num++;
 	}
 	return Num;
@@ -1918,21 +1885,16 @@ int CGameContext::GetBotNum(CGameWorld *pGameWorld) const
 
 int CGameContext::GetBotNum() const
 {
-	return (int) m_vpBotPlayers.size();
+	return (int) m_pBotPlayers.size();
 }
 
 void CGameContext::OnBotDead(int ClientID)
 {
-	for(int i = 0;i < (int) m_vpBotPlayers.size(); i ++)
-	{
-		if(m_vpBotPlayers[i]->GetCID() == ClientID)
-		{
-			delete m_vpBotPlayers[i];
-			m_vpBotPlayers.erase(m_vpBotPlayers.begin() + i);
-		}
-	}
+	if(!m_pBotPlayers.count(ClientID))
+		return;
 
-	m_VoteUpdate = true;
+	delete m_pBotPlayers[ClientID];
+	m_pBotPlayers.erase(ClientID);
 }
 
 void CGameContext::UpdateBot()
@@ -1943,39 +1905,10 @@ void CGameContext::UpdateBot()
 		return;
 	}
 
-	bool BotIDs[m_BiggestBotID-MAX_CLIENTS+1];
-	
-	for(int i = 0; i < m_BiggestBotID-MAX_CLIENTS+1; i ++)
+	m_FirstFreeBotID = MAX_CLIENTS;
+	while(m_pBotPlayers.count(m_FirstFreeBotID))
 	{
-		BotIDs[i] = false;
-	}
-	
-	for(int i = 0; i < (int) m_vpBotPlayers.size(); i ++)
-	{
-		BotIDs[m_vpBotPlayers[i]->GetCID() - MAX_CLIENTS] = true;
-	}
-
-	int FirstFree = -1;
-	int Biggest = -1;
-	for(int i = 0; i < m_BiggestBotID-MAX_CLIENTS+1; i ++)
-	{
-		if(BotIDs[i])
-		{
-			Biggest = i;
-		}else if(FirstFree == -1)
-		{
-			FirstFree = i;
-		}
-	}
-
-	if(FirstFree == -1)
-	{
-		m_FirstFreeBotID = MAX_CLIENTS + Biggest + 1;
-		m_BiggestBotID = MAX_CLIENTS + Biggest + 1;
-	}else
-	{
-		m_FirstFreeBotID = MAX_CLIENTS + FirstFree;
-		m_BiggestBotID = MAX_CLIENTS + Biggest;
+		m_FirstFreeBotID ++;
 	}
 }
 
@@ -1983,7 +1916,7 @@ void CGameContext::CreateBot(CGameWorld *pGameWorld, CBotData BotData)
 {
 	UpdateBot();
 
-	m_vpBotPlayers.push_back(new CPlayer(pGameWorld, m_FirstFreeBotID, 0, BotData));
+	m_pBotPlayers[m_FirstFreeBotID] = new CPlayer(pGameWorld, m_FirstFreeBotID, 0, BotData);
 }
 
 static char EscapeJsonChar(char c)
@@ -2131,17 +2064,17 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		}
 	}
 
-	for (int i = 0; i < (int) m_vpBotPlayers.size(); i++)
+	for (auto& pBotPlayer : m_pBotPlayers)
 	{
-		if(m_vpBotPlayers[i]->GameWorld() != m_apPlayers[ClientID]->GameWorld())
+		if(pBotPlayer.second->GameWorld() != m_apPlayers[ClientID]->GameWorld())
 			continue;
 
-		if(distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos) > 6e3)
+		if(distance(m_apPlayers[ClientID]->m_ViewPos, pBotPlayer.second->m_ViewPos) > 6e3)
 			continue;
 			
 		std::pair<float,int> temp;
-		temp.first = distance(m_apPlayers[ClientID]->m_ViewPos, m_vpBotPlayers[i]->m_ViewPos);
-		temp.second = m_vpBotPlayers[i]->GetCID();
+		temp.first = distance(m_apPlayers[ClientID]->m_ViewPos, pBotPlayer.second->m_ViewPos);
+		temp.second = pBotPlayer.first;
 
 		Dist.push_back(temp);
 	}

@@ -77,8 +77,7 @@ class CGameContext : public IGameServer
 	static void ConForceVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConClearVotes(IConsole::IResult *pResult, void *pUserData);
 	static void ConVote(IConsole::IResult *pResult, void *pUserData);
-	static void ConNextWorld(IConsole::IResult *pResult, void *pUserData);
-	static void ConMapRegenerate(IConsole::IResult *pResult, void *pUserData);
+	static void ConToWorld(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
@@ -111,11 +110,12 @@ public:
 
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
-	std::vector<CPlayer*> m_vpBotPlayers;
+	std::map<int, CPlayer*> m_pBotPlayers;
 
 	CGameController *m_pController;
 	CBotController *m_pBotController;
-	std::vector<CGameWorld*> m_vpWorlds;
+	std::map<CUuid, CGameWorld*> m_pWorlds;
+	CGameWorld *m_pMainWorld;
 
 	// helper functions
 	class CCharacter *GetPlayerChar(int ClientID);
@@ -148,7 +148,6 @@ public:
 	CVoteOptionServer *m_pVoteOptionFirst;
 	CVoteOptionServer *m_pVoteOptionLast;
 
-	int FindWorldIDWithWorld(CGameWorld *pGameWorld) const;
 	CGameWorld *FindWorldWithClientID(int ClientID) const;
 	CGameWorld *FindWorldWithMap(IMap *pMap);
 	CGameWorld *FindWorldWithName(const char *WorldName);
