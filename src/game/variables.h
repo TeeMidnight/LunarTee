@@ -4,7 +4,7 @@
 #define GAME_VARIABLES_H
 #undef GAME_VARIABLES_H // this file will be included several times
 
-MACRO_CONFIG_INT(SvGeneratedMap, sv_generated_map, 1, 0, 1, CFGFLAG_SERVER, "generated map")
+MACRO_CONFIG_INT(SvGeneratedMap, sv_generated_map, 1, 0, 1, CFGFLAG_SERVER, "regenerate the generated map")
 
 MACRO_CONFIG_STR(SvSqlDatabase, sv_sql_database, 256, "db_lunartee", CFGFLAG_SERVER, "SQL Database name")
 MACRO_CONFIG_STR(SvSqlUser, sv_sql_user, 256, "postgres", CFGFLAG_SERVER, "SQL User")

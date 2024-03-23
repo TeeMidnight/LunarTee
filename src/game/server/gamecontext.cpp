@@ -1729,7 +1729,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, ConForceVote, this, "Force a voting option");
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
-	Console()->Register("to_world", "r", CFGFLAG_SERVER, ConToWorld, this, "go to next world");
+	Console()->Register("to_world", "r", CFGFLAG_SERVER, ConToWorld, this, "go to the world");
 	
 	Console()->Register("about", "", CFGFLAG_CHAT, ConAbout, this, "Show information about the mod");
 
