@@ -47,6 +47,8 @@
 #include <algorithm>
 #include <cstring>
 
+#include <signal.h>
+
 #if defined(CONF_FAMILY_WINDOWS)
 	#define _WIN32_WINNT 0x0501
 	#define WIN32_LEAN_AND_MEAN
@@ -54,6 +56,8 @@
 #elif defined(CONF_FAMILY_UNIX)
     #include <cstring>//fixes memset error
 #endif
+
+volatile sig_atomic_t InterruptSignaled = 0;
 
 static const char *StrLtrim(const char *pStr)
 {
@@ -2307,6 +2311,12 @@ int CServer::Run()
 
 				PacketWaiting = x > 0 ? net_socket_read_wait(m_NetServer.Socket(), x) : true;
 			}
+
+			if(InterruptSignaled)
+			{
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "interrupted");
+				break;
+			}
 		}
 	}
 	// disconnect all clients on shutdown
@@ -2553,6 +2563,15 @@ void CServer::SnapSetStaticsize(int ItemType, int Size)
 
 static CServer *CreateServer() { return new CServer(); }
 
+void HandleSigIntTerm(int Param)
+{
+	InterruptSignaled = 1;
+
+	// Exit the next time a signal is received
+	signal(SIGINT, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
+}
+
 int main(int argc, const char **argv) // ignore_convention
 {
 	bool Silent = false;
@@ -2564,6 +2583,7 @@ int main(int argc, const char **argv) // ignore_convention
 			Silent = true;
 		}
 	}
+	
 	std::vector<std::shared_ptr<ILogger>> vpLoggers;
 	if(!Silent)
 	{
@@ -2582,6 +2602,9 @@ int main(int argc, const char **argv) // ignore_convention
 		log_error("secure", "could not initialize secure RNG");
 		return -1;
 	}
+
+	signal(SIGINT, HandleSigIntTerm);
+	signal(SIGTERM, HandleSigIntTerm);
 
 	CServer *pServer = CreateServer();
 	IKernel *pKernel = IKernel::Create();
@@ -2654,9 +2677,8 @@ int main(int argc, const char **argv) // ignore_convention
 	pEngine->SetAdditionalLogger(pServerLogger);
 
 	// run the server
-	log_info("server", "Starting...");
+	log_info("server", "starting...");
 	pServer->Run();
-	log_info("server", "Server shutdown");
 
 	pServerLogger->OnServerDeletion();
 	// free
