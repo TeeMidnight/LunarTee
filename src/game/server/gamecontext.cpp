@@ -2031,7 +2031,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 	if(Server()->Tick() % g_Config.m_SvMapUpdateRate != 0)
 		return;
 
-	if (!Server()->ClientIngame(ClientID)) 
+	if(!Server()->ClientIngame(ClientID)) 
 		return;
 
 	if(!m_apPlayers[ClientID])
@@ -2040,10 +2040,16 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 	int *pMap = Server()->GetIdMap(ClientID);
 	int MaxClients = (Server()->Is64Player(ClientID) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS);
 
+	for(int i = 1; i < MaxClients - 1; i++)
+	{
+		if(!GetPlayer(pMap[i]))
+			pMap[i] = -1;
+	}
+
 	std::vector<std::pair<float, int>> Dist;
 
 	// compute distances
-	for (int i = 0; i < MAX_CLIENTS; i++)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		Dist.push_back(std::pair<float, int>(1e10, i));
 
@@ -2064,7 +2070,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		}
 	}
 
-	for (auto& pBotPlayer : m_pBotPlayers)
+	for(auto& pBotPlayer : m_pBotPlayers)
 	{
 		if(pBotPlayer.second->GameWorld() != m_apPlayers[ClientID]->GameWorld())
 			continue;
@@ -2112,7 +2118,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		if(Index >= (int) Dist.size())
 			break;
 
-		if(pMap[i] == -1 || !GetPlayer(pMap[i]))
+		if(pMap[i] == -1)
 		{
 			pMap[i] = Dist[Index].second;
 			Index ++;
