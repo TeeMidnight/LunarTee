@@ -10,7 +10,7 @@
 #define GAME_RELEASE_VERSION "0.6.4"
 
 #define MOD_NAME "LunarTee"
-#define MOD_VERSION "b0.1.3"
+#define MOD_VERSION "b0.1.3.1"
 
 #define GAME_VERSION GAME_RELEASE_VERSION ", " MOD_NAME " " MOD_VERSION
 #define GAME_NETVERSION "0.6 626fce9a778df4d4" //the std game version
