@@ -1,7 +1,7 @@
 Teeworlds LunarTee
 =========
 
-LunarTee, a teeworlds universe surivial mod with client (WIP).
+LunarTee, a teeworlds universe survival mod.
 
 Depends
 =======
