@@ -186,8 +186,8 @@ void CPlayer::PostTick()
 	if(m_Team == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW)
 	{
 		// update view pos for spectators
-		if(GameServer()->m_apPlayers[m_SpectatorID])
-			m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;
+		if(GameServer()->GetPlayer(m_SpectatorID))
+			m_ViewPos = GameServer()->GetPlayer(m_SpectatorID)->m_ViewPos;
 	}
 }
 

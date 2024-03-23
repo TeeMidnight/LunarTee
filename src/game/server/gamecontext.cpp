@@ -153,12 +153,12 @@ class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 CPlayer *CGameContext::GetPlayer(int ClientID)
 {
 	if(ClientID < 0)
-		return 0;
+		return nullptr;
 	
 	CPlayer *pPlayer = (ClientID >= MAX_CLIENTS) ? GetBotWithCID(ClientID) : m_apPlayers[ClientID];
 
 	if(!pPlayer)
-		return 0;
+		return nullptr;
 	else
 		return pPlayer;
 }
@@ -1076,6 +1076,9 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(g_Config.m_SvSpamprotection && pPlayer->m_LastSetSpectatorMode && pPlayer->m_LastSetSpectatorMode+Server()->TickSpeed()*0.5 > Server()->Tick())
 				return;
 
+			if(pMsg->m_SpectatorID >= MAX_CLIENTS)
+				return;
+
 			if(pMsg->m_SpectatorID != SPEC_FREEVIEW)
 				if (!Server()->ReverseTranslate(pMsg->m_SpectatorID, ClientID))
 					return;
@@ -1083,11 +1086,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(pPlayer->GetTeam() != TEAM_SPECTATORS || pPlayer->m_SpectatorID == pMsg->m_SpectatorID || ClientID == pMsg->m_SpectatorID)
 				return;
 
-			if(pMsg->m_SpectatorID >= MAX_CLIENTS)
-				return;
-
 			pPlayer->m_LastSetSpectatorMode = Server()->Tick();
-			if(pMsg->m_SpectatorID != SPEC_FREEVIEW && (!m_apPlayers[pMsg->m_SpectatorID] || m_apPlayers[pMsg->m_SpectatorID]->GetTeam() == TEAM_SPECTATORS))
+			if(pMsg->m_SpectatorID != SPEC_FREEVIEW && (!GetPlayer(pMsg->m_SpectatorID) || GetPlayer(pMsg->m_SpectatorID)->GetTeam() == TEAM_SPECTATORS))
 				SendChatTarget_Localization(ClientID, _("Invalid spectator id {INT} used"), pMsg->m_SpectatorID);
 			else
 			{
