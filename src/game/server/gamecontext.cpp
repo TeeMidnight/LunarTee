@@ -48,7 +48,6 @@ void CGameContext::Construct(int Resetting)
 	m_Resetting = 0;
 	m_pServer = 0;
 
-	m_BiggestBotID = -1;
 	m_FirstFreeBotID = MAX_CLIENTS;
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -1899,12 +1898,6 @@ void CGameContext::OnBotDead(int ClientID)
 
 void CGameContext::UpdateBot()
 {
-	if(m_BiggestBotID < MAX_CLIENTS) // do not to update when create first bot
-	{
-		m_BiggestBotID = m_FirstFreeBotID;
-		return;
-	}
-
 	m_FirstFreeBotID = MAX_CLIENTS;
 	while(m_pBotPlayers.count(m_FirstFreeBotID))
 	{
@@ -2026,6 +2019,11 @@ int CGameContext::GetOneWorldPlayerNum(int ClientID) const
 	return GetOneWorldPlayerNum(FindWorldWithClientID(ClientID));
 }
 
+bool distCompare(std::pair<float, int> a, std::pair<float, int> b)
+{
+	return (a.first < b.first);
+}
+
 void CGameContext::UpdatePlayerMaps(int ClientID)
 {
 	if(Server()->Tick() % g_Config.m_SvMapUpdateRate != 0)
@@ -2042,7 +2040,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 
 	for(int i = 1; i < MaxClients - 1; i++)
 	{
-		if(!GetPlayer(pMap[i]))
+		if(pMap[i] > 0 && !GetPlayer(pMap[i]))
 			pMap[i] = -1;
 	}
 
@@ -2085,6 +2083,8 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		Dist.push_back(temp);
 	}
 
+	std::sort(Dist.begin(), Dist.end(), distCompare);
+
 	for(int i = 1; i < MaxClients - 1; i++)
 	{
 		if(pMap[i] == -1)
@@ -2117,6 +2117,9 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 	{
 		if(Index >= (int) Dist.size())
 			break;
+
+		if(pMap[i] != -1)
+			dbg_msg("yee", "%d %d", i, pMap[i]);
 
 		if(pMap[i] == -1)
 		{

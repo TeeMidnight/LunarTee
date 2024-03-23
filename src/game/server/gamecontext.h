@@ -231,7 +231,6 @@ public:
 	int GetPlayerNum() const;
 
 	//Bot Start
-	int m_BiggestBotID;
 	int m_FirstFreeBotID;
 
 	CPlayer *GetBotWithCID(int ClientID);
