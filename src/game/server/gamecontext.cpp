@@ -2118,9 +2118,6 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		if(Index >= (int) Dist.size())
 			break;
 
-		if(pMap[i] != -1)
-			dbg_msg("yee", "%d %d", i, pMap[i]);
-
 		if(pMap[i] == -1)
 		{
 			pMap[i] = Dist[Index].second;
