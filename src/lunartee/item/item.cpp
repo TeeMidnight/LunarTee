@@ -95,11 +95,9 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 	CItemCore *pThis = (CItemCore *) pUserData;
 
 	const char* pSelect, *pType;
-	if(str_startswith(pCmd, "SHOW"))
-	{
-		pSelect = "";
-	}
-	else if(str_startswith(pCmd, "CRAFT"))
+	pSelect = "";
+	
+	if(str_startswith(pCmd, "CRAFT"))
 	{
 		pSelect = pCmd + 6;
 		pThis->GameServer()->CraftItem(ClientID, pSelect);

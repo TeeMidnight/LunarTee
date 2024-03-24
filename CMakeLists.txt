@@ -253,7 +253,7 @@ endif()
 find_package(ZLIB)
 find_package(LibZip)
 find_package(Git)
-find_package(PythonInterp)
+find_package(Python3)
 find_package(Curl)
 find_package(OpenSSL)
 find_package(PQXX)
@@ -303,14 +303,14 @@ endif()
 if(TARGET_OS AND TARGET_OS STREQUAL "mac")
   show_dependency_status("Hdiutil" HDIUTIL)
 endif()
-show_dependency_status("PythonInterp" PYTHONINTERP)
+show_dependency_status("Python3" Python3)
 show_dependency_status("Curl" CURL)
 show_dependency_status("OpenSSL Crypto" CRYPTO)
 show_dependency_status("PNG" PNG)
 show_dependency_status("Zlib" ZLIB)
 show_dependency_status("pqxx" PQXX)
 
-if(NOT(PYTHONINTERP_FOUND))
+if(NOT(Python3_FOUND))
   message(SEND_ERROR "You must install Python to compile LunarTee")
 endif()
 if(NOT(CURL_FOUND))
@@ -372,7 +372,7 @@ file(COPY ${COPY_FILES} DESTINATION .)
 
 function(chash output_file)
   add_custom_command(OUTPUT ${output_file}
-    COMMAND ${PYTHON_EXECUTABLE} scripts/cmd5.py ${ARGN}
+    COMMAND ${Python3_EXECUTABLE} scripts/cmd5.py ${ARGN}
       > "${PROJECT_BINARY_DIR}/${output_file}"
     DEPENDS scripts/cmd5.py ${ARGN}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -381,7 +381,7 @@ endfunction()
 
 function(generate_source output_file script_parameter)
   add_custom_command(OUTPUT ${output_file}
-    COMMAND ${PYTHON_EXECUTABLE} datasrc/compile.py ${script_parameter}
+    COMMAND ${Python3_EXECUTABLE} datasrc/compile.py ${script_parameter}
       > "${PROJECT_BINARY_DIR}/${output_file}"
     DEPENDS
       datasrc/compile.py
@@ -487,7 +487,7 @@ if(LOCALIZE)
 
   add_custom_command(
     TARGET localize
-    COMMAND ${PYTHON_EXECUTABLE} scripts/translate.py
+    COMMAND ${Python3_EXECUTABLE} scripts/translate.py
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
   )
 
