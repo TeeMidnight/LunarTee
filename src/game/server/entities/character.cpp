@@ -775,7 +775,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		if(m_pPlayer->IsBot())
 		{
 			// create pickup
-			if(( ) || (Pickable() && (GameServer()->GetPlayer(From) && !GameServer()->GetPlayer(From)->IsBot()) && Weapon == WEAPON_HAMMER))
+			if((GameServer()->GetPlayer(From) && !GameServer()->GetPlayer(From)->IsBot() && GameServer()->GetPlayer(From)->IsDonor()) || (Pickable() && (GameServer()->GetPlayer(From) && !GameServer()->GetPlayer(From)->IsBot()) && Weapon == WEAPON_HAMMER))
 			{
 				GameServer()->m_pController->GiveDrop(From, m_pPlayer->m_BotData);	
 				Die(From, Weapon);
