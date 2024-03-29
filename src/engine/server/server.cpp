@@ -1368,7 +1368,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					int SendRconCmds = Unpacker.GetInt();
 					if(Unpacker.Error() == 0 && SendRconCmds)
 					{
-						m_aClients[ClientID].m_pRconCmdToSend = Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_MOD CFGFLAG_SERVER);
+						m_aClients[ClientID].m_pRconCmdToSend = Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_MOD, CFGFLAG_SERVER);
 						CMsgPacker MsgStart(NETMSG_RCON_CMD_GROUP_START, true);
 						SendMsg(&MsgStart, MSGFLAG_VITAL, ClientID);
 						if(m_aClients[ClientID].m_pRconCmdToSend == nullptr)
