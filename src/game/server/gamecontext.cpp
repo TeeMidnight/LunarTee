@@ -715,39 +715,22 @@ void CGameContext::OnClientEnter(int ClientID)
 
 	{
 		CNetMsg_Sv_CommandInfoGroupStart Msg;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientID);
 	}
 	for(const IConsole::CCommandInfo *pCmd = Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_USER, CFGFLAG_CHAT);
 		pCmd; pCmd = pCmd->NextCommandInfo(IConsole::ACCESS_LEVEL_USER, CFGFLAG_CHAT))
 	{
 		const char *pName = pCmd->m_pName;
 
-		if(Server()->IsSixup(ClientId))
-		{
-			if(!str_comp_nocase(pName, "w") || !str_comp_nocase(pName, "whisper"))
-				continue;
-
-			if(!str_comp_nocase(pName, "r"))
-				pName = "rescue";
-
-			protocol7::CNetMsg_Sv_CommandInfo Msg;
-			Msg.m_pName = pName;
-			Msg.m_pArgsFormat = pCmd->m_pParams;
-			Msg.m_pHelpText = pCmd->m_pHelp;
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
-		}
-		else
-		{
-			CNetMsg_Sv_CommandInfo Msg;
-			Msg.m_pName = pName;
-			Msg.m_pArgsFormat = pCmd->m_pParams;
-			Msg.m_pHelpText = pCmd->m_pHelp;
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
-		}
+		CNetMsg_Sv_CommandInfo Msg;
+		Msg.m_pName = pName;
+		Msg.m_pArgsFormat = pCmd->m_pParams;
+		Msg.m_pHelpText = pCmd->m_pHelp;
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientID);
 	}
 	{
 		CNetMsg_Sv_CommandInfoGroupEnd Msg;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientID);
 	}
 
 	if(m_apPlayers[ClientID]->GameWorld() == m_pMainWorld)
