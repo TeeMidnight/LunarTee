@@ -92,8 +92,6 @@ public:
 		return Translate(MsgCopy.m_ClientID, ClientID) && SendPackMsgOne(&MsgCopy, Flags, ClientID);
 	}
 
-	char msgbuf[1000];
-
 	int SendPackMsgTranslate(CNetMsg_Sv_Chat *pMsg, int Flags, int ClientID)
 	{
 		CNetMsg_Sv_Chat MsgCopy;

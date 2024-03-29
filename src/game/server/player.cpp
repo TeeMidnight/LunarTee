@@ -518,8 +518,13 @@ void CPlayer::Login(int UserID)
 	m_UserID = UserID;
 	SetTeam(0); // join game
 
-	if(!m_Datas["donor"].empty() && m_Datas["donor"].get<bool>())
+	if(IsDonor())
 	{
 		GameServer()->SendChatTarget_Localization(-1, _("Welcome donor '{STR}' back the world!"), Server()->ClientName(m_ClientID));
 	}
+}
+
+bool CPlayer::IsDonor()
+{
+	return !m_Datas["donor"].empty() && m_Datas["donor"].get<bool>();
 }
