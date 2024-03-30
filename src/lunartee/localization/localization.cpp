@@ -103,6 +103,26 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 
 	io_close(File);
 
+	// read datapack languages
+	CUnzip Unzip;
+
+	for(auto& Datapack : Datas()->m_Datapacks)
+	{
+		if(!(Datapack.m_State&DatapackState::PACKSTATE_ENABLE))
+			continue;
+
+		Unzip.OpenFile(Datapack.m_aLocalPath);
+		Unzip.LoadDirFile();
+
+		std::string FileBuffer;
+		char aPath[IO_MAX_PATH_LENGTH];
+		str_format(aPath, sizeof(aPath), "translations/%s.lang", m_aFilename);
+		if(Unzip.UnzipFile(FileBuffer, aPath))
+			Success = Load(pLocalization, pStorage, FileBuffer);
+
+		Unzip.CloseFile();
+	}
+
 	return Success;
 }
 
@@ -191,17 +211,16 @@ void CLocalization::LoadDatapack(class CUnzip *pUnzip, std::string Buffer)
 				pLanguage = (* m_vpLanguages.rbegin());
 			}
 
-			std::string FileBuffer;
-			char aPath[IO_MAX_PATH_LENGTH];
-			str_format(aPath, sizeof(aPath), "translations/%s.lang", Current["file"].get<std::string>().c_str());
-			if(pUnzip->UnzipFile(FileBuffer, aPath))
-				pLanguage->Load(this, Storage(), FileBuffer);
-			else
-				continue;
-
 			if(str_comp(g_Config.m_SvDefaultLanguage, Current["file"].get<std::string>().c_str()) == 0)
 			{
-				m_pMainLanguage = (* m_vpLanguages.rbegin());
+				std::string FileBuffer;
+				char aPath[IO_MAX_PATH_LENGTH];
+				str_format(aPath, sizeof(aPath), "translations/%s.lang", Current["file"].get<std::string>().c_str());
+				if(pUnzip->UnzipFile(FileBuffer, aPath))
+					pLanguage->Load(this, Storage(), FileBuffer);
+				else
+					continue;
+				m_pMainLanguage = pLanguage;
 			}
 		}
 	}
