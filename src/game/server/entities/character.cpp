@@ -1207,7 +1207,7 @@ CCharacter *CCharacter::FindTarget(vec2 Pos, float Radius)
 			}
 			if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
 			{
-				if(!!p->GetPlayer()->IsBot())
+				if(!p->GetPlayer()->IsBot())
 					continue;
 				if(p->GetPlayer()->m_pBotData->m_Type != EBotType::BOTTYPE_MONSTER)
 					continue;
