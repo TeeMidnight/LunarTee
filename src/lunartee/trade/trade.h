@@ -21,7 +21,7 @@ public:
 
     struct STradeData
     {
-        STradeData()
+        void GenerateUuid()
         {
             std::string UuidString;
             UuidString.append(m_Give.first);
