@@ -30,7 +30,7 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
     {
         const char* aUuidStr = pCmd + 6;
         CUuid Uuid;
-        if(!ParseUuid(&Uuid, aUuidStr))
+        if(ParseUuid(&Uuid, aUuidStr))
             return;
         
         int TraderID = 0;
@@ -43,8 +43,11 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
                 {
                     pTradeData = &Trade;
                     TraderID = Trader.first;
+                    break;
                 }
             }
+            if(pTradeData)
+                break;
         }
         
         if(!pTradeData)
