@@ -13,7 +13,7 @@
 class CPlayer
 {
 public:
-	CPlayer(CGameWorld *pGameWorld, int ClientID, int Team, CBotData BotData=CBotData());
+	CPlayer(CGameWorld *pGameWorld, int ClientID, int Team, SBotData *pBotData);
 	~CPlayer();
 
 	void Reset();
@@ -29,8 +29,6 @@ public:
 	void PostTick();
 	void Snap(int SnappingClient);
 	void SnapBot(int SnappingClient);
-
-	void FakeSnap(int SnappingClient);
 	
 	void OnDirectInput(CNetObj_PlayerInput *NewInput);
 	void OnPredictedInput(CNetObj_PlayerInput *NewInput);
@@ -142,7 +140,7 @@ public:
 
 	bool m_Sit;
 	// Bot
-	CBotData m_BotData;
+	SBotData *m_pBotData;
 
 	bool IsBot() { return (m_ClientID >= MAX_CLIENTS); }
 	bool IsLogin() { return m_UserID > 0; }

@@ -7,6 +7,7 @@
 #include <lunartee/postgresql.h>
 
 #include "item/item.h"
+#include "trade/trade.h"
 
 #include "datacontroller.h"
 // unload description: wrong datapack info
@@ -35,6 +36,7 @@ void CDataController::Init(IServer *pServer, IStorage *pStorage, CGameContext *p
     m_pGameServer = pGameServer;
     m_pWebDownloader = new CWebDownloader(pStorage, pServer);
     m_pItem = new CItemCore(pGameServer);
+    m_pTrade = new CTradeCore(pGameServer);
     Sql()->Init(pGameServer);
 
     AddDatapack("https://codeload.github.com/TeeMidnight/LunarTee-Vanilla/zip/refs/heads/LunarTee", true);

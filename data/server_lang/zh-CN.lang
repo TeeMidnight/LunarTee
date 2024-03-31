@@ -30,6 +30,9 @@ LunarTee translation
 = ===Welcome to LunarTee===
 ## ===欢迎来到LunarTee===
 
+= Buy this
+## 购买
+
 = Call vote is game menu
 ## 投票是游戏菜单
 
@@ -114,6 +117,9 @@ LunarTee translation
 = The length of the <Username> should be between {INT}-{INT}
 ## <用户名>的长度应当在{INT}-{INT}之间
 
+= Trade
+## 交易
+
 = Use /login <username> <password> to login
 ## 使用 /login <用户名> <密码> 以登录
 
@@ -197,6 +203,9 @@ LunarTee translation
 
 = spectators
 ## 旁观者
+
+= {LSTR}'s Shop
+## {LSTR}的商店 
 
 = {STR} by {STR}
 ## {STR} by {STR}

@@ -71,6 +71,7 @@ void CMenu::RegisterMain()
                 Options.push_back(CMenuOption(_("Craft"), "CRAFT"));
                 Options.push_back(CMenuOption(_("Inventory"), "INVENTORY"));
                 Options.push_back(CMenuOption(_("Language"), "LANGUAGE"));
+                Options.push_back(CMenuOption(_("Trade"), "TRADE"));
 
                 pThis->UpdateMenu(ClientID, Options, "MAIN");
                 return;
@@ -89,6 +90,11 @@ void CMenu::RegisterMain()
             {
                 pThis->GetMenuPage("INVENTORY")->m_pfnCallback(ClientID, "SHOW", "", 
                     pThis->GetMenuPage("INVENTORY")->m_pUserData);
+            }
+            else if(str_comp(pCmd, "TRADE") == 0)
+            {
+                pThis->GetMenuPage("TRADE")->m_pfnCallback(ClientID, "SHOW", "", 
+                    pThis->GetMenuPage("TRADE")->m_pUserData);
             }
         };
         
@@ -135,6 +141,9 @@ void CMenu::PreviousPage(int ClientID)
 void CMenu::UpdateMenu(int ClientID, std::vector<CMenuOption> Options, const char* PageName)
 {
     if(!GameServer()->m_apPlayers[ClientID])
+        return;
+
+    if(m_avPlayerMenu[ClientID].first == Options)
         return;
 
     // remove options

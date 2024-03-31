@@ -52,6 +52,11 @@ public:
 	char m_aOption[VOTE_DESC_LENGTH];
 	char m_aCmd[VOTE_CMD_LENGTH];
 	char m_aFormat[16];
+
+	bool operator==(const CMenuOption &Other) const
+	{
+		return mem_comp(this, &Other, sizeof(this)) == 0;
+	}
 };
 
 class CMenu

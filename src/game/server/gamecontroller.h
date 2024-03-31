@@ -126,7 +126,7 @@ public:
 
 	double GetTime();
 
-	void GiveDrop(int GiveID, struct CBotData BotData);
+	void GiveDrop(int GiveID, struct SBotData *pBotData);
 
 	WeaponInit WeaponIniter;
 };

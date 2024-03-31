@@ -760,7 +760,7 @@ void CGameContext::OnClientConnected(int ClientID, const char *WorldName)
 		m_apPlayers[ClientID]->Reset();
 	}	
 	else 
-		m_apPlayers[ClientID] = new CPlayer(pGameWorld, ClientID, TEAM_SPECTATORS);
+		m_apPlayers[ClientID] = new CPlayer(pGameWorld, ClientID, TEAM_SPECTATORS, nullptr);
 	
 
 	// send active vote
@@ -1701,6 +1701,22 @@ const char *CGameContext::Localize(const char *pLanguageCode, const char *pText)
 	return Server()->Localization()->Localize(pLanguageCode, pText);
 }
 
+const char *CGameContext::LocalizeFormat(const char *pLanguageCode, const char *pText, ...) const
+{
+	va_list Args;
+	va_start(Args, pText);
+	
+	static std::string FormatBuffer;
+
+	FormatBuffer.clear();
+
+	Server()->Localization()->Format_VL(FormatBuffer, pLanguageCode, pText, Args);
+	
+	va_end(Args);
+
+	return FormatBuffer.c_str();
+}
+
 void CGameContext::ConsoleOutputCallback_Chat(const char *pLine, void *pUser)
 {
 	CGameContext *pSelf = (CGameContext *)pUser;
@@ -1903,7 +1919,8 @@ int CGameContext::GetBotNum(CGameWorld *pGameWorld) const
 	for(auto& pBotPlayer : m_pBotPlayers)
 	{
 		if(pBotPlayer.second->GameWorld() == pGameWorld && 
-			(pBotPlayer.second->GetCharacter() && !pBotPlayer.second->GetCharacter()->Pickable()))
+			(pBotPlayer.second->GetCharacter() && !pBotPlayer.second->GetCharacter()->Pickable()
+			&& pBotPlayer.second->m_pBotData->m_Type != EBotType::BOTTYPE_TRADER))
 			Num++;
 	}
 	return Num;
@@ -1919,6 +1936,8 @@ void CGameContext::OnBotDead(int ClientID)
 	if(!m_pBotPlayers.count(ClientID))
 		return;
 
+	m_pBotPlayers[ClientID]->m_pBotData->m_Count--;
+
 	delete m_pBotPlayers[ClientID];
 	m_pBotPlayers.erase(ClientID);
 }
@@ -1932,11 +1951,13 @@ void CGameContext::UpdateBot()
 	}
 }
 
-void CGameContext::CreateBot(CGameWorld *pGameWorld, CBotData BotData)
+void CGameContext::CreateBot(CGameWorld *pGameWorld, SBotData *pBotData)
 {
 	UpdateBot();
 
-	m_pBotPlayers[m_FirstFreeBotID] = new CPlayer(pGameWorld, m_FirstFreeBotID, 0, BotData);
+	m_pBotPlayers[m_FirstFreeBotID] = new CPlayer(pGameWorld, m_FirstFreeBotID, 0, pBotData);
+
+	pBotData->m_Count++;
 }
 
 static char EscapeJsonChar(char c)

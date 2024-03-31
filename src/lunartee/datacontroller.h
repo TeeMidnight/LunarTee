@@ -173,6 +173,7 @@ class CDataController
     class CGameContext *m_pGameServer;
     CWebDownloader *m_pWebDownloader;
     class CItemCore *m_pItem;
+    class CTradeCore *m_pTrade;
 
     bool m_Loaded;
 
@@ -182,6 +183,7 @@ public:
     class CGameContext *GameServer() { return m_pGameServer; }
     CWebDownloader *Downloader() { return m_pWebDownloader; }
     class CItemCore *Item() { return m_pItem; }
+    class CTradeCore *Trade() { return m_pTrade; }
 
     bool Loaded() { return m_Loaded; }
 

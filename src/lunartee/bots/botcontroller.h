@@ -10,13 +10,13 @@ class CBotController
 {
     class CGameContext *m_pGameServer;
 
-    std::vector<CBotData> m_vBotDatas;
+    std::vector<SBotData> m_vBotDatas;
 private:
     class CGameContext *GameServer() { return m_pGameServer; }
 public:
     CBotController(class CGameContext *pGameServer);
     
-    CBotData RandomBotData();
+    SBotData *RandomBotData();
 
     void LoadBotData(std::string Buffer);
     

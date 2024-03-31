@@ -60,7 +60,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
-	if(pPlayer->IsBot() && pPlayer->m_BotData.m_Gun)
+	if(pPlayer->IsBot() && pPlayer->m_pBotData->m_Flags&EBotFlags::BOTFLAG_USEGUN)
 	{
 		m_ActiveWeapon = LT_WEAPON_GUN;
 		m_LastWeapon = LT_WEAPON_GUN;
@@ -420,7 +420,7 @@ void CCharacter::HandleEvents()
 	}
 
 	if(Collision()->IsCollision(m_Pos.x, m_Pos.y, m_ProximityRadius/3.f, TILE_MOONCENTER) 
-		&& m_pPlayer->IsBot() && (!Pickable() && m_pPlayer->m_BotData.m_AI))
+		&& m_pPlayer->IsBot() && (!Pickable() && m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_MONSTER))
 	{
 		Die(GetCID(), WEAPON_WORLD);
 	}
@@ -498,7 +498,7 @@ void CCharacter::SyncHealth()
 	m_MaxHealth = 20;
 
 	if(m_pPlayer->IsBot())
-		m_MaxHealth = m_pPlayer->m_BotData.m_Health;
+		m_MaxHealth = m_pPlayer->m_pBotData->m_Health;
 }
 
 void CCharacter::OnWeaponFire(int Weapon)
@@ -695,8 +695,12 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
+	// npc shouldn't take any damage
+	if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
+		return false;
+
 	CPlayer *pFrom = GameServer()->GetPlayer(From);
-	if(pFrom && pFrom->IsBot() && m_pPlayer->IsBot() && !pFrom->m_BotData.m_TeamDamage && str_comp(pFrom->m_BotData.m_aName, m_pPlayer->m_BotData.m_aName) == 0)
+	if(pFrom && pFrom->IsBot() && m_pPlayer->IsBot() && pFrom->m_pBotData->m_Flags&~EBotFlags::BOTFLAG_TEAMDAMAGE && str_comp(pFrom->m_pBotData->m_aName, m_pPlayer->m_pBotData->m_aName) == 0)
 		return false;
 
 	m_Core.m_Vel += Force;
@@ -777,7 +781,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			// create pickup
 			if((GameServer()->GetPlayer(From) && !GameServer()->GetPlayer(From)->IsBot() && GameServer()->GetPlayer(From)->IsDonor()) || (Pickable() && (GameServer()->GetPlayer(From) && !GameServer()->GetPlayer(From)->IsBot()) && Weapon == WEAPON_HAMMER))
 			{
-				GameServer()->m_pController->GiveDrop(From, m_pPlayer->m_BotData);	
+				GameServer()->m_pController->GiveDrop(From, m_pPlayer->m_pBotData);	
 				Die(From, Weapon);
 			}
 
@@ -788,7 +792,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 				ResetInput();
 				m_Botinfo.m_Pickable = true;
 			}
-		}else Die(From, Weapon);
+		}
+		else 
+			Die(From, Weapon);
 
 		return false;
 	}
@@ -931,7 +937,7 @@ void CCharacter::DoBotActions()
 		return;
 	if(!m_Alive)
 		return;
-	if(!m_pPlayer->m_BotData.m_AI)
+	if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_RESOURCE)
 		return;
 
 	if(!NeedActive())
@@ -941,11 +947,12 @@ void CCharacter::DoBotActions()
 		m_Botinfo.m_Pickable = BotPickable;
 		return;
 	}
+
 	if(Pickable())
 		return;
 
 	CCharacter *pOldTarget = GameServer()->GetPlayerChar(m_Botinfo.m_Target);
-	CBotData *pBotData = &m_pPlayer->m_BotData;
+	SBotData *pBotData = m_pPlayer->m_pBotData;
 
 	// Refind target
 	CCharacter *pClosestChr = FindTarget(m_Pos, 480.0f);
@@ -957,7 +964,8 @@ void CCharacter::DoBotActions()
 			m_Botinfo.m_LastTargetPos = pClosestChr->m_Pos;
 		}
 	}
-	else m_Botinfo.m_Target = -1;
+	else 
+		m_Botinfo.m_Target = -1;
 
 	// reset attack
 	m_Input.m_Fire = 0;
@@ -969,7 +977,9 @@ void CCharacter::DoBotActions()
 		if(CheckPos(NeedCheckPos) && (IsGrounded() || m_Pos.x != m_Botinfo.m_LastGroundPos.x))
 		{
 			m_Input.m_Jump = 1;
-		}else m_Input.m_Jump = 0;
+		}
+		else 
+			m_Input.m_Jump = 0;
 
 		// If collison bot
 		CCharacter *pCollison = GameWorld()->ClosestCharacter(NeedCheckPos, 5.0f, this);
@@ -978,7 +988,8 @@ void CCharacter::DoBotActions()
 			m_Input.m_Jump = 1;
 		}
 
-	}else 
+	}
+	else 
 	{
 		m_Input.m_Jump = 0;
 	}
@@ -991,58 +1002,75 @@ void CCharacter::DoBotActions()
 		{
 			m_Botinfo.m_RandomPos.x = random_int(-12.f, 12.);
 			m_Botinfo.m_RandomPos.y = random_int(-12.f, 12.f);
-		}else
+		}
+		else
 		{
 			m_Botinfo.m_RandomPos = vec2(0, 0);
 		}
 
 		// Move
-		if(pBotData->m_Hammer)
+		if(pBotData->m_Flags&BOTFLAG_USEHAMMER)
 		{
 			if(pTarget->m_Pos.x - m_Pos.x > 40.0f)
 			{
 				m_Botinfo.m_Direction = 1;
-			}else if(pTarget->m_Pos.x - m_Pos.x < -40.0f)
+			}
+			else if(pTarget->m_Pos.x - m_Pos.x < -40.0f)
 			{
 				m_Botinfo.m_Direction = -1;
-			}else m_Botinfo.m_Direction = 0;
-		}else if(pBotData->m_Gun) 
+			}
+			else 
+				m_Botinfo.m_Direction = 0;
+		}
+		else if(pBotData->m_Flags&BOTFLAG_USEGUN) 
 		{
 			if(!Collision()->IntersectLine(pTarget->m_Pos, m_Pos, NULL, NULL))
 			{
 				if(pTarget->m_Pos.x - m_Pos.x > 448.0f)
 				{
 					m_Botinfo.m_Direction = 1;
-				}else if(pTarget->m_Pos.x - m_Pos.x < -448.0f)
+				}
+				else if(pTarget->m_Pos.x - m_Pos.x < -448.0f)
 				{
 					m_Botinfo.m_Direction = -1;
-				}else if(pTarget->m_Pos.x - m_Pos.x < 480.0f && pTarget->m_Pos.x - m_Pos.x > 0.0f)
+				}
+				else if(pTarget->m_Pos.x - m_Pos.x < 480.0f && pTarget->m_Pos.x - m_Pos.x > 0.0f)
 				{
 					m_Botinfo.m_Direction = -1;
-				}else if(pTarget->m_Pos.x - m_Pos.x > -480.0f && pTarget->m_Pos.x - m_Pos.x < 0.0f)
+				}
+				else if(pTarget->m_Pos.x - m_Pos.x > -480.0f && pTarget->m_Pos.x - m_Pos.x < 0.0f)
 				{
 					m_Botinfo.m_Direction = 1;
-				}else m_Botinfo.m_Direction = 0;
-			}else
+				}
+				else 
+					m_Botinfo.m_Direction = 0;
+			}
+			else
 			{
 				if(pTarget->m_Pos.x - m_Pos.x > 40.0f)
 				{
 					m_Botinfo.m_Direction = 1;
-				}else if(pTarget->m_Pos.x - m_Pos.x < -40.0f)
+				}
+				else if(pTarget->m_Pos.x - m_Pos.x < -40.0f)
 				{
 					m_Botinfo.m_Direction = -1;
-				}else m_Botinfo.m_Direction = 0;
+				}
+				else 
+					m_Botinfo.m_Direction = 0;
 			}
-		}else
+		}
+		else
 		{
 			if(pTarget->m_Pos.x < m_Pos.x)
 			{
 				m_Botinfo.m_Direction = 1;
-			}else m_Botinfo.m_Direction = -1;
+			}
+			else 
+				m_Botinfo.m_Direction = -1;
 		}
 		
 		//Attack
-		if(pBotData->m_Hammer)
+		if(pBotData->m_Flags&BOTFLAG_USEHAMMER)
 		{
 			if(distance(pTarget->m_Pos, m_Pos) < m_ProximityRadius + 40.0f && random_int(1, 100) <= pBotData->m_AttackProba)
 			{
@@ -1051,7 +1079,7 @@ void CCharacter::DoBotActions()
 				m_LatestInput.m_Fire = 1;
 			}
 		}
-		else if(pBotData->m_Gun)
+		else if(pBotData->m_Flags&BOTFLAG_USEGUN)
 		{
 			if(distance(pTarget->m_Pos, m_Pos) > 240.0f && !Collision()->IntersectLine(pTarget->m_Pos, m_Pos, NULL, NULL) && random_int(1, 100) <= pBotData->m_AttackProba)
 			{
@@ -1062,18 +1090,19 @@ void CCharacter::DoBotActions()
 		}
 		
 		// Hook
-		if(pBotData->m_Hook)
+		if(pBotData->m_Flags&BOTFLAG_USEHOOK)
 		{
 			if(!Collision()->IntersectLine(pTarget->m_Pos, m_Pos, NULL, NULL) && ((m_Core.m_HookedPlayer == pTarget->GetCID() && distance(pTarget->m_Pos, m_Pos) > 96.0f) || (distance(pTarget->m_Pos, m_Pos) > 320.0f && distance(pTarget->m_Pos, m_Pos) < 380.0f)))
 			{
 				m_Input.m_Hook = 1;
-				if(pBotData->m_Gun)
+				if(pBotData->m_Flags&BOTFLAG_USEGUN)
 				{
 					m_ActiveWeapon = WEAPON_GUN;
 					m_Input.m_Fire = 1;
 					m_LatestInput.m_Fire = 1;
 				}
-			}else
+			}
+			else
 			{
 				m_Input.m_Hook = 0;
 			}
@@ -1082,7 +1111,7 @@ void CCharacter::DoBotActions()
 		m_Botinfo.m_TargetPos.x = (int)(pTarget->m_Pos.x - m_Pos.x + m_Botinfo.m_RandomPos.x);
 		m_Botinfo.m_TargetPos.y = (int)(pTarget->m_Pos.y - m_Pos.y + m_Botinfo.m_RandomPos.y);
 
-		if(!pBotData->m_Hammer && !pBotData->m_Gun)
+		if(pBotData->m_Flags&~BOTFLAG_USEHAMMER && pBotData->m_Flags&~BOTFLAG_USEGUN)
 		{
 			m_Botinfo.m_TargetPos.x = -m_Botinfo.m_TargetPos.x;
 			m_Botinfo.m_TargetPos.y = -m_Botinfo.m_TargetPos.y;
@@ -1158,17 +1187,35 @@ CCharacter *CCharacter::FindTarget(vec2 Pos, float Radius)
  	{
 		auto p = (CCharacter *) vpEnts[i];
 
+		if(!p)
+			continue;
+
 		float Len = distance(Pos, p->m_Pos);
 		if(Len < p->m_ProximityRadius+Radius)
 		{
-			if(p->GetPlayer() && p->GetPlayer()->IsBot() && (!p->GetPlayer()->m_BotData.m_AI || (str_comp(m_pPlayer->m_BotData.m_aName, p->GetPlayer()->m_BotData.m_aName) == 0)))
-				continue;
-
 			if(p->Pickable())
 				continue;
+			if(!p->GetPlayer())
+				continue;
+			if(p->GetPlayer()->IsBot() && p->GetPlayer()->m_pBotData->m_Type == EBotType::BOTTYPE_RESOURCE)
+				continue;
+
+			if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_MONSTER)
+			{
+				if(p->GetPlayer()->IsBot() && !(m_pPlayer->m_pBotData->m_Flags&EBotFlags::BOTFLAG_TEAMDAMAGE) && (str_comp(m_pPlayer->m_pBotData->m_aName, p->GetPlayer()->m_pBotData->m_aName) == 0))
+					continue;
+			}
+			if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
+			{
+				if(!!p->GetPlayer()->IsBot())
+					continue;
+				if(p->GetPlayer()->m_pBotData->m_Type != EBotType::BOTTYPE_MONSTER)
+					continue;
+			}
 
 			if(Collision()->IntersectLine(m_Pos, p->m_Pos, 0x0, 0x0))
 				continue;
+
 			if(Len < (pClosest ? distance(m_Pos, pClosest->m_Pos) : (Radius * 2)))
 			{
 				pClosest = p;

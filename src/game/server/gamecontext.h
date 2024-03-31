@@ -182,7 +182,7 @@ public:
 	void SetClientLanguage(int ClientID, const char *pLanguage);
 
 	const char *Localize(const char *pLanguageCode, const char *pText) const;
-
+	const char *LocalizeFormat(const char *pLanguageCode, const char *pText, ...) const;
 
 
 	//
@@ -238,7 +238,7 @@ public:
 	int GetBotNum() const;
 	void UpdateBot();
 	void OnBotDead(int ClientID);
-	void CreateBot(CGameWorld *pGameWorld, CBotData BotData);
+	void CreateBot(CGameWorld *pGameWorld, SBotData *pBotData);
 	//Bot END
 
 	void UpdatePlayerMaps(int ClientID);

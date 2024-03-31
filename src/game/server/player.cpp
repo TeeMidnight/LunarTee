@@ -1,18 +1,22 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <new>
+#include <memory>
 #include <engine/shared/config.h>
+
+#include <lunartee/trade/trade.h>
+#include <lunartee/datacontroller.h>
 #include "player.h"
 
 IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
 
-CPlayer::CPlayer(CGameWorld *pGameWorld, int ClientID, int Team, CBotData BotData)
+CPlayer::CPlayer(CGameWorld *pGameWorld, int ClientID, int Team, SBotData *pBotData)
 {
 	m_pGameWorld = pGameWorld;
 	m_pGameServer = pGameWorld->GameServer();
 	m_ClientID = ClientID;
 	m_Team = Team;
-	m_BotData = BotData;
+	m_pBotData = pBotData;
 
 	m_UserID = 0;
 
@@ -82,17 +86,32 @@ void CPlayer::Reset()
 
 void CPlayer::BotInit()
 {
-	if(m_BotData.m_ColorBody > -1 && m_BotData.m_ColorFeet > -1)
+	if(m_pBotData->m_ColorBody > -1 && m_pBotData->m_ColorFeet > -1)
 	{
 		m_TeeInfos.m_UseCustomColor = true;
-		m_TeeInfos.m_ColorBody = m_BotData.m_ColorBody;
-		m_TeeInfos.m_ColorFeet = m_BotData.m_ColorFeet;
-	}else
+		m_TeeInfos.m_ColorBody = m_pBotData->m_ColorBody;
+		m_TeeInfos.m_ColorFeet = m_pBotData->m_ColorFeet;
+	}
+	else
 	{
 		m_TeeInfos.m_UseCustomColor = false;
 	}
 
-	str_copy(m_TeeInfos.m_SkinName, m_BotData.m_SkinName);
+	str_copy(m_TeeInfos.m_SkinName, m_pBotData->m_SkinName);
+
+	// trader init
+	if(m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
+	{
+		for(auto& Trade : m_pBotData->m_vTrade)
+		{
+			CTradeCore::STradeData TradeData;
+			for(auto& Need : Trade.m_Needs)
+				TradeData.m_Needs[Need.m_ItemName] = random_int(Need.m_MinNum, Need.m_MaxNum);
+			TradeData.m_Give.first = Trade.m_Give.m_ItemName;
+			TradeData.m_Give.second = random_int(Trade.m_Give.m_MinNum, Trade.m_Give.m_MaxNum);
+			Datas()->Trade()->AddTrade(-m_ClientID, TradeData);
+		}
+	}
 	
 	Respawn();
 }
@@ -298,7 +317,7 @@ void CPlayer::SnapBot(int SnappingClient)
 		}
 	}
 
-	StrToInts(&pClientInfo->m_Name0, 4, GameServer()->Localize(pLanguage, m_BotData.m_aName));
+	StrToInts(&pClientInfo->m_Name0, 4, GameServer()->Localize(pLanguage, m_pBotData->m_aName));
 	StrToInts(&pClientInfo->m_Clan0, 3, pClan);
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
@@ -322,38 +341,6 @@ void CPlayer::SnapBot(int SnappingClient)
 		return;
 	pDDNetPlayer->m_AuthLevel = 0;
 	pDDNetPlayer->m_Flags = 0;
-}
-
-void CPlayer::FakeSnap(int SnappingClient)
-{
-	int FakeID = (Server()->Is64Player(SnappingClient) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS) - 1;
-
-	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, FakeID, sizeof(CNetObj_ClientInfo)));
-
-	if(!pClientInfo)
-		return;
-
-	StrToInts(&pClientInfo->m_Name0, 4, " ");
-	StrToInts(&pClientInfo->m_Clan0, 3, "");
-	StrToInts(&pClientInfo->m_Skin0, 6, "default");
-
-	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, FakeID, sizeof(CNetObj_PlayerInfo)));
-	if(!pPlayerInfo)
-		return;
-
-	pPlayerInfo->m_Latency = m_Latency.m_Min;
-	pPlayerInfo->m_Local = 1;
-	pPlayerInfo->m_ClientID = FakeID;
-	pPlayerInfo->m_Score = -9999;
-	pPlayerInfo->m_Team = TEAM_SPECTATORS;
-
-	CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, FakeID, sizeof(CNetObj_SpectatorInfo)));
-	if(!pSpectatorInfo)
-		return;
-
-	pSpectatorInfo->m_SpectatorID = m_SpectatorID;
-	pSpectatorInfo->m_X = m_ViewPos.x;
-	pSpectatorInfo->m_Y = m_ViewPos.y;
 }
 
 void CPlayer::OnDisconnect(const char *pReason)
@@ -489,7 +476,7 @@ void CPlayer::TryRespawn()
 		return;
 
 	vec2 SpawnPos;
-	if(!GameWorld()->GetSpawnPos(IsBot(), SpawnPos))
+	if(!GameWorld()->GetSpawnPos((m_pBotData && m_pBotData->m_Type == EBotType::BOTTYPE_TRADER) ? false : IsBot(), SpawnPos))
 		return;
 
 	m_Spawning = false;

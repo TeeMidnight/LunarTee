@@ -386,16 +386,16 @@ bool ItemCompare(std::pair<std::string, int> a, std::pair<std::string, int> b)
 	return (a.second > b.second);
 }
 
-void CGameController::GiveDrop(int GiveID, CBotData BotData)
+void CGameController::GiveDrop(int GiveID, SBotData *pBotData)
 {
-	for(unsigned i = 0;i < BotData.m_vDrops.size();i++)
+	for(unsigned i = 0;i < pBotData->m_vDrops.size();i++)
 	{
-		if(random_int(1, 100) <= BotData.m_vDrops[i].m_DropProba)
+		if(random_int(1, 100) <= pBotData->m_vDrops[i].m_DropProba)
 		{
-			int Num = random_int(BotData.m_vDrops[i].m_MinNum, BotData.m_vDrops[i].m_MaxNum);
+			int Num = random_int(pBotData->m_vDrops[i].m_MinNum, pBotData->m_vDrops[i].m_MaxNum);
 			if(Num == 0)
 				continue;
-			const char *pName = BotData.m_vDrops[i].m_ItemName;
+			const char *pName = pBotData->m_vDrops[i].m_ItemName;
 			Datas()->Item()->AddInvItemNum(pName, Num, GiveID, true, true);
 		}
 	}
