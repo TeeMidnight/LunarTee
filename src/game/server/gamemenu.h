@@ -55,7 +55,7 @@ public:
 
 	bool operator==(const CMenuOption &Other) const
 	{
-		return mem_comp(this, &Other, sizeof(this)) == 0;
+		return mem_comp(this, &Other, sizeof(*this)) == 0;
 	}
 };
 

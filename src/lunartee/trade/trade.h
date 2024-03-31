@@ -21,18 +21,7 @@ public:
 
     struct STradeData
     {
-        void GenerateUuid()
-        {
-            std::string UuidString;
-            UuidString.append(m_Give.first);
-            UuidString.append(m_Give.second%sizeof(char), m_Give.second%sizeof(char));
-            UuidString.append(1, abs(m_Trader)%sizeof(char));
-
-            m_Uuid = CalculateUuid(UuidString.c_str());
-        }
-
-        CUuid m_Uuid;
-        int m_Trader;
+        CUuid m_Uuid = RandomUuid();
         std::map<std::string, int> m_Needs;
         std::pair<std::string, int> m_Give;
 

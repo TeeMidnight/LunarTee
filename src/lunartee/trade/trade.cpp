@@ -28,10 +28,14 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
 
     if(str_startswith(pCmd, "TRADE"))
     {
-        const char* aUuidStr = pCmd + 6;
+        const char* pUuidStr = pCmd + 6;
         CUuid Uuid;
-        if(ParseUuid(&Uuid, aUuidStr))
+        if(ParseUuid(&Uuid, pUuidStr))
             return;
+
+        char aUuidStr[UUID_MAXSTRSIZE];
+        FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
+        dbg_msg("yee", "1 %s", aUuidStr);
         
         int TraderID = 0;
         CTradeCore::STradeData *pTradeData = nullptr;
@@ -39,6 +43,9 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
         {
             for(auto &Trade : Trader.second)
 		    {
+                FormatUuid(Trade.m_Uuid, aUuidStr, sizeof(aUuidStr));
+                dbg_msg("yee", "%s", aUuidStr);
+
                 if(Uuid == Trade.m_Uuid)
                 {
                     pTradeData = &Trade;
@@ -85,6 +92,7 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
     // empty
 
     // bot trade (when bot near you)
+    int Order = 0;
     for(auto& Trader : pThis->m_vTraders)
     {
         if(Trader.first >= 0) // first = trader id;
@@ -121,8 +129,14 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
                         "{LSTR} x{INT}", Need.first.c_str(), Need.second), "SHOW", "# {STR}"));
             }
 
-			Options.push_back(CMenuOption(_("Buy this"), aCmd, "@ {STR}"));
+            char aBuy[VOTE_DESC_LENGTH];
+            str_format(aBuy, sizeof(aBuy), "%d.%s", Order, pThis->GameServer()->Localize(
+                        pThis->GameServer()->Server()->GetClientLanguage(ClientID), _("Buy this")));
+
+			Options.push_back(CMenuOption(aBuy, aCmd, "@ {STR}"));
 			Options.push_back(CMenuOption(" ", "SHOW", "{STR}"));
+
+            Order++;
         }
 		Options.push_back(CMenuOption(" ", "SHOW", "{STR}"));
     }
@@ -139,7 +153,5 @@ void CTradeCore::AddTrade(int TraderID, STradeData Data)
 {
     if(!m_vTraders.count(TraderID))
         m_vTraders.insert(std::make_pair(TraderID, std::vector<STradeData>()));
-    Data.m_Trader = TraderID;
-    Data.GenerateUuid();
     m_vTraders[TraderID].push_back(Data);
 }
