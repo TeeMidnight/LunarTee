@@ -21,7 +21,12 @@ public:
 
     struct STradeData
     {
-        CUuid m_Uuid = RandomUuid();
+        STradeData()
+        {
+            m_Uuid = RandomUuid();
+        }
+        
+        CUuid m_Uuid;
         std::map<std::string, int> m_Needs;
         std::pair<std::string, int> m_Give;
 
