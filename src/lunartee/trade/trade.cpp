@@ -139,5 +139,6 @@ void CTradeCore::AddTrade(int TraderID, STradeData Data)
 {
     if(!m_vTraders.count(TraderID))
         m_vTraders.insert(std::make_pair(TraderID, std::vector<STradeData>()));
+    Data.m_Trader = TraderID;
     m_vTraders[TraderID].push_back(Data);
 }
