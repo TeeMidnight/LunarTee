@@ -32,10 +32,6 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
         CUuid Uuid;
         if(ParseUuid(&Uuid, pUuidStr))
             return;
-
-        char aUuidStr[UUID_MAXSTRSIZE];
-        FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
-        dbg_msg("yee", "1 %s", aUuidStr);
         
         int TraderID = 0;
         CTradeCore::STradeData *pTradeData = nullptr;
@@ -43,9 +39,6 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
         {
             for(auto &Trade : Trader.second)
 		    {
-                FormatUuid(Trade.m_Uuid, aUuidStr, sizeof(aUuidStr));
-                dbg_msg("yee", "%s", aUuidStr);
-
                 if(Uuid == Trade.m_Uuid)
                 {
                     pTradeData = &Trade;
