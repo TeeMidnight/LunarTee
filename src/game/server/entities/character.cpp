@@ -696,7 +696,7 @@ void CCharacter::Die(int Killer, int Weapon)
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
 	// npc shouldn't take any damage
-	if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
+	if(m_pPlayer->IsBot() && m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
 		return false;
 
 	CPlayer *pFrom = GameServer()->GetPlayer(From);
