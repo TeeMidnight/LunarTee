@@ -286,12 +286,12 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 
 	std::thread Thread([this, ItemName, Num, ClientID]()
 	{
-		s_ItemMutex.lock();
-
 		auto pOwner = GameServer()->GetPlayer(ClientID);
 		if(!pOwner)
 			return;
 		int UserID = pOwner->GetUserID();
+
+		s_ItemMutex.lock();
 
 		std::string Buffer;
 
@@ -353,12 +353,12 @@ void CItemCore::SyncInvItem(int ClientID)
 
 	std::thread Thread([this, ClientID]()
 	{
-		s_SyncMutex.lock();
-
 		auto pOwner = GameServer()->m_apPlayers[ClientID];
 		if(!pOwner)
 			return;
 		int UserID = pOwner->GetUserID();
+
+		s_SyncMutex.lock();
 
 		std::string Buffer;
 
