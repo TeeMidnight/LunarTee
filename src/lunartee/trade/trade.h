@@ -3,7 +3,7 @@
 
 #include <engine/shared/uuid_manager.h>
 
-#include <map>
+#include <unordered_map>
 #include <string>
 
 class CTradeCore
@@ -32,10 +32,11 @@ public:
     };
 
     void AddTrade(int TraderID, STradeData Data);
+    void RemoveTrade(int TraderID);
 
     // TODO: Add database save
     // int = traderID (The user id of the trader, < 0 is bot)
-    std::map<int, std::vector<STradeData>> m_vTraders;
+    std::unordered_map<int, std::vector<STradeData>> m_vTraders;
     
 };
 

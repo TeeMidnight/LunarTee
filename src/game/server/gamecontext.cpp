@@ -22,8 +22,9 @@
 #include <lunartee/localization//localization.h>
 #include <engine/server/crypt.h>
 
-#include <lunartee/item/item.h>
 #include <lunartee/item/craft.h>
+#include <lunartee/item/item.h>
+#include <lunartee/trade/trade.h>
 
 #include <lunartee/datacontroller.h>
 #include <lunartee/postgresql.h>
@@ -1935,6 +1936,9 @@ void CGameContext::OnBotDead(int ClientID)
 {
 	if(!m_pBotPlayers.count(ClientID))
 		return;
+
+	if(m_pBotPlayers[ClientID]->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
+		Datas()->Trade()->RemoveTrade(-ClientID);
 
 	m_pBotPlayers[ClientID]->m_pBotData->m_Count--;
 
