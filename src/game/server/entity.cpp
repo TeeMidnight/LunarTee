@@ -57,6 +57,6 @@ bool NetworkClipped(CGameWorld *pGameworld, int SnappingClient, vec2 CheckPos)
 
 bool CEntity::GameLayerClipped(vec2 CheckPos)
 {
-	return round_to_int(CheckPos.x)/32 > GameWorld()->Collision()->GetWidth()+200 ||
-			round_to_int(CheckPos.x)/32 < -200 ? true : false;
+	return round_to_int(CheckPos.x)/32 > GameWorld()->Collision()->GetWidth()+32 ||
+			round_to_int(CheckPos.x)/32 < -32 ? true : false;
 }
