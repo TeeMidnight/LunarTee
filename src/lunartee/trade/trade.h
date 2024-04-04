@@ -22,7 +22,7 @@ public:
     struct STradeData
     {
         CUuid m_Uuid = RandomUuid();
-        std::map<std::string, int> m_Needs;
+        std::unordered_map<std::string, int> m_Needs;
         std::pair<std::string, int> m_Give;
 
         bool operator==(const STradeData &Other) const
