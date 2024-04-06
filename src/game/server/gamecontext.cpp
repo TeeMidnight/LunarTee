@@ -627,8 +627,6 @@ void CGameContext::OnTick()
 	// check tuning
 	CheckPureTuning();
 
-	m_pBotController->Tick();
-
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(m_apPlayers[i])
@@ -653,6 +651,8 @@ void CGameContext::OnTick()
 		pWorld.second->m_Core.m_Tuning = m_Tuning;
 		pWorld.second->Tick();
 	}
+
+	m_pBotController->Tick();
 
 	m_pController->Tick();
 
