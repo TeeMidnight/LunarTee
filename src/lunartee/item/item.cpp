@@ -262,7 +262,7 @@ void CItemCore::AddInvItemNum(const char *ItemName, int Num, int ClientID, bool 
 
 	if(Database)
 	{
-		SetInvItemNumThread(ItemName, m_aInventories[ClientID][ItemName], ClientID);
+		AddInvItemNumThread(ItemName, Num, ClientID);
 	}
 }
 
@@ -277,6 +277,78 @@ void CItemCore::SetInvItemNum(const char *ItemName, int Num, int ClientID, bool 
 }
 
 static std::mutex s_ItemMutex;
+void CItemCore::AddInvItemNumThread(const char *pItemName, int Num, int ClientID)
+{
+	if(Num == 0)
+		return;
+
+	if(!GameServer()->m_apPlayers[ClientID])
+	{
+		return;
+	}
+
+	std::string ItemName(pItemName);
+
+	std::thread Thread([this, ItemName, Num, ClientID]()
+	{
+		auto pOwner = GameServer()->GetPlayer(ClientID);
+		if(!pOwner)
+			return;
+		int UserID = pOwner->GetUserID();
+
+		std::string Buffer;
+
+		Buffer.append("WHERE OwnerID=");
+		Buffer.append(std::to_string(UserID));
+		Buffer.append(" AND ");
+		Buffer.append("ItemName='");
+		Buffer.append(ItemName);
+		Buffer.append("';");
+
+		s_ItemMutex.lock();
+
+		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_itemdata",
+			Buffer.c_str(), "*");
+
+		if(!pSqlResult)
+		{
+			return;
+		}
+
+		if(!pSqlResult->size())
+		{
+			Buffer.clear();
+			Buffer.append("(OwnerID, ItemName, Num) VALUES (");
+			Buffer.append(std::to_string(UserID));
+			Buffer.append(", '");
+			Buffer.append(ItemName);
+			Buffer.append("', ");
+			Buffer.append(std::to_string(Num));
+			Buffer.append(");");
+
+			Sql()->Execute<SqlType::INSERT>("lt_itemdata", Buffer.c_str());
+		}else
+		{
+			int ID = pSqlResult->begin()["ID"].as<int>();
+
+			Buffer.clear();
+			Buffer.append("Num = Num");
+			if(Num > 0)
+				Buffer.append("+");
+			Buffer.append(std::to_string(Num));
+			Buffer.append(" WHERE ID = ");
+			Buffer.append(std::to_string(ID));
+			Buffer.append(";");
+
+			Sql()->Execute<SqlType::UPDATE>("lt_itemdata", Buffer.c_str());
+		}
+
+		s_ItemMutex.unlock();
+	});
+	Thread.detach();
+	return;
+}
+
 void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID)
 {
 	if(!GameServer()->m_apPlayers[ClientID])
@@ -292,8 +364,6 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 			return;
 		int UserID = pOwner->GetUserID();
 
-		s_ItemMutex.lock();
-
 		std::string Buffer;
 
 		Buffer.append("WHERE OwnerID=");
@@ -308,9 +378,10 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 
 		if(!pSqlResult)
 		{
-			s_ItemMutex.unlock();
 			return;
 		}
+
+		s_ItemMutex.lock();
 
 		if(!pSqlResult->size())
 		{
@@ -344,7 +415,6 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 	return;
 }
 
-static std::mutex s_SyncMutex;
 void CItemCore::SyncInvItem(int ClientID)
 {
 	if(!GameServer()->m_apPlayers[ClientID])
@@ -359,8 +429,6 @@ void CItemCore::SyncInvItem(int ClientID)
 			return;
 		int UserID = pOwner->GetUserID();
 
-		s_SyncMutex.lock();
-
 		std::string Buffer;
 
 		Buffer.append("WHERE OwnerID=");
@@ -371,7 +439,6 @@ void CItemCore::SyncInvItem(int ClientID)
 
 		if(!pSqlResult)
 		{
-			s_SyncMutex.unlock();
 			return;
 		}
 
@@ -382,8 +449,6 @@ void CItemCore::SyncInvItem(int ClientID)
 				SetInvItemNum(Iter["ItemName"].as<std::string>().c_str(), Iter["Num"].as<int>(), ClientID, false);
 			}
 		}
-
-		s_SyncMutex.unlock();
 	});
 	Thread.detach();
 	return;

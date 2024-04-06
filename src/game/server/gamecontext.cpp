@@ -2799,8 +2799,6 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 
 	std::thread Thread([this, Username, PassHash, ClientID]()
 	{
-		s_RegisterMutex.lock();
-	
 		std::string Buffer;
 
 		Buffer.append("WHERE Username='");
@@ -2812,7 +2810,6 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 
 		if(!pSqlResult)
 		{
-			s_RegisterMutex.unlock();
 			return;
 		}
 
@@ -2828,22 +2825,24 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 			Buffer.append(Json.dump());
 			Buffer.append("');");
 
+			s_RegisterMutex.lock();
+
 			Sql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
+
+			s_RegisterMutex.unlock();
+
 			SendChatTarget_Localization(ClientID, _("You are now registered."));
 			SendChatTarget_Localization(ClientID, _("Use /login <username> <password> to login"));
 		}else
 		{
 			SendChatTarget_Localization(ClientID, _("User already exists!"));
 		}
-
-		s_RegisterMutex.unlock();
 	});
 	Thread.detach();
 	
 	return;
 }
 
-static std::mutex s_LoginMutex;
 void CGameContext::Login(const char* pUsername, const char* pPassHash, int ClientID)
 {
 	if(!m_apPlayers[ClientID])
@@ -2856,8 +2855,6 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 
 	std::thread Thread([this, Username, PassHash, ClientID]()
 	{
-		s_LoginMutex.lock();
-
 		std::string Buffer;
 
 		Buffer.append("WHERE Username='");
@@ -2869,15 +2866,12 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 
 		if(!pSqlResult)
 		{
-			s_LoginMutex.unlock();
 			return;
 		}
 
 		if(!pSqlResult->size())
 		{
 			SendChatTarget_Localization(ClientID, _("No such account"));
-					
-			s_LoginMutex.unlock();
 			return;
 		}
 
@@ -2897,21 +2891,16 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 					m_apPlayers[ClientID]->Login(Iter["UserID"].as<int>());
 
 					Datas()->Item()->SyncInvItem(ClientID);
-					
-					s_LoginMutex.unlock();
 					return;
 				}else
 				{
 					SendChatTarget_Localization(ClientID, _("Wrong nickname!"));
-
-					s_LoginMutex.unlock();
 					return;
 				}
 			}
 		}
 
 		SendChatTarget_Localization(ClientID, _("Wrong password!"));
-		s_LoginMutex.unlock();
 	});
 	Thread.detach();
 
@@ -2933,8 +2922,6 @@ void CGameContext::UpdatePlayerData(int ClientID)
 
 	std::thread Thread([this, ClientID]()
 	{
-		s_UpdateMutex.lock();
-
 		std::string Buffer;
 
 		int ID = m_apPlayers[ClientID]->GetUserID();
@@ -2946,6 +2933,8 @@ void CGameContext::UpdatePlayerData(int ClientID)
 		Buffer.append(" WHERE UserID = ");
 		Buffer.append(std::to_string(ID));
 		Buffer.append(";");
+
+		s_UpdateMutex.lock();
 
 		Sql()->Execute<SqlType::UPDATE>("lt_playerdata", Buffer.c_str());
 
