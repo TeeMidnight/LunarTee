@@ -686,15 +686,6 @@ void CCharacter::Die(int Killer, int Weapon)
 
 	m_Alive = false;
 
-	for(auto& pCore : GameWorld()->m_Core.m_pCharacters)
-	{
-		if(pCore.second->m_HookedPlayer == m_pPlayer->GetCID())
-		{
-			pCore.second->m_HookedPlayer = -1;
-			pCore.second->m_HookState = HOOK_IDLE;
-		}
-	}
-
 	GameWorld()->RemoveEntity(this);
 	GameWorld()->m_Core.DeleteCharacter(GetCID());
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
