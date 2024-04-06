@@ -41,6 +41,10 @@ public:
 
 	void Clear();
 	void Snap(int SnappingClient);
+
+	bool Translate(int SnappingClient, int *pType, const char **ppData);
+
+	void EventToSixup(int *pType, int *pSize, const char **ppData);
 };
 
 #endif

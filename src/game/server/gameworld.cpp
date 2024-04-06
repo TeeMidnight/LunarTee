@@ -122,8 +122,6 @@ void CGameWorld::Snap(int SnappingClient)
 	if(GameServer()->m_apPlayers[SnappingClient]->GameWorld() != this)
 		return;
 
-	SnapSpawnPoint(SnappingClient); // snap spawn point
-
 	for(int i = 0; i < NUM_ENTTYPES; i++)
 	{
 		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
@@ -132,28 +130,6 @@ void CGameWorld::Snap(int SnappingClient)
 			pEnt->Snap(SnappingClient);
 			pEnt = m_pNextTraverseEntity;
 		}
-	}
-}
-
-void CGameWorld::SnapSpawnPoint(int SnappingClient)
-{
-	for(int i = 0; i < (int) m_vSpawnPoints[0].size(); i ++)
-	{
-		if(NetworkClipped(this, SnappingClient, m_vSpawnPoints[0][i]))
-			continue;
-
-		vec2 Pos = m_vSpawnPoints[0][i];
-
-		CNetObj_Projectile *pObj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_vSpawnPointsID[i], sizeof(CNetObj_Projectile)));
-		if(!pObj)
-			return;
-
-		pObj->m_X = (int)Pos.x;
-		pObj->m_Y = (int)Pos.y;
-		pObj->m_Type = WEAPON_RIFLE;
-		pObj->m_VelX = 0;
-		pObj->m_VelY = 0;
-		pObj->m_StartTick = Server()->Tick();
 	}
 }
 

@@ -392,6 +392,37 @@ function(generate_source output_file script_parameter)
   )
 endfunction()
 
+function(generate_source7 output_file script_parameter)
+  add_custom_command(OUTPUT ${output_file}
+    COMMAND ${Python3_EXECUTABLE} -m datasrc.seven.compile ${script_parameter}
+      > "${PROJECT_BINARY_DIR}/${output_file}"
+    DEPENDS
+      datasrc/seven/compile.py
+      datasrc/seven/content.py
+      datasrc/seven/datatypes.py
+      datasrc/seven/network.py
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  )
+endfunction()
+
+function(generate_maps output_file script_parameter)
+  add_custom_command(OUTPUT ${output_file}
+    COMMAND ${Python3_EXECUTABLE} datasrc/crosscompile.py ${script_parameter}
+      > "${PROJECT_BINARY_DIR}/${output_file}"
+    DEPENDS
+      datasrc/crosscompile.py
+      datasrc/compile.py
+      datasrc/content.py
+      datasrc/datatypes.py
+      datasrc/network.py
+      datasrc/seven/compile.py
+      datasrc/seven/content.py
+      datasrc/seven/datatypes.py
+      datasrc/seven/network.py
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  )
+endfunction()
+
 file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/generated/")
 if(GIT_FOUND)
   execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --git-dir
@@ -414,6 +445,15 @@ generate_source("src/generated/protocol.h" "network_header")
 generate_source("src/generated/server_data.cpp" "server_content_source")
 generate_source("src/generated/server_data.h" "server_content_header")
 
+generate_source7("src/generated/protocol7.cpp" "network_source")
+generate_source7("src/generated/protocol7.h" "network_header")
+generate_source7("src/generated/client_data7.cpp" "client_content_source")
+generate_source7("src/generated/client_data7.h" "client_content_header")
+
+generate_maps("src/generated/protocolglue.h" "map_header")
+generate_maps("src/generated/protocolglue.cpp" "map_source")
+
+
 
 ########################################################################
 # SHARED
@@ -428,11 +468,22 @@ file(GLOB ENGINE_GFX "src/engine/gfx/*.cpp" "src/engine/gfx/*.h")
 
 file(GLOB ENGINE_SHARED "src/engine/shared/*.cpp" "src/engine/shared/*.h")
 
-set(ENGINE_GENERATED_SHARED src/generated/nethash.cpp src/generated/protocol.cpp src/generated/protocol.h)
+set(ENGINE_GENERATED_SHARED 
+  src/generated/nethash.cpp
+  src/generated/protocolglue.cpp
+  src/generated/protocolglue.h
+  src/generated/protocol7.cpp
+  src/generated/protocol7.h
+  src/generated/protocol.cpp
+  src/generated/protocol.h
+)
+
 file(GLOB GAME_SHARED "src/game/*.cpp" "src/game/*.h")
 
 set(GAME_GENERATED_SHARED
   src/generated/nethash.cpp
+  src/generated/protocolglue.h
+  src/generated/protocol7.h
   src/generated/protocol.h
 )
 

@@ -262,4 +262,14 @@ T color_invert(const T &col)
 	return T(1.0f - col.x, 1.0f - col.y, 1.0f - col.z, 1.0f - col.a);
 }
 
+inline int HSLA_to_int(int H, int S, int L, int Alpha = 255)
+{
+	int color = 0;
+	color = (color & 0xFF00FFFF) | (H << 16);
+	color = (color & 0xFFFF00FF) | (S << 8);
+	color = (color & 0xFFFFFF00) | L;
+	color = (color & 0x00FFFFFF) | (Alpha << 24);
+	return color;
+}
+
 #endif

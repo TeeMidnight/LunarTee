@@ -52,16 +52,61 @@ void CEventHandler::Snap(int SnappingClient)
 		if(SnappingClient == -1 || m_aClientMasks[i].test(SnappingClient))
 		{
 			CNetEvent_Common *pEvent = (CNetEvent_Common *)&m_aData[m_aOffsets[i]];
-			if(SnappingClient == -1 || distance(GameServer()->m_apPlayers[SnappingClient]->m_ViewPos, vec2(pEvent->m_X, pEvent->m_Y)) < 1500.0f)
+			// TODO: make Eventhandler more world
+			if(!NetworkClipped(GameServer()->m_pMainWorld, SnappingClient, vec2(pEvent->m_X, pEvent->m_Y)))
 			{
 				int Type = m_aTypes[i];
 				int Size = m_aSizes[i];
 				const char *pData = &m_aData[m_aOffsets[i]];
+				if(!Translate(SnappingClient, &Type, &pData))
+					continue;
+
+				if(GameServer()->Server()->IsSixup(SnappingClient))
+					EventToSixup(&Type, &Size, &pData);
 
 				void *pItem = GameServer()->Server()->SnapNewItem(Type, i, Size);
 				if(pItem)
 					mem_copy(pItem, pData, Size);
 			}
 		}
+	}
+}
+
+bool CEventHandler::Translate(int SnappingClient, int *pType, const char **ppData)
+{
+	if(*pType == NETEVENTTYPE_DEATH)
+	{
+		CNetEvent_Death *pEvent = (CNetEvent_Death *)(*ppData);
+
+		return GameServer()->Server()->Translate(pEvent->m_ClientID, SnappingClient);
+	}
+	return true;
+}
+
+void CEventHandler::EventToSixup(int *pType, int *pSize, const char **ppData)
+{
+	static char s_aEventStore[128];
+	if(*pType == NETEVENTTYPE_DAMAGEIND)
+	{
+		const CNetEvent_DamageInd *pEvent = (const CNetEvent_DamageInd *)(*ppData);
+		protocol7::CNetEvent_Damage *pEvent7 = (protocol7::CNetEvent_Damage *)s_aEventStore;
+		*pType = -protocol7::NETEVENTTYPE_DAMAGE;
+		*pSize = sizeof(*pEvent7);
+
+		pEvent7->m_X = pEvent->m_X;
+		pEvent7->m_Y = pEvent->m_Y;
+
+		pEvent7->m_ClientID = 0;
+		pEvent7->m_Angle = pEvent->m_Angle;
+
+		// This will need some work, perhaps an event wrapper for damageind,
+		// a scan of the event array to merge multiple damageinds
+		// or a separate array of "damage ind" events that's added in while snapping
+		pEvent7->m_HealthAmount = 1;
+
+		pEvent7->m_ArmorAmount = 0;
+		pEvent7->m_Self = 0;
+
+		*ppData = s_aEventStore;
 	}
 }

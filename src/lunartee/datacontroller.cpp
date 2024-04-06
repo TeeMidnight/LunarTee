@@ -198,6 +198,25 @@ static int LoadBots(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *p
     return 0;
 }
 
+static int LoadSkins(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *pUser)
+{
+    CDataController *pController = (CDataController *) pUser;
+    
+    if(pItem->IsDir())
+    {
+        pUnzip->ListItem(pItem, LoadSkins, pUser);
+    }
+    else
+    {
+        std::string Buffer;
+        pUnzip->UnzipFile(Buffer, pItem);
+
+        pController->GameServer()->LoadNewSkin(Buffer);
+    }
+
+    return 0;
+}
+
 void CDataController::LoadDatapack(const char* pPath)
 {
     // Init and preload
@@ -215,6 +234,9 @@ void CDataController::LoadDatapack(const char* pPath)
     Buffer.clear();
     if(Unzip.UnzipFile(Buffer, "translations/index.json"))
         Server()->Localization()->LoadDatapack(&Unzip, Buffer);
+    // Load skins
+    Unzip.ListDir("skins", LoadSkins, this);
+
     // Load bots
     Unzip.ListDir("bots", LoadBots, this);
 }

@@ -54,6 +54,9 @@ LunarTee translation
 = Invalid spectator id {INT} used
 ## 无效的旁观者ID {INT}
 
+= Invalid whisper
+## 无效的私聊
+
 = Inventory
 ## 物品栏
 
@@ -74,6 +77,9 @@ LunarTee translation
 
 = Making {LSTR}...
 ## 制造 {LSTR} 中...
+
+= No player with name '{STR}' found
+## 没有找到玩家'{STR}'
 
 = No such account
 ## 没有此账号!
@@ -205,7 +211,7 @@ LunarTee translation
 ## 旁观者
 
 = {LSTR}'s Shop
-## {LSTR}的商店 
+## {LSTR}的商店
 
 = {STR} by {STR}
 ## {STR} by {STR}

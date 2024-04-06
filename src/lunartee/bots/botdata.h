@@ -43,14 +43,12 @@ enum EBotFlags
 struct SBotData
 {
     char m_aName[MAX_NAME_LENGTH];
-    char m_SkinName[64];
+    class CTeeInfo *m_pSkin;
 
     int m_Type;
     int m_Flags;
 
     int m_Health;
-    int m_ColorBody;
-    int m_ColorFeet;
     int m_AttackProba;
     int m_SpawnProba;
 

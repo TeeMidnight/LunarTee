@@ -76,8 +76,6 @@ void CPlayer::Reset()
 	
 	m_Datas.clear();
 
-	m_ShowClientID = 0;
-
 	if(IsBot())
 	{
 		BotInit();
@@ -86,18 +84,7 @@ void CPlayer::Reset()
 
 void CPlayer::BotInit()
 {
-	if(m_pBotData->m_ColorBody > -1 && m_pBotData->m_ColorFeet > -1)
-	{
-		m_TeeInfos.m_UseCustomColor = true;
-		m_TeeInfos.m_ColorBody = m_pBotData->m_ColorBody;
-		m_TeeInfos.m_ColorFeet = m_pBotData->m_ColorFeet;
-	}
-	else
-	{
-		m_TeeInfos.m_UseCustomColor = false;
-	}
-
-	str_copy(m_TeeInfos.m_SkinName, m_pBotData->m_SkinName);
+	m_TeeInfos = *m_pBotData->m_pSkin;
 
 	// trader init
 	if(m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
@@ -199,15 +186,25 @@ void CPlayer::PostTick()
 		}
 	}
 
-	if((Server()->Tick() % (int)(Server()->TickSpeed() * 1.5)) == 0)
-		m_ShowClientID = !m_ShowClientID;
-
 	if(m_Team == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW)
 	{
 		// update view pos for spectators
 		if(GameServer()->GetPlayer(m_SpectatorID))
 			m_ViewPos = GameServer()->GetPlayer(m_SpectatorID)->m_ViewPos;
 	}
+}
+
+static int PlayerFlags_SixToSeven(int Flags)
+{
+	int Seven = 0;
+	if(Flags & PLAYERFLAG_CHATTING)
+		Seven |= protocol7::PLAYERFLAG_CHATTING;
+	if(Flags & PLAYERFLAG_SCOREBOARD)
+		Seven |= protocol7::PLAYERFLAG_SCOREBOARD;
+	if(Flags & PLAYERFLAG_AIM)
+		Seven |= protocol7::PLAYERFLAG_AIM;
+
+	return Seven;
 }
 
 void CPlayer::Snap(int SnappingClient)
@@ -221,39 +218,71 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
-
-	if(GameServer()->m_apPlayers[SnappingClient] && 
-		GameServer()->m_apPlayers[SnappingClient]->m_ShowClientID && 
-		GameServer()->m_apPlayers[SnappingClient]->m_Authed &&
-		(GameServer()->m_apPlayers[SnappingClient]->m_PlayerFlags & PLAYERFLAG_SCOREBOARD))
-	{
-		std::string Buffer;
-		Buffer.append("Client: ");
-		Buffer.append(std::to_string(m_ClientID));
-
-		StrToInts(&pClientInfo->m_Clan0, 3, Buffer.c_str());
-	}
-
 	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
-	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
+	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_aSkinName);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
 	pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
 	pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
 
-	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(CNetObj_PlayerInfo)));
-	if(!pPlayerInfo)
-		return;
+	if(!Server()->IsSixup(SnappingClient))
+	{
+		CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(CNetObj_PlayerInfo)));
+		if(!pPlayerInfo)
+			return;
 
-	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
-	pPlayerInfo->m_ClientID = id;
-	pPlayerInfo->m_Score = m_Score;
-	pPlayerInfo->m_Team = (m_ClientID == SnappingClient ? m_Team : 0); // snap other spectator to team 0
-	pPlayerInfo->m_Local = 0;
-	
-	if (m_ClientID == SnappingClient)
-		pPlayerInfo->m_Local = 1;
+		pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
+		pPlayerInfo->m_ClientID = id;
+		pPlayerInfo->m_Score = m_Score;
+		pPlayerInfo->m_Team = m_Team;
+		pPlayerInfo->m_Local = 0;
+		
+		if (m_ClientID == SnappingClient)
+			pPlayerInfo->m_Local = 1;
+	}
+	else
+	{
+		protocol7::CNetObj_PlayerInfo *pPlayerInfo = static_cast<protocol7::CNetObj_PlayerInfo *>(Server()->SnapNewItem(-protocol7::NETOBJTYPE_PLAYERINFO, id, sizeof(protocol7::CNetObj_PlayerInfo)));
+		if(!pPlayerInfo)
+			return;
+
+		pPlayerInfo->m_PlayerFlags = PlayerFlags_SixToSeven(m_PlayerFlags);
+		if(Server()->IsAuthed(m_ClientID))
+			pPlayerInfo->m_PlayerFlags |= protocol7::PLAYERFLAG_ADMIN;
+
+		pPlayerInfo->m_Score = m_Score;
+		pPlayerInfo->m_Latency = GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
+	}
+
+	if(m_ClientID == SnappingClient && m_Team == TEAM_SPECTATORS)
+	{
+		int SpectatorID = m_SpectatorID;
+		if(SpectatorID != SPEC_FREEVIEW && !Server()->Translate(SpectatorID, SnappingClient))
+			return;
+
+		if(!Server()->IsSixup(SnappingClient))
+		{
+			CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, id, sizeof(CNetObj_SpectatorInfo)));
+			if(!pSpectatorInfo)
+				return;
+
+			pSpectatorInfo->m_SpectatorID = SpectatorID;
+			pSpectatorInfo->m_X = m_ViewPos.x;
+			pSpectatorInfo->m_Y = m_ViewPos.y;
+		}
+		else
+		{
+			protocol7::CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<protocol7::CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, id, sizeof(protocol7::CNetObj_SpectatorInfo)));
+			if(!pSpectatorInfo)
+				return;
+
+			pSpectatorInfo->m_SpecMode = SpectatorID == SPEC_FREEVIEW ? protocol7::SPEC_FREEVIEW : protocol7::SPEC_PLAYER;
+			pSpectatorInfo->m_SpectatorID = SpectatorID;
+			pSpectatorInfo->m_X = m_ViewPos.x;
+			pSpectatorInfo->m_Y = m_ViewPos.y;
+		}
+	}
 
 	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, id, sizeof(CNetObj_DDNetPlayer)));
 	if(!pDDNetPlayer)
@@ -262,33 +291,15 @@ void CPlayer::Snap(int SnappingClient)
 	pDDNetPlayer->m_AuthLevel = 0;
 	pDDNetPlayer->m_Flags = 0;
 
-	if(!IsBot())
-	{
-		IServer::CClientInfo Info;
-		Server()->GetClientInfo(m_ClientID, &Info);
-		pDDNetPlayer->m_AuthLevel = Info.m_Authed;
-	
-		if(!m_Datas["donor"].empty())
-			pDDNetPlayer->m_AuthLevel = m_Datas["donor"].get<bool>();
-	}
+	IServer::CClientInfo Info;
+	Server()->GetClientInfo(m_ClientID, &Info);
+	pDDNetPlayer->m_AuthLevel = Info.m_Authed;
+
+	if(!m_Datas["donor"].empty())
+		pDDNetPlayer->m_AuthLevel = m_Datas["donor"].get<bool>();
 
 	if(m_Sit)
 		pDDNetPlayer->m_Flags |= EXPLAYERFLAG_AFK;
-
-	if(m_ClientID == SnappingClient && m_Team == TEAM_SPECTATORS)
-	{
-		CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, id, sizeof(CNetObj_SpectatorInfo)));
-		if(!pSpectatorInfo)
-			return;
-
-		int SpectatorID = m_SpectatorID;
-		if(m_SpectatorID != SPEC_FREEVIEW && !Server()->Translate(SpectatorID, m_ClientID))
-			return;
-
-		pSpectatorInfo->m_SpectatorID = SpectatorID;
-		pSpectatorInfo->m_X = m_ViewPos.x;
-		pSpectatorInfo->m_Y = m_ViewPos.y;
-	}
 }
 
 void CPlayer::SnapBot(int SnappingClient)
@@ -319,26 +330,41 @@ void CPlayer::SnapBot(int SnappingClient)
 
 	StrToInts(&pClientInfo->m_Name0, 4, GameServer()->Localize(pLanguage, m_pBotData->m_aName));
 	StrToInts(&pClientInfo->m_Clan0, 3, pClan);
-	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
+	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_aSkinName);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
 	pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
 	pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
 
-	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(CNetObj_PlayerInfo)));
-	if(!pPlayerInfo)
-		return;
+	if(!Server()->IsSixup(SnappingClient))
+	{
+		CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(CNetObj_PlayerInfo)));
+		if(!pPlayerInfo)
+			return;
 
-	pPlayerInfo->m_Latency = 0;
-	pPlayerInfo->m_ClientID = id;
-	pPlayerInfo->m_Score = m_Score;
-	pPlayerInfo->m_Team = 2; // do not snap bot in scoreboard
-	pPlayerInfo->m_Local = 0;
+		pPlayerInfo->m_Latency = 0;
+		pPlayerInfo->m_ClientID = id;
+		pPlayerInfo->m_Score = m_Score;
+		pPlayerInfo->m_Team = 2; // do not snap bot in scoreboard
+		pPlayerInfo->m_Local = 0;
+	}
+	else
+	{
+		protocol7::CNetObj_PlayerInfo *pPlayerInfo = static_cast<protocol7::CNetObj_PlayerInfo *>(Server()->SnapNewItem(-protocol7::NETOBJTYPE_PLAYERINFO, id, sizeof(protocol7::CNetObj_PlayerInfo)));
+		if(!pPlayerInfo)
+			return;
+
+		pPlayerInfo->m_PlayerFlags = PlayerFlags_SixToSeven(m_PlayerFlags);
+
+		pPlayerInfo->m_Score = 0;
+		pPlayerInfo->m_Latency = 0;
+	}
 	
 	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, id, sizeof(CNetObj_DDNetPlayer)));
 	if(!pDDNetPlayer)
 		return;
+
 	pDDNetPlayer->m_AuthLevel = 0;
 	pDDNetPlayer->m_Flags = 0;
 }
@@ -444,6 +470,13 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 			GameServer()->SendChatTarget_Localization(-1, _("'{STR}' backed world"), Server()->ClientName(m_ClientID));
 		}
 	}
+
+	protocol7::CNetMsg_Sv_Team Msg;
+	Msg.m_ClientID = m_ClientID;
+	Msg.m_Team = Team;
+	Msg.m_Silent = true;
+	Msg.m_CooldownTick = m_LastSetTeam + Server()->TickSpeed() * 3;
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
 
 	KillCharacter();
 

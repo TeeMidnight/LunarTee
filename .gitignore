@@ -1,6 +1,8 @@
 
 datasrc/__pycache__
 datasrc/*.pyc
+datasrc/seven/__pycache__
+datasrc/seven/*.pyc
 objs
 src/generated
 autoexec.cfg

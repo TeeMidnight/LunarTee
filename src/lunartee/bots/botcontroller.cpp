@@ -21,16 +21,8 @@ void CBotController::LoadBotData(std::string Buffer)
 
         SBotData Data;
         str_copy(Data.m_aName, BotData["name"].get<std::string>().c_str());
-        str_copy(Data.m_SkinName, BotData["skin"].get<std::string>().c_str());
-        if(!BotData["color_body"].empty() && !BotData["color_feet"].empty())
-        {
-            Data.m_ColorBody = BotData["color_body"].get<int>();
-            Data.m_ColorFeet = BotData["color_feet"].get<int>();
-        }else
-        {
-            Data.m_ColorBody = -1;
-            Data.m_ColorFeet = -1;
-        }
+        Data.m_pSkin = &m_pGameServer->m_TeeSkins[CalculateUuid(BotData["skin-id"].get<std::string>().c_str())];
+
         Data.m_Health = BotData["health"].get<int>();
         Data.m_AttackProba = BotData["attack_proba"].get<int>();
         Data.m_SpawnProba = BotData["spawn_proba"].get<int>();

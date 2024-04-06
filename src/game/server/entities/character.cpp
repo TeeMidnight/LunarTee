@@ -585,7 +585,7 @@ void CCharacter::TickDefered()
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 	}
 
-	if(GetCID() < MAX_CLIENTS)
+	if(GetCID() < MAX_CLIENTS && !Server()->IsSixup(GetCID()))
 	{
 		int Events = m_Core.m_TriggeredEvents;
 		CClientMask Mask = CmaskAllExceptOne(m_pPlayer->GetCID());
@@ -820,55 +820,108 @@ void CCharacter::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, id, sizeof(CNetObj_Character)));
-	if(!pCharacter)
-		return;
-
 	CCharacterCore *pCore;
+	int Tick, HookedPlayer, Emote, Weapon, AmmoCount, Health, Armor;
+
+	Weapon = g_Weapons.m_aWeapons[m_ActiveWeapon]->GetShowType();
+	AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo;
+	Health = clamp(round_to_int(m_Health / (m_MaxHealth / 10.0f)), 0, 10);
+	Armor = clamp(m_Armor, 0, 10);
+
 	// write down the m_Core
 	if(!m_ReckoningTick)
 	{
 		// no dead reckoning when paused because the client doesn't know
 		// how far to perform the reckoning
-		pCharacter->m_Tick = 0;
+		Tick = 0;
 		pCore = &m_Core;
 	}
 	else
 	{
-		pCharacter->m_Tick = m_ReckoningTick;
+		Tick = m_ReckoningTick;
 		pCore = &m_SendCore;
 	}
-	pCore->Write(pCharacter);
+	HookedPlayer = pCore->m_HookedPlayer;
 
-	if (pCharacter->m_HookedPlayer != -1)
+	if(HookedPlayer != -1)
 	{
-		if (!Server()->Translate(pCharacter->m_HookedPlayer, SnappingClient))
-			pCharacter->m_HookedPlayer = -1;
+		if(!Server()->Translate(HookedPlayer, SnappingClient))
+			HookedPlayer = -1;
 	}
 
-	pCharacter->m_Emote = m_EmoteType;
+	Emote = m_EmoteType;
 
 	if(Pickable())
-		pCharacter->m_Emote = EMOTE_PAIN;
+		Emote = EMOTE_PAIN;
 
-	pCharacter->m_AmmoCount = 0;
-	pCharacter->m_Health = 0;
-	pCharacter->m_Armor = 0;
-
-	pCharacter->m_Weapon = g_Weapons.m_aWeapons[m_ActiveWeapon]->GetShowType();
-	pCharacter->m_AttackTick = m_AttackTick;
-
-	pCharacter->m_Direction = m_Input.m_Direction;
-
-	if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1 ||
-		(!g_Config.m_SvStrictSpectateMode && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
+	if(!Server()->IsSixup(SnappingClient))
 	{
-		pCharacter->m_Health = max(1, round_to_int((float)(m_Health / (float)m_MaxHealth) *10.0f));
-		pCharacter->m_Armor = m_Armor;
-		pCharacter->m_AmmoCount = -1; // do not snap
-	}
+		CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, id, sizeof(CNetObj_Character)));
+		if(!pCharacter)
+			return;
 
-	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
+		pCore->Write(pCharacter);
+
+		pCharacter->m_Tick = Tick;
+		pCharacter->m_Emote = Emote;
+
+		pCharacter->m_HookedPlayer = HookedPlayer;
+
+		pCharacter->m_Direction = m_Input.m_Direction;
+
+		pCharacter->m_AttackTick = m_AttackTick;
+		pCharacter->m_Weapon = Weapon;
+		pCharacter->m_AmmoCount = AmmoCount;
+		pCharacter->m_Health = Health;
+		pCharacter->m_Armor = Armor;
+
+		pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
+	}
+	else
+	{
+		protocol7::CNetObj_Character *pCharacter = static_cast<protocol7::CNetObj_Character *>(Server()->SnapNewItem(-protocol7::NETOBJTYPE_CHARACTER, id, sizeof(protocol7::CNetObj_Character)));
+		if(!pCharacter)
+			return;
+
+		pCore->Write(reinterpret_cast<CNetObj_CharacterCore *>(static_cast<protocol7::CNetObj_CharacterCore *>(pCharacter)));
+		if(pCharacter->m_Angle > (int)(pi * 256.0f))
+		{
+			pCharacter->m_Angle -= (int)(2.0f * pi * 256.0f);
+		}
+
+		pCharacter->m_HookTick = maximum(0, pCharacter->m_HookTick);
+
+		pCharacter->m_Direction = m_Input.m_Direction;
+
+		pCharacter->m_Tick = Tick;
+		pCharacter->m_Emote = Emote;
+		pCharacter->m_AttackTick = m_AttackTick;
+		pCharacter->m_Weapon = Weapon;
+		pCharacter->m_AmmoCount = AmmoCount;
+
+		pCharacter->m_HookedPlayer = HookedPlayer;
+
+		if(Weapon == WEAPON_NINJA)
+			pCharacter->m_AmmoCount = m_Ninja.m_ActivationTick + g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000;
+
+		pCharacter->m_Health = Health;
+		pCharacter->m_Armor = Armor;
+
+		int TriggeredEvents7 = 0;
+		if(m_Core.m_TriggeredEvents & COREEVENT_GROUND_JUMP)
+			TriggeredEvents7 |= protocol7::COREEVENTFLAG_GROUND_JUMP;
+		if(m_Core.m_TriggeredEvents & COREEVENT_AIR_JUMP)
+			TriggeredEvents7 |= protocol7::COREEVENTFLAG_AIR_JUMP;
+		if(m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_PLAYER)
+			TriggeredEvents7 |= protocol7::COREEVENTFLAG_HOOK_ATTACH_PLAYER;
+		if(m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_GROUND)
+			TriggeredEvents7 |= protocol7::COREEVENTFLAG_HOOK_ATTACH_GROUND;
+		if(m_Core.m_TriggeredEvents & COREEVENT_HOOK_HIT_NOHOOK)
+			TriggeredEvents7 |= protocol7::COREEVENTFLAG_HOOK_HIT_NOHOOK;
+		pCharacter->m_TriggeredEvents = TriggeredEvents7;
+
+		return;
+	}
 
 	CNetObj_DDNetCharacter *pDDNetCharacter = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, id, sizeof(CNetObj_DDNetCharacter)));
 	if(!pDDNetCharacter)

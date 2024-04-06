@@ -158,6 +158,8 @@ public:
 		CUuid m_ConnectionID;
 
 		CMapData *m_pMapData;
+
+		bool m_Sixup;
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
@@ -276,7 +278,9 @@ class CCache
 
 	void ExpireServerInfo() override;
 	void CacheServerInfo(CCache *pCache, int Type, bool SendClients);
+	void CacheServerInfoSixup(CCache *pCache, bool SendClients);
 	void SendServerInfo(const NETADDR *pAddr, int Token, int Type, bool SendClients);
+	void GetServerInfoSixup(CPacker *pPacker, int Token, bool SendClients);
 	bool RateLimitServerInfoConnless();
 	void SendServerInfoConnless(const NETADDR *pAddr, int Token, int Type);
 	void UpdateRegisterServerInfo();
@@ -327,6 +331,8 @@ public:
 
 	int GetOneWorldPlayerNum(int ClientID) const override;
 	void CreateNewTheardJob(std::shared_ptr<IJob> pJob) override;
+
+	bool IsSixup(int ClientID) const override { return ClientID != -1 && m_aClients[ClientID].m_Sixup; }
 };
 
 #endif

@@ -111,7 +111,8 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 
 	std::vector<CMenuOption> Options;
 
-	Options.push_back(CMenuOption(_("Craft Menu"), 0, "#### {STR} ####"));
+	Options.push_back(CMenuOption(_("Craft Menu"), 0, "# {STR} "));
+	Options.push_back(CMenuOption("#", 0, "{STR}"));
 
 	char aCmd[VOTE_CMD_LENGTH];
 	char aCmdCraft[VOTE_CMD_LENGTH];
@@ -121,12 +122,12 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 		str_format(aCmd, sizeof(aCmd), "LIST %s", Type.first.c_str());
 		if(str_comp(pType, Type.first.c_str()))
 		{
-			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "== {STR} ▲"));
+			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "* {STR} ▲"));
 			continue;
 		}
 		else
 		{
-			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "== {STR} ▼"));
+			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "* {STR} ▼"));
 		}
 
 		for(auto &Item : Type.second)
@@ -139,8 +140,8 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 
 			if(str_comp(pSelect, Item.m_aName) == 0)
 			{
-				Options.push_back(CMenuOption(Item.m_aName, aCmd, "- {STR} ▼"));
-				Options.push_back(CMenuOption(_("Requires"), aCmd, "-   {STR}:"));
+				Options.push_back(CMenuOption(Item.m_aName, aCmd, "= {STR} ▼"));
+				Options.push_back(CMenuOption(_("Requires"), aCmd, "- {STR}:"));
 				
 				char aBuf[VOTE_DESC_LENGTH];
 				for(auto Require : Item.m_Needs.m_vDatas)
@@ -150,16 +151,16 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 						std::get<1>(Require),
 						pThis->GetInvItemNum(std::get<0>(Require).c_str(), ClientID));
 
-					Options.push_back(CMenuOption(aBuf, aCmd, "@ {STR}"));
+					Options.push_back(CMenuOption(aBuf, aCmd, "- {STR}"));
 				}
 
 				str_format(aBuf, sizeof(aBuf), "%s %s",
 					pThis->Menu()->Localize(_("Craft")),
 					pThis->Menu()->Localize(pSelect));
-				Options.push_back(CMenuOption(aBuf, aCmdCraft, "## {STR}"));
+				Options.push_back(CMenuOption(aBuf, aCmdCraft, "@ {STR}"));
 			}
 			else 
-				Options.push_back(CMenuOption(Item.m_aName, aCmd, "- {STR} ▲"));
+				Options.push_back(CMenuOption(Item.m_aName, aCmd, "= {STR} ▲"));
 		}
 	}
 
@@ -172,13 +173,13 @@ void CItemCore::MenuInventory(int ClientID, const char* pCmd, const char* pReaso
 
 	std::vector<CMenuOption> Options;
 
-	Options.push_back(CMenuOption(_("Inventory"), 0, "#### {STR} ####"));
+	Options.push_back(CMenuOption(_("Inventory"), 0, "# {STR}"));
 
 	char aBuf[128];
 	for(auto& Item : *(pThis->GetInventory(ClientID)))
 	{
 		str_format(aBuf, sizeof(aBuf), "%s x%d", pThis->Menu()->Localize(Item.first.c_str()), Item.second);
-		Options.push_back(CMenuOption(aBuf, "SHOW", "= {STR}"));
+		Options.push_back(CMenuOption(aBuf, "SHOW", "## {STR}"));
 	}
 
 	pThis->Menu()->UpdateMenu(ClientID, Options, "INVENTORY");

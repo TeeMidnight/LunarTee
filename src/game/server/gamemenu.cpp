@@ -66,7 +66,7 @@ void CMenu::RegisterMain()
             if(str_comp(pCmd, "SHOW") == 0)
             {
                 std::vector<CMenuOption> Options;
-                Options.push_back(CMenuOption(_("Main Menu"), 0, "#### {STR} ####"));
+                Options.push_back(CMenuOption(_("Main Menu"), 0, "# {STR}"));
 
                 Options.push_back(CMenuOption(_("Craft"), "CRAFT"));
                 Options.push_back(CMenuOption(_("Inventory"), "INVENTORY"));
@@ -115,11 +115,11 @@ void CMenu::RegisterLanguage()
 
             std::vector<CMenuOption> Options;
 
-            Options.push_back(CMenuOption(_("Language"), 0, "#### {STR} ####"));
+            Options.push_back(CMenuOption(_("Language"), 0, "# {STR}"));
 
             for(auto &pLanguage : pThis->Server()->Localization()->m_vpLanguages)
             {
-                Options.push_back(CMenuOption(pLanguage->GetName(), pLanguage->GetFilename()));
+                Options.push_back(CMenuOption(pLanguage->GetName(), pLanguage->GetFilename(), "* {STR}"));
             }
 
             pThis->UpdateMenu(ClientID, Options, "LANGUAGE");

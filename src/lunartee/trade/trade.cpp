@@ -76,7 +76,7 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
 
 	std::vector<CMenuOption> Options;
 
-	Options.push_back(CMenuOption(_("Trade"), 0, "#### {STR} ####"));
+	Options.push_back(CMenuOption(_("Trade"), 0, "# {STR}"));
 	Options.push_back(CMenuOption(" ", 0, "{STR}"));
 
 
@@ -100,7 +100,7 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
 		Options.push_back(CMenuOption(
             pThis->GameServer()->LocalizeFormat(
                 pThis->GameServer()->Server()->GetClientLanguage(ClientID),
-                _("{LSTR}'s Shop"), pTrader->m_pBotData->m_aName), "SHOW", "- {STR}:"));
+                _("{LSTR}'s Shop"), pTrader->m_pBotData->m_aName), "SHOW", "#= {STR}:"));
         
 	    char aCmd[VOTE_CMD_LENGTH];
         for(auto &Trade : Trader.second)
@@ -112,14 +112,14 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
 		    Options.push_back(CMenuOption(
                 pThis->GameServer()->LocalizeFormat(
                     pThis->GameServer()->Server()->GetClientLanguage(ClientID),
-                        "{LSTR} x{INT}", Trade.m_Give.first.c_str(), Trade.m_Give.second), "SHOW", "## {STR}:"));
+                        "{LSTR} x{INT}", Trade.m_Give.first.c_str(), Trade.m_Give.second), "SHOW", "##* {STR}:"));
                     
             for(auto& Need : Trade.m_Needs)
             {
                 Options.push_back(CMenuOption(
                     pThis->GameServer()->LocalizeFormat(
                         pThis->GameServer()->Server()->GetClientLanguage(ClientID),
-                        "{LSTR} x{INT}", Need.first.c_str(), Need.second), "SHOW", "# {STR}"));
+                        "{LSTR} x{INT}", Need.first.c_str(), Need.second), "SHOW", "- {STR}"));
             }
 
             char aBuy[VOTE_DESC_LENGTH];
@@ -127,7 +127,6 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
                         pThis->GameServer()->Server()->GetClientLanguage(ClientID), _("Buy this")));
 
 			Options.push_back(CMenuOption(aBuy, aCmd, "@ {STR}"));
-			Options.push_back(CMenuOption(" ", "SHOW", "{STR}"));
 
             Order++;
         }

@@ -2,13 +2,20 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef ENGINE_SERVER_H
 #define ENGINE_SERVER_H
+
+#include <type_traits>
+
 #include "kernel.h"
 #include "message.h"
+
 #include <base/math.h>
 
-#include <generated/protocol.h>
 #include <engine/shared/protocol.h>
 #include <engine/shared/jobs.h>
+
+#include <generated/protocol.h>
+#include <generated/protocol7.h>
+#include <generated/protocolglue.h>
 
 class IMap;
 class CUuid;
@@ -63,7 +70,7 @@ public:
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;
 
 	template<class T>
-	int SendPackMsg(T *pMsg, int Flags, int ClientID)
+	inline int SendPackMsg(T *pMsg, int Flags, int ClientID)
 	{
 		int Result = 0;
 		if(ClientID == -1)
@@ -104,6 +111,25 @@ public:
 			MsgCopy.m_pMessage = aBuf;
 			MsgCopy.m_ClientID = (Is64Player(ClientID) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS) - 1;
 		}
+
+		if(IsSixup(ClientID))
+		{
+			protocol7::CNetMsg_Sv_Chat Msg7;
+			Msg7.m_ClientID = MsgCopy.m_ClientID;
+			Msg7.m_pMessage = MsgCopy.m_pMessage;
+			Msg7.m_Mode = MsgCopy.m_Team > 0 ? protocol7::CHAT_TEAM : protocol7::CHAT_ALL;
+			Msg7.m_TargetID = ClientID;
+			return SendPackMsgOne(&Msg7, Flags, ClientID);
+		}
+		return SendPackMsgOne(&MsgCopy, Flags, ClientID);
+	}
+
+	int SendPackMsgTranslate(protocol7::CNetMsg_Sv_Team *pMsg, int Flags, int ClientID)
+	{
+		protocol7::CNetMsg_Sv_Team MsgCopy;
+		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
+		if(!Translate(MsgCopy.m_ClientID, ClientID))
+			return 0;
 		return SendPackMsgOne(&MsgCopy, Flags, ClientID);
 	}
 
@@ -122,7 +148,7 @@ public:
 	int SendPackMsgOne(T *pMsg, int Flags, int ClientID)
 	{
 		dbg_assert(ClientID != -1, "SendPackMsgOne called with -1");
-		CMsgPacker Packer(T::ms_MsgID, false);
+		CMsgPacker Packer(T::ms_MsgID, false, protocol7::is_sixup<T>::value);
 
 		if(pMsg->Pack(&Packer))
 			return -1;
@@ -194,6 +220,8 @@ public:
 	virtual int GetOneWorldPlayerNum(int ClientID) const = 0;
 
 	virtual void CreateNewTheardJob(std::shared_ptr<IJob> pJob) = 0;
+
+	virtual bool IsSixup(int ClientID) const = 0;
 };
 
 class IGameServer : public IInterface

@@ -259,7 +259,7 @@ bool CGameController::IsTeamplay() const
 
 void CGameController::Snap(int SnappingClient)
 {
-	CNetObj_GameInfo *pGameInfoObj = (CNetObj_GameInfo *)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
+	CNetObj_GameInfo *pGameInfoObj = static_cast<CNetObj_GameInfo *>(Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo)));
 	if(!pGameInfoObj)
 		return;
 
@@ -279,13 +279,24 @@ void CGameController::Snap(int SnappingClient)
 	pGameInfoObj->m_RoundNum = 0;
 	pGameInfoObj->m_RoundCurrent = 1;
 	
-	CNetObj_GameInfoEx* pGameInfoEx = (CNetObj_GameInfoEx*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx));
+	CNetObj_GameInfoEx* pGameInfoEx = static_cast<CNetObj_GameInfoEx *>(Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx)));
 	if(!pGameInfoEx)
 		return;
 
 	pGameInfoEx->m_Flags = GAMEINFOFLAG_GAMETYPE_DDNET | GAMEINFOFLAG_ALLOW_EYE_WHEEL | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_ENTITIES_DDNET | GAMEINFOFLAG_PREDICT_DDRACE;
 	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_HUD_DDRACE | GAMEINFOFLAG2_HUD_HEALTH_ARMOR | GAMEINFOFLAG2_HUD_AMMO;
 	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
+
+	if(Server()->IsSixup(SnappingClient))
+	{
+		protocol7::CNetObj_GameData *pGameData = static_cast<protocol7::CNetObj_GameData *>(Server()->SnapNewItem(-protocol7::NETOBJTYPE_GAMEDATA, 0, sizeof(protocol7::CNetObj_GameData)));
+		if(!pGameData)
+			return;
+
+		pGameData->m_GameStartTick = m_RoundStartTick;
+		pGameData->m_GameStateFlags = 0;
+		pGameData->m_GameStateEndTick = 0;
+	}
 }
 
 int CGameController::GetAutoTeam(int NotThisID)

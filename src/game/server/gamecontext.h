@@ -83,6 +83,7 @@ class CGameContext : public IGameServer
 
 	static void ConEmote(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConWhisper(IConsole::IResult *pResult, void *pUserData);
 	static void ConRegister(IConsole::IResult *pResult, void *pUserData);
 	static void ConLogin(IConsole::IResult *pResult, void *pUserData);
 
@@ -167,7 +168,10 @@ public:
 		CHAT_ALL=-2,
 		CHAT_SPEC=-1,
 		CHAT_RED=0,
-		CHAT_BLUE=1
+		CHAT_BLUE=1,
+		
+		CHAT_WHISPER_SEND = 2,
+		CHAT_WHISPER_RECV = 3,
 	};
 
 	// network
@@ -202,6 +206,7 @@ public:
 	void OnSnap(int ClientID) override;
 	void OnPostSnap() override;
 
+	void *PreProcessMsg(int *pMsgID, CUnpacker *pUnpacker, int ClientID);
 	void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) override;
 
 	void OnClientConnected(int ClientID, const char *WorldName) override;
@@ -241,7 +246,14 @@ public:
 	void CreateBot(CGameWorld *pGameWorld, SBotData *pBotData);
 	//Bot END
 
+	std::map<CUuid, CTeeInfo> m_TeeSkins;
+
 	void UpdatePlayerMaps(int ClientID);
+
+	void Whisper(int ClientID, char *pStr);
+	void WhisperID(int ClientID, int VictimID, const char *pMessage);
+
+	void LoadNewSkin(std::string Buffer);
 
 	void Register(const char* pUsername, const char* pPassHash, int ClientID);
 	void Login(const char* pUsername, const char* pPassHash, int ClientID);

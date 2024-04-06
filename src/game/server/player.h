@@ -6,6 +6,7 @@
 // this include should perhaps be removed
 #include "entities/character.h"
 #include "gamecontext.h"
+#include "teeinfo.h"
 
 #include <engine/external/json/json.hpp>
 
@@ -68,14 +69,7 @@ public:
 	int m_LastEmote;
 	int m_LastKill;
 
-	// TODO: clean this up
-	struct CTeeInfo
-	{
-		char m_SkinName[64];
-		int m_UseCustomColor;
-		int m_ColorBody;
-		int m_ColorFeet;
-	} m_TeeInfos;
+	CTeeInfo m_TeeInfos;
 
 	int m_RespawnTick;
 	int m_DieTick;
@@ -120,8 +114,6 @@ private:
 	int m_Emote;
 
 	int m_UserID;
-
-	bool m_ShowClientID; // Show clientID in scoreboard
 
 	void HandleTuningParams(); //This function will send the new parameters if needed
 

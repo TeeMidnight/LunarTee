@@ -154,8 +154,6 @@ public:
 	*/
 	void Tick();
 
-	void SnapSpawnPoint(int SnappingClient);
-
 	void InitSpawnPos();
 
 	int CheckBotInRadius(vec2 Pos, float Radius);
