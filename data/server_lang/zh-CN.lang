@@ -3,8 +3,14 @@ LunarTee translation
 = '{STR}' backed world
 ## '{STR}' 返回世界
 
+= '{STR}' called for vote to kick '{STR}' ({STR})
+## '{STR}' 发起投票踢出 '{STR}' ({STR})
+
 = '{STR}' called for vote to kick you
 ## '{STR}' 发起投票踢出你
+
+= '{STR}' called for vote to move '{STR}' to spectators ({STR})
+## '{STR}' 发起投票移动 '{STR}' 到旁观 ({STR})
 
 = '{STR}' called vote to change server option '{STR}' ({STR})
 ## '{STR}' 发起投票使用服务器选项'{STR}' ({STR})

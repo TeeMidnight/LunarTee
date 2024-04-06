@@ -1259,19 +1259,26 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				}
 
 				int KickID = str_toint(pMsg->m_pValue);
-				if(KickID < 0 || KickID >= MAX_CLIENTS || !m_apPlayers[KickID])
+				if(KickID < 0 || KickID >= MAX_CLIENTS)
 				{
 					SendChatTarget_Localization(ClientID, _("Invalid client id to kick"));
 					return;
 				}
+
+				if(!Server()->ReverseTranslate(KickID, ClientID))
+					return;
+
+				if(!GetPlayer(KickID))
+				{
+					SendChatTarget_Localization(ClientID, _("Invalid client id to kick"));
+					return;
+				}
+
 				if(KickID == ClientID)
 				{
 					SendChatTarget_Localization(ClientID, _("You can't kick yourself"));
 					return;
 				}
-
-				if (!Server()->ReverseTranslate(KickID, ClientID))
-					return;
 
 				if(Server()->IsAuthed(KickID))
 				{
@@ -1280,7 +1287,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					return;
 				}
 
-				SendChatTarget_Localization(-1, "'%s' called for vote to kick '%s' (%s)", Server()->ClientName(ClientID), Server()->ClientName(KickID), pReason);
+				SendChatTarget_Localization(-1, _("'{STR}' called for vote to kick '{STR}' ({STR})"), Server()->ClientName(ClientID), Server()->ClientName(KickID), pReason);
 				str_format(aDesc, sizeof(aDesc), "Kick '%s'", Server()->ClientName(KickID));
 				if (!g_Config.m_SvVoteKickBantime)
 					str_format(aCmd, sizeof(aCmd), "kick %d Kicked by vote", KickID);\
@@ -1300,20 +1307,28 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				}
 
 				int SpectateID = str_toint(pMsg->m_pValue);
-				if(SpectateID < 0 || SpectateID >= MAX_CLIENTS || !m_apPlayers[SpectateID] || m_apPlayers[SpectateID]->GetTeam() == TEAM_SPECTATORS)
+				if(SpectateID < 0 || SpectateID >= MAX_CLIENTS)
 				{
 					SendChatTarget_Localization(ClientID, _("Invalid client id to move"));
 					return;
 				}
+
+				if(!Server()->ReverseTranslate(SpectateID, ClientID))
+					return;
+
+				if(!GetPlayer(SpectateID) || GetPlayer(SpectateID)->GetTeam() == TEAM_SPECTATORS)
+				{
+					SendChatTarget_Localization(ClientID, _("Invalid client id to move"));
+					return;
+				}
+
 				if(SpectateID == ClientID)
 				{
 					SendChatTarget_Localization(ClientID, _("You can't move yourself"));
 					return;
 				}
-				if (!Server()->ReverseTranslate(SpectateID, ClientID))
-					return;
 
-				SendChatTarget_Localization(-1, "'%s' called for vote to move '%s' to spectators (%s)", 
+				SendChatTarget_Localization(-1, _("'{STR}' called for vote to move '{STR}' to spectators ({STR})"), 
 					Server()->ClientName(ClientID), Server()->ClientName(SpectateID), pReason);
 				str_format(aDesc, sizeof(aDesc), "move '%s' to spectators", Server()->ClientName(SpectateID));
 				str_format(aCmd, sizeof(aCmd), "set_team %d -1 %d", SpectateID, g_Config.m_SvVoteSpectateRejoindelay);
