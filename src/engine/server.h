@@ -126,6 +126,8 @@ public:
 
 	int SendPackMsgTranslate(protocol7::CNetMsg_Sv_Team *pMsg, int Flags, int ClientID)
 	{
+		if(!IsSixup(ClientID))
+			return 1;
 		protocol7::CNetMsg_Sv_Team MsgCopy;
 		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
 		if(!Translate(MsgCopy.m_ClientID, ClientID))
@@ -140,7 +142,7 @@ public:
 		if(!Translate(MsgCopy.m_Victim, ClientID))
 			return 0;
 		if(!Translate(MsgCopy.m_Killer, ClientID))
-			MsgCopy.m_Killer = MsgCopy.m_Victim;
+			return 0;
 		return SendPackMsgOne(&MsgCopy, Flags, ClientID);
 	}
 

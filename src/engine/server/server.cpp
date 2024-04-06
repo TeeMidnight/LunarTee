@@ -2178,11 +2178,13 @@ void CServer::ClearIdMap(int ClientID)
 	{
 		m_aIDMap[ClientID].m_IDMap[i] = -1;
 	}
+	m_aIDMap[ClientID].m_IDMap[0] = ClientID;
 
 	for(int i = 0;i < VANILLA_MAX_CLIENTS; i ++)
 	{
 		m_aIDMap[ClientID].m_VanillaIDMap[i] = -1;
 	}
+	m_aIDMap[ClientID].m_VanillaIDMap[0] = ClientID;
 }
 
 char *CServer::GetMapName(CMapData *pMapData)

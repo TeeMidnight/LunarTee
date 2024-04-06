@@ -2149,6 +2149,9 @@ void CGameContext::OnSnap(int ClientID)
 		Server()->SendMsg(&Msg, MSGFLAG_RECORD|MSGFLAG_NOSEND, ClientID);
 	}
 
+	m_pController->Snap(ClientID);
+	m_Events.Snap(ClientID);
+
 	if(!m_apPlayers[ClientID])
 	{
 		for(auto& pWorld : m_pWorlds)
@@ -2159,9 +2162,6 @@ void CGameContext::OnSnap(int ClientID)
 		UpdatePlayerMaps(ClientID);
 		m_apPlayers[ClientID]->GameWorld()->Snap(ClientID);
 	}
-
-	m_pController->Snap(ClientID);
-	m_Events.Snap(ClientID);
 
 	for(auto& pBotPlayer : m_pBotPlayers)
 	{
