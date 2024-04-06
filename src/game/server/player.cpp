@@ -84,6 +84,12 @@ void CPlayer::Reset()
 
 void CPlayer::BotInit()
 {
+	if(!m_pBotData)
+	{
+		GameServer()->OnBotDead(m_ClientID);
+		return;
+	}
+
 	m_TeeInfos = *m_pBotData->m_pSkin;
 
 	// trader init
