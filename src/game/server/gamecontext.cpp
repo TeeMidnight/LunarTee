@@ -627,6 +627,8 @@ void CGameContext::OnTick()
 	// check tuning
 	CheckPureTuning();
 
+	m_pBotController->Tick();
+
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(m_apPlayers[i])
@@ -651,8 +653,6 @@ void CGameContext::OnTick()
 		pWorld.second->m_Core.m_Tuning = m_Tuning;
 		pWorld.second->Tick();
 	}
-	
-	m_pBotController->Tick();
 
 	m_pController->Tick();
 
@@ -2151,9 +2151,6 @@ void CGameContext::OnSnap(int ClientID)
 		Server()->SendMsg(&Msg, MSGFLAG_RECORD|MSGFLAG_NOSEND, ClientID);
 	}
 
-	m_pController->Snap(ClientID);
-	m_Events.Snap(ClientID);
-
 	if(!m_apPlayers[ClientID])
 	{
 		for(auto& pWorld : m_pWorlds)
@@ -2163,6 +2160,9 @@ void CGameContext::OnSnap(int ClientID)
 	{
 		m_apPlayers[ClientID]->GameWorld()->Snap(ClientID);
 	}
+
+	m_pController->Snap(ClientID);
+	m_Events.Snap(ClientID);
 
 	for(auto& pBotPlayer : m_pBotPlayers)
 	{
