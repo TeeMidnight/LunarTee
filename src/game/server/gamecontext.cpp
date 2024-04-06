@@ -631,6 +631,8 @@ void CGameContext::OnTick()
 	{
 		if(m_apPlayers[i])
 		{
+			UpdatePlayerMaps(i);
+
 			m_apPlayers[i]->Tick();
 			m_apPlayers[i]->PostTick();
 		}
@@ -2159,7 +2161,6 @@ void CGameContext::OnSnap(int ClientID)
 	}
 	else
 	{
-		UpdatePlayerMaps(ClientID);
 		m_apPlayers[ClientID]->GameWorld()->Snap(ClientID);
 	}
 
