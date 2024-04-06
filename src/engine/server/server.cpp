@@ -921,7 +921,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_Country = -1;
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
-	pThis->m_aClients[ClientID].m_DDNetVersion = Sixup ? VERSION_DDNET_OLD : VERSION_NONE;
+	pThis->m_aClients[ClientID].m_DDNetVersion = VERSION_NONE;
 	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
 	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
@@ -2888,7 +2888,7 @@ int CServer::GetClientVersion(int ClientID) const
 
 bool CServer::Is64Player(int ClientID) const
 {
-	return GetClientVersion(ClientID) >= VERSION_DDNET_OLD;
+	return GetClientVersion(ClientID) >= VERSION_DDNET_OLD || IsSixup(ClientID);
 }
 
 IMap *CServer::GetClientMap(int ClientID)

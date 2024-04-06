@@ -207,8 +207,6 @@ static int PlayerFlags_SixToSeven(int Flags)
 		Seven |= protocol7::PLAYERFLAG_CHATTING;
 	if(Flags & PLAYERFLAG_SCOREBOARD)
 		Seven |= protocol7::PLAYERFLAG_SCOREBOARD;
-	if(Flags & PLAYERFLAG_AIM)
-		Seven |= protocol7::PLAYERFLAG_AIM;
 
 	return Seven;
 }
@@ -256,6 +254,8 @@ void CPlayer::Snap(int SnappingClient)
 		pPlayerInfo->m_PlayerFlags = PlayerFlags_SixToSeven(m_PlayerFlags);
 		if(Server()->IsAuthed(m_ClientID))
 			pPlayerInfo->m_PlayerFlags |= protocol7::PLAYERFLAG_ADMIN;
+		if((m_PlayerFlags&PLAYERFLAG_AIM) && Server()->GetClientVersion(SnappingClient) >= VERSION_DDRACE)
+			pPlayerInfo->m_PlayerFlags |= protocol7::PLAYERFLAG_AIM;
 
 		pPlayerInfo->m_Score = m_Score;
 		pPlayerInfo->m_Latency = GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
@@ -362,6 +362,8 @@ void CPlayer::SnapBot(int SnappingClient)
 			return;
 
 		pPlayerInfo->m_PlayerFlags = PlayerFlags_SixToSeven(m_PlayerFlags);
+		if((m_PlayerFlags&PLAYERFLAG_AIM) && Server()->GetClientVersion(SnappingClient) >= VERSION_DDRACE)
+			pPlayerInfo->m_PlayerFlags |= protocol7::PLAYERFLAG_AIM;
 
 		pPlayerInfo->m_Score = 0;
 		pPlayerInfo->m_Latency = 0;
