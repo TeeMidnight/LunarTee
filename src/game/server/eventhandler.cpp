@@ -78,7 +78,8 @@ bool CEventHandler::Translate(int SnappingClient, int *pType, const char **ppDat
 	{
 		CNetEvent_Death *pEvent = (CNetEvent_Death *)(*ppData);
 
-		return GameServer()->Server()->Translate(pEvent->m_ClientID, SnappingClient);
+		if(!GameServer()->Server()->Translate(pEvent->m_ClientID, SnappingClient))
+			pEvent->m_ClientID = 0;
 	}
 	return true;
 }
