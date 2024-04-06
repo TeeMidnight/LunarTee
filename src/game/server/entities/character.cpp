@@ -824,7 +824,7 @@ void CCharacter::Snap(int SnappingClient)
 	int Tick, HookedPlayer, Emote, Weapon, AmmoCount, Health, Armor;
 
 	Weapon = g_Weapons.m_aWeapons[m_ActiveWeapon]->GetShowType();
-	AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo;
+	AmmoCount = clamp(m_aWeapons[m_ActiveWeapon].m_Ammo, 0, 10);
 	Health = clamp(round_to_int(m_Health / (m_MaxHealth / 10.0f)), 0, 10);
 	Armor = clamp(m_Armor, 0, 10);
 

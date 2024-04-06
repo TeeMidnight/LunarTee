@@ -352,7 +352,7 @@ void CPlayer::SnapBot(int SnappingClient)
 		pPlayerInfo->m_Latency = 0;
 		pPlayerInfo->m_ClientID = id;
 		pPlayerInfo->m_Score = m_Score;
-		pPlayerInfo->m_Team = 2; // do not snap bot in scoreboard
+		pPlayerInfo->m_Team = 1; // do not snap bot in scoreboard
 		pPlayerInfo->m_Local = 0;
 	}
 	else
