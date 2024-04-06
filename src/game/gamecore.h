@@ -176,20 +176,20 @@ class CWorldCore
 public:
 	CWorldCore()
 	{
-		m_vpCharacters.clear();
+		m_pCharacters.clear();
 	}
 
 	void DeleteCharacter(int ClientID)
 	{
-		auto i = m_vpCharacters.find(ClientID);
-		if(i != m_vpCharacters.end())
-			m_vpCharacters.erase(i);
+		auto i = m_pCharacters.find(ClientID);
+		if(i != m_pCharacters.end())
+			m_pCharacters.erase(i);
 	}
 
 	class CCharacterCore *FindCharacter(int ClientID);
 
 	CTuningParams m_Tuning;
-	std::map<int, class CCharacterCore*> m_vpCharacters;
+	std::map<int, class CCharacterCore*> m_pCharacters;
 };
 
 class CCharacterCore

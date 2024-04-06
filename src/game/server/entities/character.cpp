@@ -87,7 +87,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_Core.Init(&GameWorld()->m_Core, Collision());
 	m_Core.m_Pos = m_Pos;
 	m_Core.m_ClientID = GetCID();
-	GameWorld()->m_Core.m_vpCharacters[GetCID()] = &m_Core;
+	GameWorld()->m_Core.m_pCharacters[GetCID()] = &m_Core;
 
 	m_ReckoningTick = 0;
 	m_NextDmgTick = 0;
@@ -685,6 +685,16 @@ void CCharacter::Die(int Killer, int Weapon)
 	m_pPlayer->m_DieTick = Server()->Tick();
 
 	m_Alive = false;
+
+	for(auto& pCore : GameWorld()->m_Core.m_pCharacters)
+	{
+		if(pCore.second->m_HookedPlayer == m_pPlayer->GetCID())
+		{
+			pCore.second->m_HookedPlayer = -1;
+			pCore.second->m_HookState = HOOK_IDLE;
+		}
+	}
+
 	GameWorld()->RemoveEntity(this);
 	GameWorld()->m_Core.DeleteCharacter(GetCID());
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
