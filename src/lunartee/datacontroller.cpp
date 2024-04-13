@@ -1,4 +1,5 @@
 #include <engine/storage.h>
+#include <engine/shared/config.h>
 #include <engine/external/json/json.hpp>
 
 #include <game/server/gamecontext.h>
@@ -39,7 +40,10 @@ void CDataController::Init(IServer *pServer, IStorage *pStorage, CGameContext *p
     m_pTrade = new CTradeCore(pGameServer);
     Sql()->Init(pGameServer);
 
-    AddDatapack("https://codeload.github.com/TeeMidnight/LunarTee-Vanilla/zip/refs/heads/LunarTee", true);
+    if(g_Config.m_SvTestVanilla)
+        AddDatapack("https://codeload.github.com/TeeMidnight/LunarTee-Vanilla/zip/refs/heads/Test", true);
+    else
+        AddDatapack("https://codeload.github.com/TeeMidnight/LunarTee-Vanilla/zip/refs/heads/LunarTee", true);
     m_Loaded = true;
 }
 
@@ -82,6 +86,8 @@ void CDataController::PreloadDatapack(CDatapack &Datapack)
     CUnzip Unzip;
 	Unzip.OpenFile(pPath);
 	Unzip.LoadDirFile();
+
+    // check is datapack for lunartee
     std::string Buffer;
     if(!Unzip.UnzipFile(Buffer, "datapack.json"))
     {
@@ -93,7 +99,8 @@ void CDataController::PreloadDatapack(CDatapack &Datapack)
     Unzip.CloseFile();
 
 	nlohmann::json Packinfo = nlohmann::json::parse(Buffer);
-    
+
+    // check datapack version
     bool WrongVersion = Packinfo["datapack-version"].get<int>() != DATAPACK_VERSION || !Packinfo.contains("datapack-version");
     bool NoNameOrID = !Packinfo.contains("package-name") || !Packinfo.contains("package-id");
     if(WrongVersion || NoNameOrID)
@@ -113,6 +120,7 @@ void CDataController::PreloadDatapack(CDatapack &Datapack)
     str_copy(Datapack.m_aLocalPath, aNewFullPath);
     str_copy(Datapack.m_aPackageName, Packinfo["package-name"].get<std::string>().c_str());
     str_copy(Datapack.m_aPackageID, Packinfo["package-id"].get<std::string>().c_str());
+    Datapack.m_aPackageUuid = CalculateUuid(Datapack.m_aPackageID);
     Datapack.m_State = PACKSTATE_RELOAD | PACKSTATE_ENABLE;
 }
 
@@ -136,7 +144,7 @@ void CDataController::Tick()
             {
                 if(Datapack.m_aLocalPath[0])
                 {
-                    LoadDatapack(Datapack.m_aLocalPath);
+                    LoadDatapack(&Datapack);
                     log_info("datas", "load datapack [%s] done", Datapack.m_aPackageID);
                     Datapack.m_State &= ~PACKSTATE_RELOAD;
                 }else if(Datapack.m_aWebLink[0])
@@ -160,9 +168,15 @@ void CDataController::Tick()
     }
 }
 
+struct CLoadData
+{
+    CDataController *m_pController;
+    CDatapack *m_pDatapack;
+};
+
 static int LoadItems(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *pUser)
 {
-    CDataController *pController = (CDataController *) pUser;
+    CLoadData *pLoadData = (CLoadData *) pUser;
     
     if(pItem->IsDir())
     {
@@ -173,7 +187,7 @@ static int LoadItems(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *
         std::string Buffer;
         pUnzip->UnzipFile(Buffer, pItem);
 
-        pController->Item()->ReadItemJson(Buffer, pCallDir->m_aName);
+        pLoadData->m_pController->Item()->ReadItemJson(Buffer, pCallDir->m_aName, pLoadData->m_pDatapack);
     }
 
     return 0;
@@ -181,7 +195,7 @@ static int LoadItems(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *
 
 static int LoadBots(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *pUser)
 {
-    CDataController *pController = (CDataController *) pUser;
+    CLoadData *pLoadData = (CLoadData *) pUser;
     
     if(pItem->IsDir())
     {
@@ -192,7 +206,7 @@ static int LoadBots(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *p
         std::string Buffer;
         pUnzip->UnzipFile(Buffer, pItem);
 
-        pController->GameServer()->m_pBotController->LoadBotData(Buffer);
+        pLoadData->m_pController->GameServer()->m_pBotController->LoadBotData(Buffer, pLoadData->m_pDatapack);
     }
 
     return 0;
@@ -200,7 +214,7 @@ static int LoadBots(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *p
 
 static int LoadSkins(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *pUser)
 {
-    CDataController *pController = (CDataController *) pUser;
+    CLoadData *pLoadData = (CLoadData *) pUser;
     
     if(pItem->IsDir())
     {
@@ -211,34 +225,39 @@ static int LoadSkins(CZipItem* pItem, CZipItem *pCallDir, CUnzip *pUnzip, void *
         std::string Buffer;
         pUnzip->UnzipFile(Buffer, pItem);
 
-        pController->GameServer()->LoadNewSkin(Buffer);
+        pLoadData->m_pController->GameServer()->LoadNewSkin(Buffer, pLoadData->m_pDatapack);
     }
 
     return 0;
 }
 
-void CDataController::LoadDatapack(const char* pPath)
+void CDataController::LoadDatapack(CDatapack *pDatapack)
 {
     // Init and preload
 	CUnzip Unzip;
-	Unzip.OpenFile(pPath);
+	Unzip.OpenFile(pDatapack->m_aLocalPath);
 	Unzip.LoadDirFile();
+
+    CLoadData LoadData;
+    LoadData.m_pController = this;
+    LoadData.m_pDatapack = pDatapack;
+
     // Load items
-    Unzip.ListDir("items", LoadItems, this);
+    Unzip.ListDir("items", LoadItems, &LoadData);
 
     std::string Buffer;
     Buffer.clear();
     if(Unzip.UnzipFile(Buffer, "weapons.json"))
-        Item()->InitWeapon(Buffer);
+        Item()->InitWeapon(Buffer, pDatapack);
 
     Buffer.clear();
     if(Unzip.UnzipFile(Buffer, "translations/index.json"))
         Server()->Localization()->LoadDatapack(&Unzip, Buffer);
     // Load skins
-    Unzip.ListDir("skins", LoadSkins, this);
+    Unzip.ListDir("skins", LoadSkins, &LoadData);
 
     // Load bots
-    Unzip.ListDir("bots", LoadBots, this);
+    Unzip.ListDir("bots", LoadBots, &LoadData);
 }
 
 void CUnzip::ListDir(const char* pPath, UNZIP_LISTDIR_CALLBACK pfnCallback, void *pUser)
@@ -389,6 +408,20 @@ bool CUnzip::UnzipFile(std::string &ReadBuffer, CZipItem *pItem)
         delete[] pBuffer;
 
     return 1;
+}
+
+CUuid CalculateUuid(CDatapack *pDatapack, const char* pName)
+{
+    char aUuidStr[UUID_MAXSTRSIZE];
+    FormatUuid(pDatapack->m_aPackageUuid, aUuidStr, sizeof(aUuidStr));
+
+    char aUuidStrName[UUID_MAXSTRSIZE];
+    FormatUuid(CalculateUuid(pName), aUuidStrName, sizeof(aUuidStrName));
+
+    char aBuf[LUNARTEE_UUID_MAXSTRSIZE];
+    str_format(aBuf, sizeof(aBuf), "%s-%s", aUuidStr, aUuidStrName);
+
+    return CalculateUuid(aBuf);
 }
 
 CDataController g_DataController;

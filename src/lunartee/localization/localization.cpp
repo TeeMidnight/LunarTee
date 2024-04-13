@@ -30,7 +30,7 @@ CLocalization::CLanguage::CLanguage(const char *pName, const char *pFilename, co
 
 CLocalization::CLanguage::~CLanguage() = default;
 
-bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pStorage, std::string FileStr)
+bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pStorage, std::string FileStr, class CDatapack *pDatapack)
 {
 	char FileLine[512];
 	bool isEndOfFile = false;
@@ -78,7 +78,13 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 			if(str_length(FileLine) > str_length(MsgStrKey))
 			{
 				std::string Value = FileLine + 3;
-				m_Translations.insert(std::pair(Key, Value));
+				CUuid Uuid = CalculateUuid(Key.c_str());
+				if(pDatapack)
+				{
+					Uuid = CalculateUuid(pDatapack, Key.c_str());
+				}
+				
+				m_Translations.insert(std::pair(Uuid, Value));
 			}
 		}
 	}
@@ -118,7 +124,7 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 		char aPath[IO_MAX_PATH_LENGTH];
 		str_format(aPath, sizeof(aPath), "translations/%s.lang", m_aFilename);
 		if(Unzip.UnzipFile(FileBuffer, aPath))
-			Success = Load(pLocalization, pStorage, FileBuffer);
+			Success = Load(pLocalization, pStorage, FileBuffer, &Datapack);
 
 		Unzip.CloseFile();
 	}
@@ -126,20 +132,23 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 	return Success;
 }
 
-const char *CLocalization::CLanguage::Localize(const char *pText) const
+const char *CLocalization::CLanguage::Localize(const char *pText)
 {	
-	auto LocalizeStr = m_Translations.find(pText);
-	if(LocalizeStr == m_Translations.end())
+	return Localize(CalculateUuid(pText));
+}
+
+const char *CLocalization::CLanguage::Localize(const CUuid Uuid)
+{	
+	if(!m_Translations.count(Uuid))
 		return nullptr;
 	
-	return (* LocalizeStr).second.c_str();
+	return m_Translations[Uuid].c_str();
 }
 
 CLocalization::CLocalization(class IStorage* pStorage) :
 	m_pStorage(pStorage),
 	m_pMainLanguage(nullptr)
 {
-	
 }
 
 CLocalization::~CLocalization()
@@ -174,8 +183,6 @@ bool CLocalization::Init()
 				
 			if(str_comp(g_Config.m_SvDefaultLanguage, Current["file"].get<std::string>().c_str()) == 0)
 			{
-				(* m_vpLanguages.rbegin())->Load(this, Storage());
-				
 				m_pMainLanguage = (* m_vpLanguages.rbegin());
 			}
 		}
@@ -209,18 +216,6 @@ void CLocalization::LoadDatapack(class CUnzip *pUnzip, std::string Buffer)
 					Current["file"].get<std::string>().c_str(), Current["parent"].empty() ? "" : Current["parent"].get<std::string>().c_str()));
 
 				pLanguage = (* m_vpLanguages.rbegin());
-			}
-
-			if(str_comp(g_Config.m_SvDefaultLanguage, Current["file"].get<std::string>().c_str()) == 0)
-			{
-				std::string FileBuffer;
-				char aPath[IO_MAX_PATH_LENGTH];
-				str_format(aPath, sizeof(aPath), "translations/%s.lang", Current["file"].get<std::string>().c_str());
-				if(pUnzip->UnzipFile(FileBuffer, aPath))
-					pLanguage->Load(this, Storage(), FileBuffer);
-				else
-					continue;
-				m_pMainLanguage = pLanguage;
 			}
 		}
 	}
@@ -256,9 +251,47 @@ const char *CLocalization::LocalizeWithDepth(const char *pLanguageCode, const ch
 		return pText;
 }
 
+std::string CLocalization::LocalizeWithDepth(const char *pLanguageCode, CUuid Uuid, int Depth)
+{
+	CLanguage* pLanguage = m_pMainLanguage;	
+	if(pLanguageCode)
+	{
+		for(auto ipLanguage : m_vpLanguages)
+		{
+			if(str_comp(ipLanguage->GetFilename(), pLanguageCode) == 0)
+			{
+				pLanguage = ipLanguage;
+				break;
+			}
+		}
+	}
+
+	char aText[UUID_MAXSTRSIZE];
+	FormatUuid(Uuid, aText, sizeof(aText));
+	
+	if(!pLanguage)
+		return std::string(aText);
+	
+	if(!pLanguage->IsLoaded())
+		pLanguage->Load(this, Storage());
+	
+	const char *pResult = pLanguage->Localize(Uuid);
+	if(pResult)
+		return pResult;
+	else if(pLanguage->GetParentFilename()[0] && Depth < 4)
+		return LocalizeWithDepth(pLanguage->GetParentFilename(), Uuid, Depth+1);
+	else
+		return std::string(aText);
+}
+
 const char *CLocalization::Localize(const char *pLanguageCode, const char *pText)
 {
 	return LocalizeWithDepth(pLanguageCode, pText, 0);
+}
+
+std::string CLocalization::Localize(const char *pLanguageCode, CUuid Uuid)
+{
+	return LocalizeWithDepth(pLanguageCode, Uuid, 0);
 }
 
 void CLocalization::Format_V(std::string& Buffer, const char *pLanguageCode, const char *pText, va_list VarArgs)
@@ -296,10 +329,23 @@ void CLocalization::Format_V(std::string& Buffer, const char *pLanguageCode, con
 				continue;
 			}
 			
-			if(str_comp_num("STR", pText + FormatStart, 3) == 0) // string
+			if(str_comp_num("UUID", pText + FormatStart, 4) == 0) // uuid
+			{
+				const char* pStr = pLanguage->Localize(va_arg(VarArgsIter, CUuid));
+				if(pStr)
+					Buffer += pStr;
+				else
+				{
+					char aText[UUID_MAXSTRSIZE];
+					FormatUuid(va_arg(VarArgsIter, CUuid), aText, sizeof(aText));
+					Buffer += aText;
+				}
+			}
+			else if(str_comp_num("STR", pText + FormatStart, 3) == 0) // string
 			{
 				Buffer += va_arg(VarArgsIter, const char *);
-			}else if(str_comp_num("LSTR", pText + FormatStart, 4) == 0) // Translate string
+			}
+			else if(str_comp_num("LSTR", pText + FormatStart, 4) == 0) // Translate string
 			{
 				const char* pStr = va_arg(VarArgsIter, const char *);
 				const char* pTranslateStr = pLanguage->Localize(pStr);
@@ -307,10 +353,12 @@ void CLocalization::Format_V(std::string& Buffer, const char *pLanguageCode, con
 					Buffer += pStr;
 				else 
 					Buffer += pTranslateStr;
-			}else if(str_comp_num("INT", pText + FormatStart, 3) == 0) // int
+			}
+			else if(str_comp_num("INT", pText + FormatStart, 3) == 0) // int
 			{
 				Buffer += std::to_string(va_arg(VarArgsIter, int));
-			}else if(str_comp_num("NUM", pText + FormatStart, 3) == 0) // number (double)
+			}
+			else if(str_comp_num("NUM", pText + FormatStart, 3) == 0) // number (double)
 			{
 				Buffer += std::to_string(va_arg(VarArgsIter, double));
 			}

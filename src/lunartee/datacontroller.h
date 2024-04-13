@@ -146,11 +146,11 @@ struct CDatapack
 
     inline bool operator==(const CDatapack& Datapack)
     {
-        if(m_aPackageID[0])
-            return str_comp(m_aPackageID, Datapack.m_aPackageID) == 0;
-        else if(m_aWebLink[0])
+        if(m_aPackageID[0] && Datapack.m_aPackageID[0])
+            return m_aPackageUuid == Datapack.m_aPackageUuid;
+        else if(m_aWebLink[0] && Datapack.m_aWebLink[0])
             return str_comp(m_aWebLink, Datapack.m_aWebLink) == 0;
-        else if(m_aLocalPath[0])
+        else if(m_aLocalPath[0] && Datapack.m_aLocalPath[0])
             return str_comp(m_aLocalPath, Datapack.m_aLocalPath) == 0;
         return false;
     }
@@ -164,6 +164,7 @@ struct CDatapack
     char m_aFileName[128];
     char m_aPackageName[64];
     char m_aPackageID[32];
+    CUuid m_aPackageUuid;
 };
 
 class CDataController
@@ -198,10 +199,11 @@ public:
 
     void AddDatapack(const char* pPath, bool IsWeb);
 
-    void LoadDatapack(const char* pPath);
+    void LoadDatapack(CDatapack *pDatapack);
     void PreloadDatapack(CDatapack &Datapack);
 };
 
+extern CUuid CalculateUuid(CDatapack *pDatapack, const char* pName);
 extern CDataController g_DataController;
 extern CDataController *Datas();
 

@@ -4,32 +4,7 @@
 #include <vector>
 
 #include <base/system.h>
-
-enum
-{
-	UUID_MAXSTRSIZE = 37, // 12345678-0123-5678-0123-567890123456
-
-	UUID_INVALID = -2,
-	UUID_UNKNOWN = -1,
-
-	OFFSET_UUID = 1 << 16,
-};
-
-struct CUuid
-{
-	unsigned char m_aData[16];
-
-	bool operator==(const CUuid &Other) const;
-	bool operator!=(const CUuid &Other) const;
-	bool operator<(const CUuid &Other) const { return mem_comp(m_aData, Other.m_aData, sizeof(m_aData)) < 0; }
-};
-
-CUuid RandomUuid();
-CUuid CalculateUuid(const char *pName);
-// The buffer length should be at least UUID_MAXSTRSIZE.
-void FormatUuid(CUuid Uuid, char *pBuffer, unsigned BufferLength);
-// Returns nonzero on failure.
-int ParseUuid(CUuid *pUuid, const char *pBuffer);
+#include <base/uuid.h>
 
 struct CName
 {

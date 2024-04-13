@@ -2016,6 +2016,11 @@ const char *CGameContext::Localize(const char *pLanguageCode, const char *pText)
 	return Server()->Localization()->Localize(pLanguageCode, pText);
 }
 
+std::string CGameContext::Localize(const char *pLanguageCode, CUuid Uuid) const
+{
+	return Server()->Localization()->Localize(pLanguageCode, Uuid);
+}
+
 const char *CGameContext::LocalizeFormat(const char *pLanguageCode, const char *pText, ...) const
 {
 	va_list Args;
@@ -2204,9 +2209,9 @@ const char *CGameContext::NetVersion() { return GAME_NETVERSION; }
 
 IGameServer *CreateGameServer() { return new CGameContext; }
 
-void CGameContext::CraftItem(int ClientID, const char *pItemName)
+void CGameContext::CraftItem(int ClientID, CUuid Uuid)
 {
-	Datas()->Item()->Craft()->CraftItem(pItemName, ClientID);
+	Datas()->Item()->Craft()->CraftItem(Uuid, ClientID);
 }
 
 int CGameContext::GetPlayerNum() const
@@ -2530,7 +2535,9 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 				NewInfo.m_Local = 0;
 				// do not show bot
 				NewInfo.m_Team = pPlayer->IsBot() ? 1 : pPlayer->GetTeam();
-				NewInfo.m_pName = pPlayer->IsBot() ?  Localize(Server()->GetClientLanguage(ClientID), pPlayer->m_pBotData->m_aName) : Server()->ClientName(pMap[i]);
+
+				std::string Name = pPlayer->IsBot() ?  Localize(Server()->GetClientLanguage(ClientID), pPlayer->m_pBotData->m_Uuid) : Server()->ClientName(pMap[i]);
+				NewInfo.m_pName = Name.c_str();
 				NewInfo.m_pClan = pPlayer->IsBot() ?  "" : Server()->ClientClan(pMap[i]);
 				NewInfo.m_Country = pPlayer->IsBot() ? -1 : Server()->ClientCountry(pMap[i]);
 				NewInfo.m_Silent = true;
@@ -2716,7 +2723,7 @@ void CGameContext::WhisperID(int ClientID, int VictimID, const char *pMessage)
 	}
 }
 
-void CGameContext::LoadNewSkin(std::string Buffer)
+void CGameContext::LoadNewSkin(std::string Buffer, class CDatapack *pDatapack)
 {
     nlohmann::json Data = nlohmann::json::parse(Buffer);
 	if(!Data.is_object())
@@ -2784,7 +2791,7 @@ void CGameContext::LoadNewSkin(std::string Buffer)
 	if(!Version[1])
 		NewSkin.ToSixup();
 	
-	m_TeeSkins[CalculateUuid(Data["skin-id"].get<std::string>().c_str())] = NewSkin;
+	m_TeeSkins[CalculateUuid(pDatapack, Data["skin-id"].get<std::string>().c_str())] = NewSkin;
 }
 
 static std::mutex s_RegisterMutex;
@@ -2801,9 +2808,14 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 	std::thread Thread([this, Username, PassHash, ClientID]()
 	{
 		std::string Buffer;
+		
+		CUuid Uuid = CalculateUuid(Username.c_str());
 
-		Buffer.append("WHERE Username='");
-		Buffer.append(Username);
+		char aUuidStr[UUID_MAXSTRSIZE];
+		FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
+
+		Buffer.append("WHERE Uuid='");
+		Buffer.append(aUuidStr);
 		Buffer.append("';");
 
 		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
@@ -2820,8 +2832,8 @@ void CGameContext::Register(const char* pUsername, const char* pPassHash, int Cl
 				{"Nickname", Server()->ClientName(ClientID)}};
 			
 			Buffer.clear();
-			Buffer.append("(Username, Data) VALUES ('");
-			Buffer.append(Username);
+			Buffer.append("(Uuid, Data) VALUES ('");
+			Buffer.append(aUuidStr);
 			Buffer.append("', '");
 			Buffer.append(Json.dump());
 			Buffer.append("');");
@@ -2858,8 +2870,13 @@ void CGameContext::Login(const char* pUsername, const char* pPassHash, int Clien
 	{
 		std::string Buffer;
 
-		Buffer.append("WHERE Username='");
-		Buffer.append(Username);
+		CUuid Uuid = CalculateUuid(Username.c_str());
+
+		char aUuidStr[UUID_MAXSTRSIZE];
+		FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
+
+		Buffer.append("WHERE Uuid='");
+		Buffer.append(aUuidStr);
 		Buffer.append("';");
 
 		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",

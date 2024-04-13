@@ -18,7 +18,7 @@ public:
     
     SBotData *RandomBotData();
 
-    void LoadBotData(std::string Buffer);
+    void LoadBotData(std::string Buffer, class CDatapack *pDatapack);
     
     void OnCreateBot();
     void Tick();

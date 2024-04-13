@@ -1,6 +1,7 @@
 #include "weapon.h"
 
 #include <lunartee/weapons/hammer.h>
+#include <lunartee/weapons/hand.h>
 #include <lunartee/weapons/gun.h>
 #include <lunartee/weapons/shotgun.h>
 #include <lunartee/weapons/grenade.h>
@@ -17,4 +18,5 @@ void WeaponInit::InitWeapons(CGameContext *pGameServer)
 	g_Weapons.InitWeapon(LT_WEAPON_RIFLE, new CWeaponRifle(pGameServer));
 	g_Weapons.InitWeapon(LT_WEAPON_NINJA, new CWeaponNinja(pGameServer));
 	g_Weapons.InitWeapon(LT_WEAPON_FREEZE_RIFLE, new CWeaponFreezeRifle(pGameServer));
+	g_Weapons.InitWeapon(LT_WEAPON_HAND, new CWeaponHand(pGameServer));
 }

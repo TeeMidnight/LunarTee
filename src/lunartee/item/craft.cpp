@@ -19,9 +19,9 @@ CGameContext *CCraftCore::GameServer() const
 }
 
 // Public Make
-void CCraftCore::CraftItem(const char *pMakeItem, int ClientID)
+void CCraftCore::CraftItem(CUuid Uuid, int ClientID)
 {
-	CItemData *pItemInfo = m_pParent->GetItemData(pMakeItem);
+	CItemData *pItemInfo = m_pParent->GetItemData(Uuid);
 	if(!pItemInfo)
 	{
 		GameServer()->SendChatTarget_Localization(ClientID, _("No such item!"));
@@ -41,7 +41,7 @@ void CCraftCore::CraftItem(const char *pMakeItem, int ClientID)
 	// Check the resources are enough
 	for(unsigned i = 0; i < pItemInfo->m_Needs.m_vDatas.size();i ++)
 	{
-		if(m_pParent->GetInvItemNum(std::get<0>(pItemInfo->m_Needs.m_vDatas[i]).c_str(), ClientID) < std::get<1>(pItemInfo->m_Needs.m_vDatas[i]))
+		if(m_pParent->GetInvItemNum(std::get<0>(pItemInfo->m_Needs.m_vDatas[i]), ClientID) < std::get<1>(pItemInfo->m_Needs.m_vDatas[i]))
 		{
 			Makeable = false;
 			break;
@@ -58,18 +58,18 @@ void CCraftCore::CraftItem(const char *pMakeItem, int ClientID)
 
 	for(int i = 0; i < NUM_LUNARTEE_WEAPONS; i ++)
 	{
-		if(str_comp(g_Weapons.m_aWeapons[i]->GetItemName(), pMakeItem) == 0)
-			if(m_pParent->GetInvItemNum(pMakeItem, ClientID))
+		if(g_Weapons.m_aWeapons[i]->GetItemUuid() == Uuid)
+			if(m_pParent->GetInvItemNum(Uuid, ClientID))
 				Makeable = false;
 	}
 
 	if(!Makeable)
 	{
-		GameServer()->SendChatTarget_Localization(ClientID, _("You had {LSTR}"), pMakeItem);
+		GameServer()->SendChatTarget_Localization(ClientID, _("You had {UUID}"), Uuid);
 		return;
 	}
 
-	GameServer()->SendChatTarget_Localization(ClientID, _("Making {LSTR}..."), pMakeItem);
+	GameServer()->SendChatTarget_Localization(ClientID, _("Making {UUID}..."), Uuid);
 
 	ReturnItem(pItemInfo, ClientID);
 	
@@ -83,25 +83,25 @@ void CCraftCore::ReturnItem(class CItemData *Item, int ClientID)
 	
 	for(unsigned i = 0; i < Item->m_Needs.m_vDatas.size();i ++)
 	{
-		m_pParent->AddInvItemNum(std::get<0>(Item->m_Needs.m_vDatas[i]).c_str(), -std::get<1>(Item->m_Needs.m_vDatas[i]), ClientID);
+		m_pParent->AddInvItemNum(std::get<0>(Item->m_Needs.m_vDatas[i]), -std::get<1>(Item->m_Needs.m_vDatas[i]), ClientID);
 	}
 
 	for(unsigned i = 0; i < Item->m_Gives.m_vDatas.size();i ++)
 	{
-		m_pParent->AddInvItemNum(std::get<0>(Item->m_Gives.m_vDatas[i]).c_str(), std::get<1>(Item->m_Gives.m_vDatas[i]), ClientID);
+		m_pParent->AddInvItemNum(std::get<0>(Item->m_Gives.m_vDatas[i]), std::get<1>(Item->m_Gives.m_vDatas[i]), ClientID);
 
 		if(!std::get<2>(Item->m_Gives.m_vDatas[i]))
 			continue;
 			
 		if(std::get<1>(Item->m_Gives.m_vDatas[i]) > 1)
 		{
-			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get {LSTR} x{INT}"), 
-				std::get<0>(Item->m_Gives.m_vDatas[i]).c_str(), std::get<1>(Item->m_Gives.m_vDatas[i]));
+			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get {UUID} x{INT}"), 
+				std::get<0>(Item->m_Gives.m_vDatas[i]), std::get<1>(Item->m_Gives.m_vDatas[i]));
 		}
 		else 
 		{
-			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get {LSTR}"), 
-				std::get<0>(Item->m_Gives.m_vDatas[i]).c_str());
+			GameServer()->SendChatTarget_Localization(ClientID, _("Make finish, you get {UUID}"), 
+				std::get<0>(Item->m_Gives.m_vDatas[i]));
 		}	
 	}
 }

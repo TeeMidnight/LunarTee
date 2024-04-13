@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include <base/uuid.h>
+
 #define _(TEXT) TEXT
 
 class CLocalization
@@ -22,7 +24,7 @@ public:
 		char m_aParentFilename[64];
 		bool m_Loaded;
 		
-		std::map<std::string, std::string> m_Translations;
+		std::map<CUuid, std::string> m_Translations;
 
 	public:
 		CLanguage();
@@ -34,9 +36,10 @@ public:
 		inline const char *GetName() const { return m_aName; }
 		inline bool IsLoaded() const { return m_Loaded; }
 
-		bool Load(CLocalization* pLocalization, class IStorage* pStorage, std::string FileStr);
+		bool Load(CLocalization* pLocalization, class IStorage* pStorage, std::string FileStr, class CDatapack *pDatapack = nullptr);
 		bool Load(CLocalization* pLocalization, class IStorage* pStorage);
-		const char *Localize(const char *pKey) const;
+		const char *Localize(const char *pKey);
+		const char *Localize(const CUuid Uuid);
 	};
 
 protected:
@@ -47,6 +50,7 @@ public:
 
 protected:
 	const char *LocalizeWithDepth(const char *pLanguageCode, const char *pText, int Depth);
+	std::string LocalizeWithDepth(const char *pLanguageCode, CUuid Uuid, int Depth);
 public:
 
 	CLocalization(class IStorage* pStorage);
@@ -59,6 +63,7 @@ public:
 
 	//localize
 	const char *Localize(const char *pLanguageCode, const char *pText);
+	std::string Localize(const char *pLanguageCode, CUuid Uuid);
 	
 	//format
 	void Format_V(std::string& Buffer, const char *pLanguageCode, const char *pText, va_list VarArgs);

@@ -9,8 +9,7 @@ IWeapon::IWeapon(CGameContext *pGameServer, int WeaponID, int ShowType, int Fire
     m_FireDelay = FireDelay;
     m_Damage = Damage;
 
-    m_aItemName[0] = 0;
-    m_aAmmoName[0] = 0;
+    m_IsUnlimitedAmmo = true;
 }
 
 CGameContext *IWeapon::GameServer() const

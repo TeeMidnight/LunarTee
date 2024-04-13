@@ -99,8 +99,8 @@ void CPlayer::BotInit()
 		{
 			CTradeCore::STradeData TradeData;
 			for(auto& Need : Trade.m_Needs)
-				TradeData.m_Needs[Need.m_ItemName] = random_int(Need.m_MinNum, Need.m_MaxNum);
-			TradeData.m_Give.first = Trade.m_Give.m_ItemName;
+				TradeData.m_Needs[Need.m_Uuid] = random_int(Need.m_MinNum, Need.m_MaxNum);
+			TradeData.m_Give.first = Trade.m_Give.m_Uuid;
 			TradeData.m_Give.second = random_int(Trade.m_Give.m_MinNum, Trade.m_Give.m_MaxNum);
 			Datas()->Trade()->AddTrade(-m_ClientID, TradeData);
 		}
@@ -334,7 +334,7 @@ void CPlayer::SnapBot(int SnappingClient)
 		}
 	}
 
-	StrToInts(&pClientInfo->m_Name0, 4, GameServer()->Localize(pLanguage, m_pBotData->m_aName));
+	StrToInts(&pClientInfo->m_Name0, 4, GameServer()->Localize(pLanguage, m_pBotData->m_Uuid).c_str());
 	StrToInts(&pClientInfo->m_Clan0, 3, pClan);
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_aSkinName);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);

@@ -1,9 +1,9 @@
 #ifndef LUNARTEE_TRADE_H
 #define LUNARTEE_TRADE_H
 
-#include <engine/shared/uuid_manager.h>
+#include <base/uuid.h>
 
-#include <unordered_map>
+#include <map>
 #include <string>
 
 class CTradeCore
@@ -22,8 +22,8 @@ public:
     struct STradeData
     {
         CUuid m_Uuid = RandomUuid();
-        std::unordered_map<std::string, int> m_Needs;
-        std::pair<std::string, int> m_Give;
+        std::map<CUuid, int> m_Needs;
+        std::pair<CUuid, int> m_Give;
 
         bool operator==(const STradeData &Other) const
         {

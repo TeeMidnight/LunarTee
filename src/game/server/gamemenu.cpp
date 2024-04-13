@@ -19,6 +19,11 @@ const char *CMenu::Localize(const char *pText) const
 	return GameServer()->Localize(m_aLanguageCode, pText);
 }
 
+std::string CMenu::Localize(CUuid Uuid) const
+{
+	return GameServer()->Localize(m_aLanguageCode, Uuid);
+}
+
 CMenuOption *CMenu::FindOption(const char *pDesc, int ClientID)
 {
 	auto i = std::find_if(m_avPlayerMenu[ClientID].first.begin(), m_avPlayerMenu[ClientID].first.end(),

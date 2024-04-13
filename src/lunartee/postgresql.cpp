@@ -101,14 +101,14 @@ void CSql::CreateTables()
 				ExecBuffer.append(
 					"CREATE TABLE IF NOT EXISTS lt_playerdata( \
                         UserID SERIAL NOT NULL, \
-                        Username TEXT NOT NULL, \
+                        Uuid TEXT NOT NULL, \
                         Data TEXT NOT NULL \
                     ); \
                     CREATE TABLE IF NOT EXISTS lt_itemdata( \
                         ID SERIAL NOT NULL, \
                         OwnerID INTEGER NOT NULL, \
                         Num INTEGER NOT NULL, \
-						ItemName TEXT NOT NULL \
+						Uuid TEXT NOT NULL \
                     );"
 				);
 				m_pResult = pWork->Commit(ExecBuffer.c_str());

@@ -1,6 +1,8 @@
 #ifndef LUNARTEE_ITEM_MAKE_H
 #define LUNARTEE_ITEM_MAKE_H
 
+#include <base/uuid.h>
+
 class CCraftCore
 {
 	class CItemCore *m_pParent;
@@ -10,7 +12,7 @@ class CCraftCore
 
 public:
     CCraftCore(CItemCore *pItem);
-	void CraftItem(const char *pMakeItem, int ClientID);
+	void CraftItem(CUuid Uuid, int ClientID);
 };
 
 #endif

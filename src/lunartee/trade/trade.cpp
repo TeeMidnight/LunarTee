@@ -55,7 +55,7 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
 
         for(auto& Need : pTradeData->m_Needs)
         {
-            if(Datas()->Item()->GetInvItemNum(Need.first.c_str(), ClientID) < Need.second)
+            if(Datas()->Item()->GetInvItemNum(Need.first, ClientID) < Need.second)
             {
                 pThis->GameServer()->SendChatTarget_Localization(ClientID, _("You don't have enough resources"));
                 return;
@@ -64,10 +64,10 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
 
         for(auto& Need : pTradeData->m_Needs)
         {
-            Datas()->Item()->AddInvItemNum(Need.first.c_str(), -Need.second, ClientID);
+            Datas()->Item()->AddInvItemNum(Need.first, -Need.second, ClientID);
         }
 
-        Datas()->Item()->AddInvItemNum(pTradeData->m_Give.first.c_str(), pTradeData->m_Give.second, ClientID, true, true);
+        Datas()->Item()->AddInvItemNum(pTradeData->m_Give.first, pTradeData->m_Give.second, ClientID, true, true);
 
         if(TraderID > 0)
             pThis->m_vTraders[TraderID].erase(std::find(pThis->m_vTraders[TraderID].begin(), pThis->m_vTraders[TraderID].end(), *pTradeData));
@@ -100,7 +100,7 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
 		Options.push_back(CMenuOption(
             pThis->GameServer()->LocalizeFormat(
                 pThis->GameServer()->Server()->GetClientLanguage(ClientID),
-                _("{LSTR}'s Shop"), pTrader->m_pBotData->m_aName), "SHOW", "#= {STR}:"));
+                _("{UUID}'s Shop"), pTrader->m_pBotData->m_Uuid), "SHOW", "#= {STR}:"));
         
 	    char aCmd[VOTE_CMD_LENGTH];
         for(auto &Trade : Trader.second)
@@ -112,14 +112,14 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
 		    Options.push_back(CMenuOption(
                 pThis->GameServer()->LocalizeFormat(
                     pThis->GameServer()->Server()->GetClientLanguage(ClientID),
-                        "{LSTR} x{INT}", Trade.m_Give.first.c_str(), Trade.m_Give.second), "SHOW", "##* {STR}:"));
+                        "{UUID} x{INT}", Trade.m_Give.first, Trade.m_Give.second), "SHOW", "##* {STR}:"));
                     
             for(auto& Need : Trade.m_Needs)
             {
                 Options.push_back(CMenuOption(
                     pThis->GameServer()->LocalizeFormat(
                         pThis->GameServer()->Server()->GetClientLanguage(ClientID),
-                        "{LSTR} x{INT}", Need.first.c_str(), Need.second), "SHOW", "- {STR}"));
+                        "{UUID} x{INT}", Need.first, Need.second), "SHOW", "- {STR}"));
             }
 
             char aBuy[VOTE_DESC_LENGTH];

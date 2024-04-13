@@ -2,6 +2,8 @@
 #define LUNARTEE_WEAPON_H
 
 #include <game/server/define.h>
+
+#include <base/uuid.h>
 #include <base/vmath.h>
 
 class CGameContext;
@@ -18,8 +20,9 @@ private:
     int m_Damage;
     int m_FireDelay;
 
-    char m_aItemName[128];
-    char m_aAmmoName[128];
+    CUuid m_ItemUuid;
+    CUuid m_AmmoUuid;
+    bool m_IsUnlimitedAmmo;
 public:
     IWeapon(CGameContext *pGameServer, int WeaponID, int ShowType, int FireDelay, int Damage);
     CGameContext *GameServer() const;
@@ -29,18 +32,13 @@ public:
     int GetFireDelay() const;
     int GetDamage() const;
 
-    const char *GetItemName() const { return m_aItemName; }
-    const char *GetAmmoName() const { return m_aAmmoName; }
+    CUuid GetItemUuid() const { return m_ItemUuid; }
+    CUuid GetAmmoUuid() const { return m_AmmoUuid; }
 
-    void SetItemName(const char *pName)
-    {
-        str_copy(m_aItemName, pName);
-    }
+    inline bool IsUnlimitedAmmo()  { return m_IsUnlimitedAmmo; }
 
-    void SetAmmoName(const char *pName)
-    {
-        str_copy(m_aAmmoName, pName);
-    }
+    void SetItemUuid(CUuid Uuid) { m_ItemUuid = Uuid; }
+    void SetAmmoUuid(CUuid Uuid) { m_AmmoUuid = Uuid; m_IsUnlimitedAmmo = false; }
 
     virtual void OnFire(CGameWorld *pGameWorld, int Owner, vec2 Dir, vec2 Pos) = 0;
 };

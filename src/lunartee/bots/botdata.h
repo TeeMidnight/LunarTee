@@ -2,11 +2,13 @@
 #define LUNARTEE_BOTDATA_H
 
 #include <base/system.h>
+#include <base/uuid.h>
+
 #include <engine/shared/protocol.h>
 
 struct SBotDropData
 {
-    char m_ItemName[128];
+    CUuid m_Uuid;
     int m_DropProba;
     int m_MinNum;
     int m_MaxNum;
@@ -16,7 +18,7 @@ struct SBotTradeData
 {
     struct SData
     {
-        char m_ItemName[128];
+        CUuid m_Uuid;
         int m_MinNum;
         int m_MaxNum;
     };
@@ -42,7 +44,7 @@ enum EBotFlags
 
 struct SBotData
 {
-    char m_aName[MAX_NAME_LENGTH];
+    CUuid m_Uuid;
     class CTeeInfo *m_pSkin;
 
     int m_Type;

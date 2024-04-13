@@ -162,8 +162,7 @@ void CGameController::OnCharacterSpawn(class CCharacter *pChr)
 	if(pChr->GetPlayer()->IsBot())
 		return;
 
-	// give default weapons
-	Datas()->Item()->SetInvItemNum("Wood Hammer", 1, pChr->GetCID(), 0);
+	// no default weapons
 }
 
 void CGameController::TogglePause()
@@ -406,8 +405,7 @@ void CGameController::GiveDrop(int GiveID, SBotData *pBotData)
 			int Num = random_int(pBotData->m_vDrops[i].m_MinNum, pBotData->m_vDrops[i].m_MaxNum);
 			if(Num == 0)
 				continue;
-			const char *pName = pBotData->m_vDrops[i].m_ItemName;
-			Datas()->Item()->AddInvItemNum(pName, Num, GiveID, true, true);
+			Datas()->Item()->AddInvItemNum(pBotData->m_vDrops[i].m_Uuid, Num, GiveID, true, true);
 		}
 	}
 }

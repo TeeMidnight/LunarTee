@@ -186,6 +186,7 @@ public:
 	void SetClientLanguage(int ClientID, const char *pLanguage);
 
 	const char *Localize(const char *pLanguageCode, const char *pText) const;
+	std::string Localize(const char *pLanguageCode, CUuid Uuid) const;
 	const char *LocalizeFormat(const char *pLanguageCode, const char *pText, ...) const;
 
 
@@ -231,7 +232,7 @@ public:
 	int GetOneWorldPlayerNum(int ClientID) const override;
 
 	// CraftItem
-	void CraftItem(int ClientID, const char *pItemName);
+	void CraftItem(int ClientID, CUuid Uuid);
 
 	int GetPlayerNum() const;
 
@@ -253,7 +254,7 @@ public:
 	void Whisper(int ClientID, char *pStr);
 	void WhisperID(int ClientID, int VictimID, const char *pMessage);
 
-	void LoadNewSkin(std::string Buffer);
+	void LoadNewSkin(std::string Buffer, class CDatapack *pDatapack);
 
 	void Register(const char* pUsername, const char* pPassHash, int ClientID);
 	void Login(const char* pUsername, const char* pPassHash, int ClientID);

@@ -2,6 +2,7 @@
 #define GAME_SERVER_GAMEMENU_H
 
 #include <game/voting.h>
+#include <base/uuid.h>
 
 #include <string>
 #include <vector>
@@ -33,9 +34,9 @@ public:
 class CMenuOption
 {
 public:
-	CMenuOption(const char* pDesc, const char* pCmd = 0, const char* pFormat = "- {STR}")
+	CMenuOption(std::string Desc, const char* pCmd = 0, const char* pFormat = "- {STR}")
 	{
-		str_copy(m_aOption, pDesc);
+		str_copy(m_aOption, Desc.c_str());
 
 		if(!pCmd || !pCmd[0])
 			m_aCmd[0] = 0;
@@ -74,6 +75,7 @@ public:
 	CMenuPage *GetMenuPage(const char* PageName);
 
 	const char *Localize(const char *pText) const;
+	std::string Localize(CUuid Uuid) const;
 	
 	void Register(const char* PageName, const char* ParentName, void *pUserData, MenuCallback Callback);
 

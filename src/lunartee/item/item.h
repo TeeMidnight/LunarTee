@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include <base/uuid.h>
 #include "item-data.h"
 
 class CItemCore
@@ -13,35 +14,35 @@ class CItemCore
 
     class CCraftCore *m_pCraft;
 
-    std::map<std::string, int> m_aInventories[MAX_CLIENTS];
+    std::map<CUuid, int> m_aInventories[MAX_CLIENTS];
 
     int m_ItemTypeNum;
 
-    const char* GetTypesByStr(const char *pStr);
+    CUuid GetTypesByUuid(CUuid Uuid);
 
     static void MenuCraft(int ClientID, const char* pCmd, const char* pReason, void *pUserData);
     static void MenuInventory(int ClientID, const char* pCmd, const char* pReason, void *pUserData);
     void RegisterMenu();
 
 public:
-	std::map<std::string, std::vector<CItemData>> m_vItems;
+	std::map<CUuid, std::vector<CItemData>> m_vItems;
 
     CItemCore(CGameContext *pGameServer);
 	CGameContext *GameServer() const { return m_pGameServer; }
-    
+
     class CCraftCore *Craft() const {return m_pCraft;}
 	class CMenu *Menu() const;
 
-    void InitWeapon(std::string Buffer);
-    void ReadItemJson(std::string FileBuffer, std::string ItemType);
+    void InitWeapon(std::string Buffer, class CDatapack *pDatapack);
+    void ReadItemJson(std::string FileBuffer, std::string ItemType, class CDatapack *pDatapack);
 
-    CItemData *GetItemData(const char *Name);
-    std::map<std::string, int> *GetInventory(int ClientID);
-    int GetInvItemNum(const char *ItemName, int ClientID);
-    void AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true, bool SendChat = false);
-    void SetInvItemNum(const char *ItemName, int Num, int ClientID, bool Database = true);
-    void AddInvItemNumThread(const char *pItemName, int Num, int ClientID);
-    void SetInvItemNumThread(const char *pItemName, int Num, int ClientID);
+    CItemData *GetItemData(CUuid Uuid);
+    std::map<CUuid, int> *GetInventory(int ClientID);
+    int GetInvItemNum(CUuid Uuid, int ClientID);
+    void AddInvItemNum(CUuid Uuid, int Num, int ClientID, bool Database = true, bool SendChat = false);
+    void SetInvItemNum(CUuid Uuid, int Num, int ClientID, bool Database = true);
+    void AddInvItemNumThread(CUuid Uuid, int Num, int ClientID);
+    void SetInvItemNumThread(CUuid Uuid, int Num, int ClientID);
     void SyncInvItem(int ClientID);
     void ClearInv(int ClientID, bool Database = true);
 };

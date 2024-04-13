@@ -67,9 +67,10 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	}
 	else
 	{
-		m_ActiveWeapon = LT_WEAPON_HAMMER;
-		m_LastWeapon = LT_WEAPON_HAMMER;
+		m_ActiveWeapon = LT_WEAPON_HAND;
+		m_LastWeapon = LT_WEAPON_HAND;
 	}
+
 	mem_zero(&m_Botinfo, sizeof(CBotInfo));
 	m_Botinfo.m_TargetPos = vec2(0, 0);
 	m_Botinfo.m_NowTargetPos = vec2(0, 0);
@@ -481,15 +482,19 @@ void CCharacter::SyncWeapon()
 
 	for(int i = 0;i < NUM_LUNARTEE_WEAPONS;i ++)
 	{
-		if(!g_Weapons.m_aWeapons[i]->GetAmmoName()[0])
+		if(g_Weapons.m_aWeapons[i]->IsUnlimitedAmmo())
 		{
 			m_aWeapons[i].m_Ammo = -1;
-		}else 
+		}
+		else 
 		{
-			m_aWeapons[i].m_Ammo = Datas()->Item()->GetInvItemNum(g_Weapons.m_aWeapons[i]->GetAmmoName(), GetCID());
+			m_aWeapons[i].m_Ammo = Datas()->Item()->GetInvItemNum(g_Weapons.m_aWeapons[i]->GetAmmoUuid(), GetCID());
 		}
 
-		m_aWeapons[i].m_Got = Datas()->Item()->GetInvItemNum(g_Weapons.m_aWeapons[i]->GetItemName(), GetCID());
+		if(i == LT_WEAPON_HAND)
+			m_aWeapons[i].m_Got = true;
+		else
+			m_aWeapons[i].m_Got = Datas()->Item()->GetInvItemNum(g_Weapons.m_aWeapons[i]->GetItemUuid(), GetCID());
 	}
 }
 
@@ -506,8 +511,8 @@ void CCharacter::OnWeaponFire(int Weapon)
 	if(m_pPlayer->IsBot())
 		return;
 
-	if(g_Weapons.m_aWeapons[Weapon]->GetAmmoName()[0])
-		Datas()->Item()->AddInvItemNum(g_Weapons.m_aWeapons[Weapon]->GetAmmoName(), -1, GetCID());
+	if(g_Weapons.m_aWeapons[Weapon]->IsUnlimitedAmmo())
+		Datas()->Item()->AddInvItemNum(g_Weapons.m_aWeapons[Weapon]->GetAmmoUuid(), -1, GetCID());
 }
 
 void CCharacter::Tick()
@@ -701,7 +706,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return false;
 
 	CPlayer *pFrom = GameServer()->GetPlayer(From);
-	if(pFrom && pFrom->IsBot() && m_pPlayer->IsBot() && pFrom->m_pBotData->m_Flags&~EBotFlags::BOTFLAG_TEAMDAMAGE && str_comp(pFrom->m_pBotData->m_aName, m_pPlayer->m_pBotData->m_aName) == 0)
+	if(pFrom && pFrom->IsBot() && m_pPlayer->IsBot() && pFrom->m_pBotData->m_Flags&~EBotFlags::BOTFLAG_TEAMDAMAGE && (pFrom->m_pBotData == m_pPlayer->m_pBotData))
 		return false;
 
 	m_Core.m_Vel += Force;
@@ -1256,7 +1261,7 @@ CCharacter *CCharacter::FindTarget(vec2 Pos, float Radius)
 
 			if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_MONSTER)
 			{
-				if(p->GetPlayer()->IsBot() && !(m_pPlayer->m_pBotData->m_Flags&EBotFlags::BOTFLAG_TEAMDAMAGE) && (str_comp(m_pPlayer->m_pBotData->m_aName, p->GetPlayer()->m_pBotData->m_aName) == 0))
+				if(p->GetPlayer()->IsBot() && !(m_pPlayer->m_pBotData->m_Flags&EBotFlags::BOTFLAG_TEAMDAMAGE) && (m_pPlayer->m_pBotData == p->GetPlayer()->m_pBotData))
 					continue;
 			}
 			if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)

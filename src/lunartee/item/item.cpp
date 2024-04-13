@@ -24,39 +24,40 @@ CItemCore::CItemCore(CGameContext *pGameServer)
 	RegisterMenu();
 }
 
-const char* CItemCore::GetTypesByStr(const char* pStr)
+CUuid CItemCore::GetTypesByUuid(CUuid Uuid)
 {
 	for(auto &Type : m_vItems)
 	{
-		if(str_comp(Type.first.c_str(), pStr) == 0)
-			return pStr;
+		if(Type.first == Uuid)
+			return Uuid;
 		
 		for(auto &Item : Type.second)
 		{
-			if(str_comp(Item.m_aName, pStr) == 0)
-				return Type.first.c_str();
+			if(Uuid == Item.m_Uuid)
+				return Type.first;
 		}
 	}
-	return "";
+	return Uuid;
 }
 
-void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
+void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType, class CDatapack *pDatapack)
 {
 	// parse json data
 	nlohmann::json Item = nlohmann::json::parse(FileBuffer);
 
-	if(!m_vItems.count(ItemType))
+	CUuid TypeUuid = CalculateUuid(pDatapack, ItemType.c_str());
+	if(!m_vItems.count(TypeUuid))
 	{
-		m_vItems[ItemType] = std::vector<CItemData>();
+		m_vItems[TypeUuid] = std::vector<CItemData>();
 		m_ItemTypeNum = (int) m_vItems.size();
 	}
 
 	if(!Item.empty())
 	{
-		m_vItems[ItemType].push_back(CItemData());
+		m_vItems[TypeUuid].push_back(CItemData());
 
-		CItemData *pData = &(*m_vItems[ItemType].rbegin());
-		str_copy(pData->m_aName, Item["name"].get<std::string>().c_str());
+		CItemData *pData = &(*m_vItems[TypeUuid].rbegin());
+		pData->m_Uuid = CalculateUuid(pDatapack, Item["id"].get<std::string>().c_str());
 
 		nlohmann::json Needs = Item["need"];
 		pData->m_Needs.m_vDatas.clear();
@@ -68,8 +69,8 @@ void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
 				bool SendChat = true;
 				if(!Current["sendchat"].empty())
 					SendChat = Current["sendchat"].get<bool>();
-				
-				pData->m_Needs.m_vDatas.push_back(std::make_tuple(Current["name"], Current["num"], SendChat));
+
+				pData->m_Needs.m_vDatas.push_back(std::make_tuple(CalculateUuid(pDatapack, Current["id"].get<std::string>().c_str()), Current["num"], SendChat));
 			}
 		}
 
@@ -83,8 +84,8 @@ void CItemCore::ReadItemJson(std::string FileBuffer, std::string ItemType)
 				bool SendChat = true;
 				if(!Current["sendchat"].empty())
 					SendChat = Current["sendchat"].get<bool>();
-				
-				pData->m_Gives.m_vDatas.push_back(std::make_tuple(Current["name"], Current["num"], SendChat));
+
+				pData->m_Gives.m_vDatas.push_back(std::make_tuple(CalculateUuid(pDatapack, Current["id"].get<std::string>().c_str()), Current["num"], SendChat));
 			}
 		}
 	}
@@ -94,20 +95,28 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 {
 	CItemCore *pThis = (CItemCore *) pUserData;
 
-	const char* pSelect, *pType;
+	const char* pSelect;
+	CUuid Uuid;
 	pSelect = "";
 	
 	if(str_startswith(pCmd, "CRAFT"))
 	{
 		pSelect = pCmd + 6;
-		pThis->GameServer()->CraftItem(ClientID, pSelect);
+		
+		if(ParseUuid(&Uuid, pSelect))
+			return;
+
+		pThis->GameServer()->CraftItem(ClientID, Uuid);
 
 	}else if(str_startswith(pCmd, "LIST"))
 	{
 		pSelect = pCmd + 5;
 	}
 
-	pType = pThis->GetTypesByStr(pSelect);
+	if(ParseUuid(&Uuid, pSelect))
+	{
+		Uuid = pThis->GetTypesByUuid(Uuid);
+	}
 
 	std::vector<CMenuOption> Options;
 
@@ -119,48 +128,53 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 
 	for(auto Type : pThis->m_vItems)
 	{
-		str_format(aCmd, sizeof(aCmd), "LIST %s", Type.first.c_str());
-		if(str_comp(pType, Type.first.c_str()))
+		char aUuidStr[UUID_MAXSTRSIZE];	
+		FormatUuid(Type.first, aUuidStr, sizeof(aUuidStr));
+
+		str_format(aCmd, sizeof(aCmd), "LIST %s", aUuidStr);
+		if(Uuid == Type.first)
 		{
-			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "* {STR} ▲"));
+			Options.push_back(CMenuOption(pThis->Menu()->Localize(Type.first), aCmd, "* {STR} ▲"));
 			continue;
 		}
 		else
 		{
-			Options.push_back(CMenuOption(Type.first.c_str(), aCmd, "* {STR} ▼"));
+			Options.push_back(CMenuOption(pThis->Menu()->Localize(Type.first), aCmd, "* {STR} ▼"));
 		}
 
 		for(auto &Item : Type.second)
 		{
 			if(!Item.m_Makeable)
 				continue;
-			
-			str_format(aCmd, sizeof(aCmd), "LIST %s", Item.m_aName);
-			str_format(aCmdCraft, sizeof(aCmdCraft), "CRAFT %s", Item.m_aName);
 
-			if(str_comp(pSelect, Item.m_aName) == 0)
+			FormatUuid(Item.m_Uuid, aUuidStr, sizeof(aUuidStr));
+			
+			str_format(aCmd, sizeof(aCmd), "LIST %s", aUuidStr);
+			str_format(aCmdCraft, sizeof(aCmdCraft), "CRAFT %s", aUuidStr);
+
+			if(str_comp(pSelect, aUuidStr) == 0)
 			{
-				Options.push_back(CMenuOption(Item.m_aName, aCmd, "= {STR} ▼"));
+				Options.push_back(CMenuOption(pThis->Menu()->Localize(Item.m_Uuid), aCmd, "= {STR} ▼"));
 				Options.push_back(CMenuOption(_("Requires"), aCmd, "- {STR}:"));
 				
 				char aBuf[VOTE_DESC_LENGTH];
 				for(auto Require : Item.m_Needs.m_vDatas)
 				{
 					str_format(aBuf, sizeof(aBuf), "%s x%d (%d)", 
-						pThis->Menu()->Localize(std::get<0>(Require).c_str()),
+						pThis->Menu()->Localize(std::get<0>(Require)).c_str(),
 						std::get<1>(Require),
-						pThis->GetInvItemNum(std::get<0>(Require).c_str(), ClientID));
+						pThis->GetInvItemNum(std::get<0>(Require), ClientID));
 
 					Options.push_back(CMenuOption(aBuf, aCmd, "- {STR}"));
 				}
 
 				str_format(aBuf, sizeof(aBuf), "%s %s",
 					pThis->Menu()->Localize(_("Craft")),
-					pThis->Menu()->Localize(pSelect));
+					pThis->Menu()->Localize(Item.m_Uuid).c_str());
 				Options.push_back(CMenuOption(aBuf, aCmdCraft, "@ {STR}"));
 			}
 			else 
-				Options.push_back(CMenuOption(Item.m_aName, aCmd, "= {STR} ▲"));
+				Options.push_back(CMenuOption(pThis->Menu()->Localize(Item.m_Uuid), aCmd, "= {STR} ▲"));
 		}
 	}
 
@@ -178,7 +192,7 @@ void CItemCore::MenuInventory(int ClientID, const char* pCmd, const char* pReaso
 	char aBuf[128];
 	for(auto& Item : *(pThis->GetInventory(ClientID)))
 	{
-		str_format(aBuf, sizeof(aBuf), "%s x%d", pThis->Menu()->Localize(Item.first.c_str()), Item.second);
+		str_format(aBuf, sizeof(aBuf), "%s x%d", pThis->Menu()->Localize(Item.first).c_str(), Item.second);
 		Options.push_back(CMenuOption(aBuf, "SHOW", "## {STR}"));
 	}
 
@@ -191,7 +205,7 @@ void CItemCore::RegisterMenu()
     Menu()->Register("INVENTORY", "MAIN", this, MenuInventory);
 }
 
-void CItemCore::InitWeapon(std::string Buffer)
+void CItemCore::InitWeapon(std::string Buffer, CDatapack *pDatapack)
 {
 	// parse json data
 	nlohmann::json Items = nlohmann::json::parse(Buffer);
@@ -200,14 +214,17 @@ void CItemCore::InitWeapon(std::string Buffer)
 		for(auto& WeaponData : Items)
 		{
 			IWeapon *pWeapon = g_Weapons.m_aWeapons[WeaponData["weapon"].get<int>()];
-			pWeapon->SetItemName(WeaponData["item"].get<std::string>().c_str());
+
+			pWeapon->SetItemUuid(CalculateUuid(pDatapack, WeaponData["item"].get<std::string>().c_str()));
 			if(!WeaponData["item_ammo"].empty())
-				pWeapon->SetAmmoName(WeaponData["item_ammo"].get<std::string>().c_str());
+			{
+				pWeapon->SetAmmoUuid(CalculateUuid(pDatapack, WeaponData["item_ammo"].get<std::string>().c_str()));
+			}
 		}
 	}
 }
 
-CItemData *CItemCore::GetItemData(const char *Name)
+CItemData *CItemCore::GetItemData(CUuid Uuid)
 {
     CItemData *pData = nullptr;
 	
@@ -215,7 +232,7 @@ CItemData *CItemCore::GetItemData(const char *Name)
 	{
 		for(auto &Item : Type.second)
 		{
-			if(str_comp(Item.m_aName, Name) == 0)
+			if(Item.m_Uuid == Uuid)
 				return &Item;
 		}
 	}
@@ -223,61 +240,59 @@ CItemData *CItemCore::GetItemData(const char *Name)
 	return pData;
 }
 
-std::map<std::string, int> *CItemCore::GetInventory(int ClientID)
+std::map<CUuid, int> *CItemCore::GetInventory(int ClientID)
 {
 	return &m_aInventories[ClientID];
 }
 
-int CItemCore::GetInvItemNum(const char *ItemName, int ClientID)
+int CItemCore::GetInvItemNum(CUuid Uuid, int ClientID)
 {
-	auto Item = m_aInventories[ClientID].find(ItemName);
-	if(Item != m_aInventories[ClientID].end())
-		return Item->second;
-	return 0;
+	if(!m_aInventories[ClientID].count(Uuid))
+		return 0;
+	return m_aInventories[ClientID][Uuid];
 }
 
-void CItemCore::AddInvItemNum(const char *ItemName, int Num, int ClientID, bool Database, bool SendChat)
+void CItemCore::AddInvItemNum(CUuid Uuid, int Num, int ClientID, bool Database, bool SendChat)
 {
-	auto Item = m_aInventories[ClientID].find(ItemName);
-
-	if(Item == m_aInventories[ClientID].end())
+	if(!m_aInventories[ClientID].count(Uuid))
 	{
-		m_aInventories[ClientID][ItemName] = Num;
-	}else
+		m_aInventories[ClientID][Uuid] = Num;
+	}
+	else
 	{
-		m_aInventories[ClientID][ItemName] += Num;
+		m_aInventories[ClientID][Uuid] += Num;
 	}
 
 	if(SendChat)
 	{
 		if(Num > 0)
 		{
-			GameServer()->SendChatTarget_Localization(ClientID, _("You got {LSTR} x{INT}"), ItemName, Num);
+			GameServer()->SendChatTarget_Localization(ClientID, _("You got {UUID} x{INT}"), Uuid, Num);
 		}
 		else if(Num < 0)
 		{
-			GameServer()->SendChatTarget_Localization(ClientID, _("You lost {LSTR} x{INT}"), ItemName, -Num);
+			GameServer()->SendChatTarget_Localization(ClientID, _("You lost {UUID} x{INT}"), Uuid, -Num);
 		}
 	}
 
 	if(Database)
 	{
-		AddInvItemNumThread(ItemName, Num, ClientID);
+		AddInvItemNumThread(Uuid, Num, ClientID);
 	}
 }
 
-void CItemCore::SetInvItemNum(const char *ItemName, int Num, int ClientID, bool Database)
+void CItemCore::SetInvItemNum(CUuid Uuid, int Num, int ClientID, bool Database)
 {
-	m_aInventories[ClientID][ItemName] = Num;
+	m_aInventories[ClientID][Uuid] = Num;
 
 	if(Database)
 	{
-		SetInvItemNumThread(ItemName, m_aInventories[ClientID][ItemName], ClientID);
+		SetInvItemNumThread(Uuid, m_aInventories[ClientID][Uuid], ClientID);
 	}
 }
 
 static std::mutex s_ItemMutex;
-void CItemCore::AddInvItemNumThread(const char *pItemName, int Num, int ClientID)
+void CItemCore::AddInvItemNumThread(CUuid Uuid, int Num, int ClientID)
 {
 	if(Num == 0)
 		return;
@@ -287,22 +302,23 @@ void CItemCore::AddInvItemNumThread(const char *pItemName, int Num, int ClientID
 		return;
 	}
 
-	std::string ItemName(pItemName);
-
-	std::thread Thread([this, ItemName, Num, ClientID]()
+	std::thread Thread([this, Uuid, Num, ClientID]()
 	{
 		auto pOwner = GameServer()->GetPlayer(ClientID);
 		if(!pOwner)
 			return;
 		int UserID = pOwner->GetUserID();
 
+		char aUuidStr[UUID_MAXSTRSIZE];	
+		FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
+
 		std::string Buffer;
 
 		Buffer.append("WHERE OwnerID=");
 		Buffer.append(std::to_string(UserID));
 		Buffer.append(" AND ");
-		Buffer.append("ItemName='");
-		Buffer.append(ItemName);
+		Buffer.append("Uuid='");
+		Buffer.append(aUuidStr);
 		Buffer.append("';");
 
 		s_ItemMutex.lock();
@@ -318,16 +334,17 @@ void CItemCore::AddInvItemNumThread(const char *pItemName, int Num, int ClientID
 		if(!pSqlResult->size())
 		{
 			Buffer.clear();
-			Buffer.append("(OwnerID, ItemName, Num) VALUES (");
+			Buffer.append("(OwnerID, Uuid, Num) VALUES (");
 			Buffer.append(std::to_string(UserID));
 			Buffer.append(", '");
-			Buffer.append(ItemName);
+			Buffer.append(aUuidStr);
 			Buffer.append("', ");
 			Buffer.append(std::to_string(Num));
 			Buffer.append(");");
 
 			Sql()->Execute<SqlType::INSERT>("lt_itemdata", Buffer.c_str());
-		}else
+		}
+		else
 		{
 			int ID = pSqlResult->begin()["ID"].as<int>();
 
@@ -349,28 +366,30 @@ void CItemCore::AddInvItemNumThread(const char *pItemName, int Num, int ClientID
 	return;
 }
 
-void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID)
+void CItemCore::SetInvItemNumThread(CUuid Uuid, int Num, int ClientID)
 {
 	if(!GameServer()->m_apPlayers[ClientID])
 	{
 		return;
 	}
-	std::string ItemName(pItemName);
 
-	std::thread Thread([this, ItemName, Num, ClientID]()
+	std::thread Thread([this, Uuid, Num, ClientID]()
 	{
 		auto pOwner = GameServer()->GetPlayer(ClientID);
 		if(!pOwner)
 			return;
 		int UserID = pOwner->GetUserID();
 
+		char aUuidStr[UUID_MAXSTRSIZE];	
+		FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
+
 		std::string Buffer;
 
 		Buffer.append("WHERE OwnerID=");
 		Buffer.append(std::to_string(UserID));
 		Buffer.append(" AND ");
-		Buffer.append("ItemName='");
-		Buffer.append(ItemName);
+		Buffer.append("Uuid='");
+		Buffer.append(aUuidStr);
 		Buffer.append("';");
 
 		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_itemdata",
@@ -386,10 +405,10 @@ void CItemCore::SetInvItemNumThread(const char *pItemName, int Num, int ClientID
 		if(!pSqlResult->size())
 		{
 			Buffer.clear();
-			Buffer.append("(OwnerID, ItemName, Num) VALUES (");
+			Buffer.append("(OwnerID, Uuid, Num) VALUES (");
 			Buffer.append(std::to_string(UserID));
 			Buffer.append(", '");
-			Buffer.append(ItemName);
+			Buffer.append(aUuidStr);
 			Buffer.append("', ");
 			Buffer.append(std::to_string(Num));
 			Buffer.append(");");
@@ -446,7 +465,10 @@ void CItemCore::SyncInvItem(int ClientID)
 		{
 			for(SqlResult::const_iterator Iter = pSqlResult->begin(); Iter != pSqlResult->end(); ++ Iter)
 			{
-				SetInvItemNum(Iter["ItemName"].as<std::string>().c_str(), Iter["Num"].as<int>(), ClientID, false);
+				CUuid Uuid;
+				if(ParseUuid(&Uuid, Iter["Uuid"].as<std::string>().c_str()))
+					continue;
+				SetInvItemNum(Uuid, Iter["Num"].as<int>(), ClientID, false);
 			}
 		}
 	});

@@ -18,7 +18,7 @@ public:
 	bool m_aUseCustomColors[protocol7::NUM_SKINPARTS] = {false, false, false, false, false, false};
 	int m_aSkinPartColors[protocol7::NUM_SKINPARTS] = {0, 0, 0, 0, 0, 0};
 
-	CTeeInfo() = default;
+	CTeeInfo();
 
 	CTeeInfo(const char *pSkinName, int UseCustomColor, int ColorBody, int ColorFeet);
 

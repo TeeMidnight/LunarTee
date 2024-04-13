@@ -2,6 +2,8 @@
 
 #include <game/server/gamecontext.h>
 
+#include <lunartee/datacontroller.h>
+
 #include <thread>
 
 #include "botcontroller.h"
@@ -12,16 +14,16 @@ CBotController::CBotController(CGameContext *pGameServer) :
     m_vBotDatas.clear();
 }
 
-void CBotController::LoadBotData(std::string Buffer)
+void CBotController::LoadBotData(std::string Buffer, class CDatapack *pDatapack)
 {
-    std::thread([this](std::string FileBuffer)
+    std::thread([this, pDatapack](std::string FileBuffer)
     {
         // parse json data
         nlohmann::json BotData = nlohmann::json::parse(FileBuffer);
 
         SBotData Data;
-        str_copy(Data.m_aName, BotData["name"].get<std::string>().c_str());
-        Data.m_pSkin = &m_pGameServer->m_TeeSkins[CalculateUuid(BotData["skin-id"].get<std::string>().c_str())];
+        Data.m_Uuid = CalculateUuid(pDatapack, BotData["id"].get<std::string>().c_str());
+        Data.m_pSkin = &m_pGameServer->m_TeeSkins[CalculateUuid(pDatapack, BotData["skin-id"].get<std::string>().c_str())];
 
         Data.m_Health = BotData["health"].get<int>();
         Data.m_AttackProba = BotData["attack_proba"].get<int>();
@@ -53,7 +55,7 @@ void CBotController::LoadBotData(std::string Buffer)
             for(auto &CurrentDrop : DropsArray)
             {
                 SBotDropData DropData;
-                str_copy(DropData.m_ItemName, CurrentDrop["name"].get<std::string>().c_str());
+                DropData.m_Uuid = CalculateUuid(pDatapack, CurrentDrop["id"].get<std::string>().c_str());
                 DropData.m_DropProba = CurrentDrop["proba"].get<int>();
                 DropData.m_MinNum = CurrentDrop["min"].get<int>();
                 DropData.m_MaxNum = CurrentDrop["max"].get<int>();
@@ -77,7 +79,7 @@ void CBotController::LoadBotData(std::string Buffer)
                     for(auto &CurrentNeed : Current)
                     {
                         SBotTradeData::SData NeedData;
-                        str_copy(NeedData.m_ItemName, CurrentNeed["name"].get<std::string>().c_str());
+                        NeedData.m_Uuid = CalculateUuid(pDatapack, CurrentNeed["id"].get<std::string>().c_str());
                         NeedData.m_MinNum = CurrentNeed["min"].get<int>();
                         NeedData.m_MaxNum = CurrentNeed["max"].get<int>();
                         TradeData.m_Needs.push_back(NeedData);
@@ -88,7 +90,7 @@ void CBotController::LoadBotData(std::string Buffer)
                         continue;
 
                     SBotTradeData::SData GiveData;
-                    str_copy(GiveData.m_ItemName, Current["name"].get<std::string>().c_str());
+                    GiveData.m_Uuid = CalculateUuid(pDatapack, Current["id"].get<std::string>().c_str());
                     GiveData.m_MinNum = Current["min"].get<int>();
                     GiveData.m_MaxNum = Current["max"].get<int>();
                     TradeData.m_Give = GiveData;
