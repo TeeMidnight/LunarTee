@@ -258,6 +258,7 @@ find_package(Curl)
 find_package(OpenSSL)
 find_package(PQXX)
 find_package(PNG)
+find_package(Freetype)
 
 if(TARGET_OS AND TARGET_OS STREQUAL "mac")
   find_program(DMG dmg)
@@ -307,6 +308,7 @@ show_dependency_status("Python3" Python3)
 show_dependency_status("Curl" CURL)
 show_dependency_status("OpenSSL Crypto" CRYPTO)
 show_dependency_status("PNG" PNG)
+show_dependency_status("Freetype" FREETYPE)
 show_dependency_status("Zlib" ZLIB)
 show_dependency_status("pqxx" PQXX)
 
@@ -321,6 +323,9 @@ if(NOT(PQXX_FOUND))
 endif()
 if(NOT(PNG_FOUND))
   message(SEND_ERROR "You must install libpng to compile LunarTee")
+endif()
+if(NOT(FREETYPE_FOUND))
+  message(SEND_ERROR "You must install Freetype to compile LunarTee")
 endif()
 if(NOT(LIBZIP_FOUND))
   message(SEND_ERROR "You must install libzip to compile LunarTee")
@@ -494,6 +499,7 @@ set(LIBS
   ${CMAKE_THREAD_LIBS_INIT}
   ${CRYPTO_LIBRARIES}
   ${PNG_LIBRARIES}
+  ${FREETYPE_LIBRARIES}
   ${CURL_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${LIBZIP_LIBRARIES}
@@ -863,7 +869,8 @@ foreach(target ${TARGETS_OWN})
   target_compile_definitions(${target} PRIVATE $<$<CONFIG:Debug>:CONF_DEBUG>)
   target_include_directories(${target} PRIVATE ${CURL_INCLUDE_DIRS})
   target_include_directories(${target} PRIVATE ${ZLIB_INCLUDE_DIRS})
-  target_include_directories(${target} PRIVATE ${PQXX_INCLUDE_DIR})
+  target_include_directories(${target} PRIVATE ${PQXX_INCLUDE_DIRS})
+  target_include_directories(${target} PRIVATE ${FREETYPE_INCLUDE_DIRS})
 endforeach()
 
 foreach(target ${TARGETS_DEP})

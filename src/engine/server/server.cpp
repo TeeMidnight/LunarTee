@@ -2213,7 +2213,7 @@ int CServer::LoadMap(const char *pMapName)
 	m_MapReload = false;
 	//DATAFILE *df;
 	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "generated_map/%s.map", pMapName);
+	str_format(aBuf, sizeof(aBuf), "maps/%s.map", pMapName);
 
 	CMapData MapData;
 	MapData.m_pCurrentMapData = 0;
@@ -2222,8 +2222,12 @@ int CServer::LoadMap(const char *pMapName)
 	MapData.m_pMap = CreateEngineMap();
 
 	if(!MapData.m_pMap->Load(aBuf, Storage()))
-		return 0;
-	
+	{
+		str_format(aBuf, sizeof(aBuf), "chunk/%s.map", pMapName);
+		if(!MapData.m_pMap->Load(aBuf, Storage()))
+			return 0;
+	}
+
 	str_copy(MapData.m_aCurrentMap, pMapName, sizeof(MapData.m_aCurrentMap));
 	//map_set(df);
 
@@ -2250,26 +2254,10 @@ int CServer::LoadMap(const char *pMapName)
 int CServer::GenerateMap(const char *pMapName)
 {
 	CMapGen MapGen(Storage(), Console(), this);
-
-	char aMapDir[256];
-	str_format(aMapDir, sizeof(aMapDir), "generated_map");
-
-	char aFullPath[512];
-	Storage()->GetCompletePath(IStorage::TYPE_SAVE, aMapDir, aFullPath, sizeof(aFullPath));
-	if(fs_makedir(aFullPath) != 0)
-	{
-		log_error("mapgen", "Can't create the directory '%s'", aMapDir);
-	}
 	
-	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "generated_map/%s.map", pMapName);
-	
-	Storage()->GetCompletePath(IStorage::TYPE_SAVE, aBuf, aFullPath, sizeof(aFullPath));
-	if(!fs_is_file(aFullPath) || (fs_is_file(aFullPath) && g_Config.m_SvGeneratedMap))
-	{
-		if(!MapGen.CreateMap(aBuf))
-			return 0;
-	}
+	if(!MapGen.CreateMap(pMapName))
+		return 0;
+
 	LoadMap(pMapName);
 	
 	return 1;

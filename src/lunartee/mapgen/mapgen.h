@@ -24,24 +24,17 @@ public:
 	IStorage *m_pStorage;
 	IConsole *m_pConsole;
 	CServer *m_pServer;
-	CDataFileWriter m_DataFile;
 	
 	CTile* m_pBackGroundTiles;
 	CTile* m_pGameTiles;
 	CTile* m_pHookableTiles;
 	CTile* m_pUnhookableTiles;
 	CTile* m_pDoodadsTiles;
-	
-	int m_NumGroups;
-	int m_NumLayers;
-	int m_NumImages;
-	int m_NumEnvs;
 
-	int m_MainImageID;
-	int m_MainRules;
+	class SGroupInfo *m_pMainGroup;
+	class SImage *m_pSpaceImage;
 
-	int m_UnhookableRules;
-	int m_BackgroundRules;
+	class CMapCreater *m_pMapCreater;
 
 	bool m_HookableReady;
 	bool m_UnhookableReady;
@@ -49,77 +42,12 @@ public:
 	IStorage* Storage() { return m_pStorage; };
 	IConsole* Console() { return m_pConsole; };
 	CServer* Server() { return m_pServer; };
-	
-	void InitQuad(CQuad* pQuad);
-	void InitQuad(CQuad* pQuad, vec2 Pos, vec2 Size);
-	void AddTile(CTile *pTile, const char *LayerName, int Image, vec4 Color = vec4(255,255,255, 255));
-	void AddGameTile(CTile *pTile);
 
 	void GenerateBackground();
 	void GenerateGameLayer();
 	void GenerateDoodadsLayer();
+	void GenerateCenter();
 
-	// auto map
-	int LoadRules(const char *pImageName);
-	void Proceed(CTile *pTiles, int ConfigID, vec2 StartPos, vec2 EndPos);
-
-	struct CIndexInfo
-	{
-		int m_ID;
-		int m_Flag;
-		bool m_TestFlag;
-	};
-
-	struct CPosRule
-	{
-		int m_X;
-		int m_Y;
-		int m_Value;
-		std::vector<CIndexInfo> m_vIndexList;
-
-		enum
-		{
-			NORULE = 0,
-			INDEX,
-			NOTINDEX
-		};
-	};
-
-	struct CIndexRule
-	{
-		int m_ID;
-		std::vector<CPosRule> m_vRules;
-		int m_Flag;
-		float m_RandomProbability;
-		bool m_DefaultRule;
-		bool m_SkipEmpty;
-		bool m_SkipFull;
-	};
-
-	struct CRun
-	{
-		std::vector<CIndexRule> m_vIndexRules;
-		bool m_AutomapCopy;
-	};
-
-	struct CConfiguration
-	{
-		std::vector<CRun> m_vRuns;
-		char m_aName[128];
-		int m_StartX;
-		int m_StartY;
-		int m_EndX;
-		int m_EndY;
-	};
-	std::vector<CConfiguration> m_vConfigs;
-
-	void InitState();
-	
-	void AddImageQuad(const char *pName, int ImageID, int GridX, int GridY, int X, int Y, int Width, int Height, vec2 Pos, vec2 Size, vec4 Color, int Env);
-	
-	int AddExternalImage(const char *pImageName, int Width, int Height);
-	int AddEmbeddedImage(const char *pImageName, int Width, int Height);
-	
 	void GenerateMap();
 
 	CMapGen(IStorage *pStorage, IConsole* pConsole, CServer *pServer);
