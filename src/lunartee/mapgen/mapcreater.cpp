@@ -28,7 +28,7 @@
 #include "mapcreater.h"
 
 static FT_Library s_Library;
-static FT_Face s_FontFace;
+static std::vector<FT_Face> s_vFontFaces;
 
 void FreePNG(CImageInfo *pImg)
 {
@@ -106,12 +106,30 @@ CMapCreater::CMapCreater(IStorage *pStorage, IConsole* pConsole) :
 
 	void *pBuf;
 	unsigned Length;
+	if(!Storage()->ReadFile("fonts/DejaVuSans.ttf", IStorage::TYPE_ALL, &pBuf, &Length))
+		return;
+
+	FT_Face FtFace;
+
+    FT_New_Memory_Face(s_Library, (FT_Bytes) pBuf, Length, 0, &FtFace);
+
+    s_vFontFaces.push_back(FtFace);
+
 	if(!Storage()->ReadFile("fonts/SourceHanSans.ttc", IStorage::TYPE_ALL, &pBuf, &Length))
 		return;
 
-    FT_New_Memory_Face(s_Library, (FT_Bytes) pBuf, Length, 0, &s_FontFace);
+    FT_New_Memory_Face(s_Library, (FT_Bytes) pBuf, Length, 0, &FtFace);
 
-    FT_Select_Charmap(s_FontFace, FT_ENCODING_UNICODE);
+	int NumFaces = FtFace->num_faces;
+	for(int i = 0; i < NumFaces; ++i)
+	{
+		if(FT_New_Memory_Face(s_Library, (FT_Bytes) pBuf, Length, i, &FtFace))
+		{
+			FT_Done_Face(FtFace);
+			break;
+		}
+        s_vFontFaces.push_back(FtFace);
+	}
 }
 
 CMapCreater::~CMapCreater()
@@ -141,7 +159,9 @@ CMapCreater::~CMapCreater()
     }
     m_vGroups.clear();
 
-    FT_Done_Face(s_FontFace);
+    for(auto Face : s_vFontFaces)
+        FT_Done_Face(Face);
+
     FT_Done_FreeType(s_Library);
 }
 
@@ -368,26 +388,70 @@ static void GenerateQuadsFromTextLayer(SLayerText *pText, std::vector<CQuad> *vp
 {
     for(auto& Text : pText->m_vText)
     {
-        ivec2 Pos = Text.m_Pos;
-        FT_Set_Char_Size(s_FontFace, 0, Text.m_Size * 64, 0, 96);
-        for(auto& Char : Text.m_aText)
+        ivec2 Beginning = Text.m_Pos;
+        ivec2 Pos = Beginning;
+
+        const char* pTextStr = Text.m_aText;
+
+        int MaxHeight = 0;
+        int Char;
+
+        while((Char = str_utf8_decode(&pTextStr)) > 0)
         {
-            if(Char == '\0')
-                break;
-            FT_ULong GlyphIndex = FT_Get_Char_Index(s_FontFace, Char);
-            FT_Load_Glyph(s_FontFace, GlyphIndex, FT_LOAD_DEFAULT);
-            FT_Render_Glyph(s_FontFace->glyph, FT_RENDER_MODE_NORMAL);
+            // find face
+            FT_Face Face;
+            FT_ULong GlyphIndex = 0;
+
+            for(auto FtFace : s_vFontFaces)
+            {
+                FT_ULong FtChar = Char;
+                if(FtChar == '\n')
+                    FtChar = ' ';
+                GlyphIndex = FT_Get_Char_Index(FtFace, (FT_ULong) FtChar);
+                if(GlyphIndex)
+                {
+                    Face = FtFace;
+                    break;
+                }
+            }
+            
+            FT_Set_Char_Size(Face, 0, Text.m_Size * 64, 0, 96);
+
+            // render
+		    FT_BitmapGlyph Glyph;
+            FT_Load_Glyph(Face, GlyphIndex, FT_LOAD_NO_BITMAP);
+            FT_Get_Glyph(Face->glyph, (FT_Glyph *) &Glyph);
+            FT_Glyph_To_Bitmap((FT_Glyph *) &Glyph, FT_RENDER_MODE_NORMAL, 0, true);
+
+            FT_Bitmap *pBitmap;
+            pBitmap = &Glyph->bitmap;
 
             int Width, Height;
-            Width = s_FontFace->glyph->bitmap.width;
-            Height = s_FontFace->glyph->bitmap.rows;
+            Width = pBitmap->width;
+            Height = pBitmap->rows;
 
-            ivec2 StartPos = Pos - ivec2(Width, Height) / 2;
+            MaxHeight = maximum(MaxHeight, Height);
+
+            if(Char == '\n')
+            {
+                Beginning.y += MaxHeight * 1.2f;
+                Pos = Beginning;
+                continue;
+            }
+
+            FT_BBox BBox;
+            FT_Glyph_Get_CBox((FT_Glyph) Glyph, FT_GLYPH_BBOX_TRUNCATE, &BBox);
+
+            ivec2 StartPos = Pos;
+
+            StartPos.x += Face->glyph->bitmap_left;
+            StartPos.y -= Face->glyph->bitmap_top;
+
             for(int x = 0; x < Width; x ++)
             {
                 for(int y = 0; y < Height; y ++)
                 {
-                    unsigned char Alpha = s_FontFace->glyph->bitmap.buffer[y * Width + x];
+                    unsigned char Alpha = pBitmap->buffer[y * Width + x];
                     if(Alpha == 0)
                         continue;
 
@@ -428,7 +492,11 @@ static void GenerateQuadsFromTextLayer(SLayerText *pText, std::vector<CQuad> *vp
                     vpQuads->push_back(Quad);
                 }
             }
-            Pos.x += Width;
+
+            Pos.x += Face->glyph->advance.x / 64;
+            Pos.y += Face->glyph->advance.y / 64;
+
+            FT_Done_Glyph((FT_Glyph) Glyph);
         }
     }
 }

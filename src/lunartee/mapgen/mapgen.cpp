@@ -208,9 +208,6 @@ void CMapGen::GenerateBackground()
 		pQuad->m_aColors[2].b = pQuad->m_aColors[3].b = 0;
 		pQuad->m_aColors[2].a = pQuad->m_aColors[3].a = 255;
 	}
-
-	SLayerText *pText = pGroup->AddTextLayer("Text");
-	pText->AddText("你好, LunarTee", 64, ivec2(0, 0));
 }
 
 void CMapGen::GenerateDoodadsLayer()
