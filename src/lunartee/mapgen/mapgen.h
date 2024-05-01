@@ -54,6 +54,7 @@ public:
 	~CMapGen();
 
 	bool CreateMap(const char *pFilename);
+	bool CreateMenu(const char *pFilename);
 };
 
 #endif

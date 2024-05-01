@@ -83,8 +83,7 @@ void CMenu::RegisterMain()
             }
             else if(str_comp(pCmd, "LANGUAGE") == 0)
             {
-                pThis->GetMenuPage("LANGUAGE")->m_pfnCallback(ClientID, "SHOW", "", 
-                    pThis->GetMenuPage("LANGUAGE")->m_pUserData);
+                pThis->GameServer()->OnPlayerChooseLanguage(ClientID);
             }
             else if(str_comp(pCmd, "CRAFT") == 0)
             {
@@ -104,33 +103,6 @@ void CMenu::RegisterMain()
         };
         
     Register("MAIN", 0, this, Callback);
-
-    RegisterLanguage();
-}
-
-void CMenu::RegisterLanguage()
-{
-    auto Callback = 
-        [](int ClientID, const char* pCmd, const char* pReason, void *pUserData)
-        {
-            CMenu *pThis = (CMenu *) pUserData;
-
-            if(str_comp(pCmd, "SHOW"))
-                pThis->GameServer()->m_apPlayers[ClientID]->SetLanguage(pCmd);
-
-            std::vector<CMenuOption> Options;
-
-            Options.push_back(CMenuOption(_("Language"), 0, "# {STR}"));
-
-            for(auto &pLanguage : pThis->Server()->Localization()->m_vpLanguages)
-            {
-                Options.push_back(CMenuOption(pLanguage->GetName(), pLanguage->GetFilename(), "* {STR}"));
-            }
-
-            pThis->UpdateMenu(ClientID, Options, "LANGUAGE");
-        };
-
-    Register("LANGUAGE", "MAIN", this, Callback);
 }
 
 void CMenu::PreviousPage(int ClientID)

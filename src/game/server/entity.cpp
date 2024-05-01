@@ -40,6 +40,9 @@ bool CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos)
 
 bool NetworkClipped(CGameWorld *pGameworld, int SnappingClient, vec2 CheckPos)
 {
+	if(!pGameworld)
+		return true;
+
 	if(SnappingClient == -1)
 		return false;
 	

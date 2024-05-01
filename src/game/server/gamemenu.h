@@ -80,7 +80,6 @@ public:
 	void Register(const char* PageName, const char* ParentName, void *pUserData, MenuCallback Callback);
 
 	void RegisterMain();
-	void RegisterLanguage();
 
 private:
 	void PreviousPage(int ClientID);

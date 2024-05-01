@@ -3,6 +3,8 @@
 
 #include <base/color.h>
 
+#include <engine/external/json/json.hpp>
+
 #include <game/mapitems.h>
 
 #include <vector>
@@ -10,7 +12,8 @@
 enum ELunarMapType
 {
     MAPTYPE_NORMAL = 0,
-    MAPTYPE_CHUNK
+    MAPTYPE_CHUNK,
+    MAPTYPE_MENU,
 };
 
 enum ELunarLayerType
@@ -57,6 +60,8 @@ struct SText
     char m_aText[32];
 
     int m_Size;
+    bool m_Outline;
+    bool m_Center;
 };
 
 struct SLayerText : public ILayerInfo
@@ -68,7 +73,7 @@ struct SLayerText : public ILayerInfo
         m_Type = LTLAYERTYPE_TEXT;
     }
 
-    SText *AddText(const char* pText, int Size, ivec2 Pos);
+    SText *AddText(const char* pText, int Size, ivec2 Pos, bool Outline = true, bool Center = false);
 };
 
 struct SLayerTilemap : public ILayerInfo
@@ -114,7 +119,7 @@ struct SLayerQuads : public ILayerInfo
         m_Type = LTLAYERTYPE_QUADS;
     }
 
-    SQuad *AddQuad(vec2 Pos, vec2 Size);
+    SQuad *AddQuad(vec2 Pos, vec2 Size, ColorRGBA Color = ColorRGBA(255, 255, 255, 255));
 };
 
 struct SGroupInfo

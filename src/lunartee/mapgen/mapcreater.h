@@ -3,6 +3,10 @@
 
 #include "mapitems.h"
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_STROKER_H
+
 class CServer;
 
 class CMapCreater
@@ -16,13 +20,21 @@ class CMapCreater
 
 	class IStorage* Storage() { return m_pStorage; };
 	class IConsole* Console() { return m_pConsole; };
-	
+
+	FT_Library m_Library;
+	FT_Stroker m_FtStroker;
+	std::vector<FT_Face> m_vFontFaces;
+	nlohmann::json m_Json;
+
+	void GenerateQuadsFromTextLayer(SLayerText *pText, std::vector<CQuad> *vpQuads);
+
 public:
     CMapCreater(class IStorage *pStorage, class IConsole* pConsole);
 	~CMapCreater();
 
 	SImage *AddExternalImage(const char *pImageName, int Width, int Height);
-	SImage *AddEmbeddedImage(const char *pImageName, int Width, int Height);
+	SImage *AddEmbeddedImage(const char *pImageName, bool Flag = false);
+	void SetJson(nlohmann::json Json);
 
     SGroupInfo *AddGroup(const char* pName);
 

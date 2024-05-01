@@ -76,12 +76,13 @@ public:
 		if(ClientID == -1)
 		{
 			for(int i = 0; i < MaxClients(); i++)
-				if(ClientIngame(i))
+				if(ClientIngame(i) && !IsInMenu(i))
 					Result = SendPackMsgTranslate(pMsg, Flags, i);
 		}
 		else
 		{
-			Result = SendPackMsgTranslate(pMsg, Flags, ClientID);
+			if(!IsInMenu(ClientID))
+				Result = SendPackMsgTranslate(pMsg, Flags, ClientID);
 		}
 		return Result;
 	}
@@ -224,6 +225,10 @@ public:
 	virtual void CreateNewTheardJob(std::shared_ptr<IJob> pJob) = 0;
 
 	virtual bool IsSixup(int ClientID) const = 0;
+	virtual bool IsInMenu(int ClientID) const = 0;
+
+	virtual const char *GetMainMap() = 0;
+	virtual const char *GetMenuMap() = 0;
 };
 
 class IGameServer : public IInterface
@@ -242,7 +247,7 @@ public:
 
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) = 0;
 
-	virtual void OnClientConnected(int ClientID, const char *WorldName) = 0;
+	virtual void OnClientConnected(int ClientID, const char *WorldName, bool Menu) = 0;
 	virtual void OnClientEnter(int ClientID) = 0;
 	virtual void OnClientDrop(int ClientID, const char *pReason) = 0;
 	virtual void OnClientDirectInput(int ClientID, void *pInput) = 0;

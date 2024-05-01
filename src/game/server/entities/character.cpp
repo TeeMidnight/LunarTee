@@ -228,6 +228,11 @@ void CCharacter::HandleWeaponSwitch()
 	// select Weapon
 	int Next = CountInput(m_LatestPrevInput.m_NextWeapon, m_LatestInput.m_NextWeapon).m_Presses;
 	int Prev = CountInput(m_LatestPrevInput.m_PrevWeapon, m_LatestInput.m_PrevWeapon).m_Presses;
+	
+	if(Server()->IsInMenu(GetCID()))
+	{
+		return;
+	}
 
 	if(Next < 128) // make sure we only try sane stuff
 	{
@@ -262,6 +267,9 @@ void CCharacter::HandleWeaponSwitch()
 
 void CCharacter::FireWeapon()
 {
+	if(!m_pPlayer->IsBot() && Server()->IsInMenu(GetCID()))
+		return;
+
 	if(m_ReloadTimer != 0)
 		return;
 
@@ -406,6 +414,9 @@ void CCharacter::ResetInput()
 
 void CCharacter::HandleEvents()
 {
+	if((!m_pPlayer->IsBot() && Server()->IsInMenu(GetCID())))
+		return;
+
 	// handle death-tiles and leaving gamelayer
 	if((Collision()->IsCollision(m_Pos.x, m_Pos.y, m_ProximityRadius/3.f, TILE_DEATH)) 
 		&& Server()->Tick() >= m_NextDmgTick)
@@ -455,9 +466,10 @@ void CCharacter::HandleInput()
 		m_Input.m_Jump = 0;
 		m_Input.m_Direction = 0;
 		m_Input.m_Hook = 0;
-	}else m_SitTick = 0;
+	}
+	else m_SitTick = 0;
 
-	if(m_FreezeEndTick >= Server()->Tick())
+	if(m_FreezeEndTick >= Server()->Tick() || (!m_pPlayer->IsBot() && Server()->IsInMenu(GetCID())))
 	{
 		m_Input.m_Jump = 0;
 		m_Input.m_Direction = 0;
@@ -465,6 +477,53 @@ void CCharacter::HandleInput()
 	}
 
 	SetEmote(m_pPlayer->GetEmote(), Server()->Tick());
+}
+
+void CCharacter::HandleMenu()
+{
+	if(!(!m_pPlayer->IsBot() && Server()->IsInMenu(GetCID())))
+		return;
+
+	int Next = CountInput(m_PrevInput.m_NextWeapon, m_Input.m_NextWeapon).m_Presses;
+	int Prev = CountInput(m_PrevInput.m_PrevWeapon, m_Input.m_PrevWeapon).m_Presses;
+
+	if(Next < 128 && Next > 0) // make sure we only try sane stuff
+	{
+		m_Core.m_Vel.x = 64.0f;
+	}
+	if(Prev < 128 && Prev > 0) // make sure we only try sane stuff
+	{
+		m_Core.m_Vel.x = -64.0f;
+	}
+
+	if(m_Input.m_Direction == 1)
+	{
+		m_Core.m_Vel.x = 32.0f;
+	}
+	if(m_Input.m_Direction == -1)
+	{
+		m_Core.m_Vel.x = -32.0f;
+	}
+
+	if(m_Pos.x + m_Core.m_Vel.x > (GameWorld()->m_MenuPagesNum - 1) * 960)
+	{
+		m_Pos.x = (GameWorld()->m_MenuPagesNum - 1) * 960;
+		m_Core.m_Pos.x = (GameWorld()->m_MenuPagesNum - 1) * 960;
+		m_Core.m_Vel.x = 0;
+	}
+	else if(m_Pos.x + m_Core.m_Vel.x < 0)
+	{
+		m_Pos.x = 0;
+		m_Core.m_Pos.x = 0;
+		m_Core.m_Vel.x = 0;
+	}
+	
+	int Page = (m_Pos.x + 480) / 960;
+
+	if(m_Input.m_Fire&1)
+	{
+		GameServer()->OnPlayerMenuOption(GameWorld(), GetCID(), Page);
+	}
 }
 
 void CCharacter::HandleStats()
@@ -526,6 +585,11 @@ void CCharacter::Tick()
 	if(!m_Alive)
 		return;
 
+	HandleMenu();
+
+	if(!m_Alive)
+		return;
+	
 	UpdateTuning();
 
 	HandleInput();
@@ -538,6 +602,7 @@ void CCharacter::Tick()
 
 	// Previnput
 	m_PrevInput = m_Input;
+
 	return;
 }
 
@@ -694,9 +759,6 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameWorld()->RemoveEntity(this);
 	GameWorld()->m_Core.DeleteCharacter(GetCID());
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
-
-	if(m_pPlayer->IsBot())
-		GameServer()->OnBotDead(GetCID());
 }
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
@@ -966,7 +1028,7 @@ void CCharacter::Snap(int SnappingClient)
 		pDDNetCharacter->m_Jumps = 0;
 	}
 
-	if(m_pPlayer->m_Sit)
+	if(m_pPlayer->m_Sit || (!m_pPlayer->IsBot() && Server()->IsInMenu(GetCID())))
 	{
 		pDDNetCharacter->m_Jumps = 0;
 	}
@@ -1324,5 +1386,14 @@ void CCharacter::UpdateTuning()
 		pTuning->m_AirJumpImpulse = 0.0f;
 		pTuning->m_HookLength = 0.1f;
 		pTuning->m_HookFireSpeed = 0.1f;
+	}
+
+	if(!m_pPlayer->IsBot() && Server()->IsInMenu(GetCID()))
+	{
+		pTuning->m_GroundJumpImpulse = 0.0f;
+		pTuning->m_AirJumpImpulse = 0.0f;
+		pTuning->m_HookLength = 0.1f;
+		pTuning->m_HookFireSpeed = 0.1f;
+		pTuning->m_Gravity = 0.0f;
 	}
 }

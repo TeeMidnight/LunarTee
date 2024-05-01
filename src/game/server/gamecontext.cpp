@@ -125,7 +125,7 @@ void CGameContext::Clear()
 	m_Tuning = Tuning;
 }
 
-CGameWorld *CGameContext::CreateNewWorld(IMap *pMap, const char *WorldName)
+CGameWorld *CGameContext::CreateNewWorld(IMap *pMap, const char *WorldName, bool Menu)
 {
 	CUuid Uuid = CalculateUuid(WorldName);
 	m_pWorlds[Uuid] = new CGameWorld();
@@ -137,8 +137,35 @@ CGameWorld *CGameContext::CreateNewWorld(IMap *pMap, const char *WorldName)
 
 	m_pWorlds[Uuid]->InitSpawnPos();
 
-	if(m_pWorlds.size() == 1)
+	m_pWorlds[Uuid]->m_Menu = Menu;
+
+	if(!Menu && !m_pMainWorld)
 		m_pMainWorld = m_pWorlds[Uuid];
+
+	int Start, Num;
+	pMap->GetType(MAPITEMTYPE_JSON, &Start, &Num);
+	if(Num)
+	{
+		CMapItemJson *pItem = static_cast<CMapItemJson *>(pMap->GetItem(Start, 0, 0));
+
+		if(pItem->m_Size > 0)
+		{
+			char *pBuf = new char[pItem->m_Size + 1];
+			str_copy(pBuf, (char *) pMap->GetData(pItem->m_Data), pItem->m_Size + 1);
+
+			nlohmann::json Json = nlohmann::json::parse(pBuf);
+
+			if(!Json["PagesNum"].empty() && Json["PagesNum"].is_number_integer())
+				m_pWorlds[Uuid]->m_MenuPagesNum = Json["PagesNum"].get<int>();
+
+			for(int i = 1; i < m_pWorlds[Uuid]->m_MenuPagesNum; i ++)
+			{
+				str_copy(m_pWorlds[Uuid]->m_MenuLanguages[i], Json[std::to_string(i)].get<std::string>().c_str());
+			}
+
+			delete[] pBuf;
+		}
+	}
 
 	return m_pWorlds[Uuid];
 }
@@ -400,7 +427,7 @@ void CGameContext::SendChatTarget_Localization(int To, const char *pText, ...)
 		{
 			Buffer.clear();
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
-			
+
 			Msg.m_pMessage = Buffer.c_str();
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
 		}
@@ -627,6 +654,18 @@ void CGameContext::OnTick()
 	// check tuning
 	CheckPureTuning();
 
+	for(auto& BotID : m_vDeadBots)
+	{
+		if(m_pBotPlayers[BotID]->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
+			Datas()->Trade()->RemoveTrade(-BotID);
+
+		m_pBotPlayers[BotID]->m_pBotData->m_Count--;
+
+		delete m_pBotPlayers[BotID];
+		m_pBotPlayers.erase(BotID);
+	}
+	m_vDeadBots.clear();
+
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(m_apPlayers[i])
@@ -825,15 +864,21 @@ void CGameContext::OnClientEnter(int ClientID)
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientID);
 	}
 
-	if(m_apPlayers[ClientID]->GameWorld() == m_pMainWorld)
+	if(m_apPlayers[ClientID]->GameWorld() == m_pMainWorld && m_apPlayers[ClientID]->m_FirstJoin)
 	{
 		SendChatTarget_Localization(-1, _("'{STR}' entered the server"), Server()->ClientName(ClientID));
 
 		SendChatTarget_Localization(ClientID, _("===Welcome to LunarTee==="));
 		SendChatTarget_Localization(ClientID, _("Call vote is game menu"));
 		SendChatTarget_Localization(ClientID, _("Show clan plate to show health bar"));
+
+		m_apPlayers[ClientID]->m_FirstJoin = false;
 	}
-	else
+	else if(Server()->IsInMenu(ClientID))
+	{
+		m_apPlayers[ClientID]->SetTeam(0, false);
+	}
+	else if(m_apPlayers[ClientID]->GameWorld() != m_pMainWorld && !m_apPlayers[ClientID]->m_FirstJoin)
 	{
 		SendChatTarget_Localization(-1, _("'{STR}' entered other world"), Server()->ClientName(ClientID));
 	}
@@ -876,11 +921,11 @@ void CGameContext::OnClientEnter(int ClientID)
 	Server()->ExpireServerInfo();
 }
 
-void CGameContext::OnClientConnected(int ClientID, const char *WorldName)
+void CGameContext::OnClientConnected(int ClientID, const char *WorldName, bool Menu)
 {
 	CGameWorld *pGameWorld = FindWorldWithName(WorldName);
 	if(!pGameWorld)
-		pGameWorld = CreateNewWorld(Server()->GetClientMap(ClientID), WorldName);
+		pGameWorld = CreateNewWorld(Server()->GetClientMap(ClientID), WorldName, Menu);
 
 	if(m_apPlayers[ClientID])
 	{
@@ -899,8 +944,6 @@ void CGameContext::OnClientConnected(int ClientID, const char *WorldName)
 	CNetMsg_Sv_Motd Msg;
 	Msg.m_pMessage = g_Config.m_SvMotd;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-
-	Server()->ExpireServerInfo();
 }
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason)
@@ -1090,6 +1133,9 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		}
 		return;
 	}
+
+	if(Server()->IsInMenu(ClientID) && MsgID != NETMSGTYPE_CL_STARTINFO)
+		return;
 
 	if(Server()->ClientIngame(ClientID))
 	{
@@ -1497,18 +1543,19 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				pPlayer->m_TeeInfos.ToSixup();
 
 			// send vote options
-			Menu()->GetMenuPage("MAIN")->m_pfnCallback(ClientID, "SHOW", "", 
-				Menu()->GetMenuPage("MAIN")->m_pUserData);
-			
+			if(!Server()->IsInMenu(ClientID))
+			{
+				Menu()->GetMenuPage("MAIN")->m_pfnCallback(ClientID, "SHOW", "", 
+					Menu()->GetMenuPage("MAIN")->m_pUserData);
+			}
+
 			// send fake tuning
 			SendFakeTuningParams(ClientID);
 
 			// client is ready to enter
 			pPlayer->m_IsReady = true;
-			CNetMsg_Sv_ReadyToEnter Msg;
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID);
-
-			Server()->ExpireServerInfo();
+			CMsgPacker Msg(NETMSGTYPE_SV_READYTOENTER);
+			Server()->SendMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID);
 		}
 	}
 }
@@ -1999,15 +2046,6 @@ void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
 	pSelf->Login(Username, aHash, ClientID);
 }
 
-void CGameContext::SetClientLanguage(int ClientID, const char *pLanguage)
-{
-	Server()->SetClientLanguage(ClientID, pLanguage);
-	if(m_apPlayers[ClientID])
-	{
-		m_apPlayers[ClientID]->SetLanguage(pLanguage);
-	}
-}
-
 const char *CGameContext::Localize(const char *pLanguageCode, const char *pText) const
 {
 	if(str_comp(pLanguageCode, "en") == 0)
@@ -2258,13 +2296,7 @@ void CGameContext::OnBotDead(int ClientID)
 	if(!m_pBotPlayers.count(ClientID))
 		return;
 
-	if(m_pBotPlayers[ClientID]->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
-		Datas()->Trade()->RemoveTrade(-ClientID);
-
-	m_pBotPlayers[ClientID]->m_pBotData->m_Count--;
-
-	delete m_pBotPlayers[ClientID];
-	m_pBotPlayers.erase(ClientID);
+	m_vDeadBots.push_back(ClientID);
 }
 
 void CGameContext::UpdateBot()
@@ -2281,6 +2313,7 @@ void CGameContext::CreateBot(CGameWorld *pGameWorld, SBotData *pBotData)
 	UpdateBot();
 
 	m_pBotPlayers[m_FirstFreeBotID] = new CPlayer(pGameWorld, m_FirstFreeBotID, 0, pBotData);
+	m_pBotPlayers[m_FirstFreeBotID]->TryRespawn();
 
 	pBotData->m_Count++;
 }
@@ -2792,6 +2825,34 @@ void CGameContext::LoadNewSkin(std::string Buffer, class CDatapack *pDatapack)
 		NewSkin.ToSixup();
 	
 	m_TeeSkins[CalculateUuid(pDatapack, Data["skin-id"].get<std::string>().c_str())] = NewSkin;
+}
+
+void CGameContext::OnPlayerMenuOption(CGameWorld *pWorld, int ClientID, int Page)
+{
+	if(!pWorld->m_MenuLanguages.count(Page))
+		return;
+
+	Server()->SetClientLanguage(ClientID, pWorld->m_MenuLanguages[Page]);
+	
+	CUuid Uuid = CalculateUuid(Server()->GetMainMap());
+
+	m_apPlayers[ClientID]->KillCharacter();
+	m_apPlayers[ClientID]->m_LoadingMap = true;
+	
+	Server()->ChangeClientMap(ClientID, &Uuid);
+}
+
+void CGameContext::OnPlayerChooseLanguage(int ClientID)
+{
+	CNetMsg_Sv_VoteClearOptions Msg;
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+
+	CUuid Uuid = CalculateUuid(Server()->GetMenuMap());
+
+	m_apPlayers[ClientID]->KillCharacter();
+	m_apPlayers[ClientID]->m_LoadingMap = true;
+	
+	Server()->ChangeClientMap(ClientID, &Uuid);
 }
 
 static std::mutex s_RegisterMutex;

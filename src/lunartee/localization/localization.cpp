@@ -28,6 +28,11 @@ CLocalization::CLanguage::CLanguage(const char *pName, const char *pFilename, co
 		str_copy(m_aParentFilename, g_Config.m_SvDefaultLanguage);
 }
 
+void CLocalization::CLanguage::SetFlag(const char *pFlag)
+{
+	str_copy(m_aFlag, pFlag, sizeof(m_aFlag));
+}
+
 CLocalization::CLanguage::~CLanguage() = default;
 
 bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pStorage, std::string FileStr, class CDatapack *pDatapack)
@@ -102,12 +107,13 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 	
 	IOHANDLE File = pStorage->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
 
-	if(!File)
-		return false;
+	bool Success = true;
+	if(File) // this language maybe not a official language
+	{
+		Success = Load(pLocalization, pStorage, io_read_all_str(File));
 
-	bool Success = Load(pLocalization, pStorage, io_read_all_str(File));
-
-	io_close(File);
+		io_close(File);
+	}
 
 	// read datapack languages
 	CUnzip Unzip;
@@ -128,6 +134,8 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorage* pSto
 
 		Unzip.CloseFile();
 	}
+
+	dbg_msg("localization", "loaded language '%s'", m_aName);
 
 	return Success;
 }
@@ -178,9 +186,13 @@ bool CLocalization::Init()
 	{
 		for(auto& Current : rStart)
 		{
-			m_vpLanguages.push_back(new CLanguage(Current["name"].get<std::string>().c_str(),
-				Current["file"].get<std::string>().c_str(), Current["parent"].empty() ? "" : Current["parent"].get<std::string>().c_str()));
-				
+			CLanguage *pLanguage = new CLanguage(Current["name"].get<std::string>().c_str(),
+				Current["file"].get<std::string>().c_str(), Current["parent"].empty() ? "" : Current["parent"].get<std::string>().c_str());
+
+			m_vpLanguages.push_back(pLanguage);
+			
+			pLanguage->SetFlag(Current["flag"].empty() ? "default" : Current["flag"].get<std::string>().c_str());
+
 			if(str_comp(g_Config.m_SvDefaultLanguage, Current["file"].get<std::string>().c_str()) == 0)
 			{
 				m_pMainLanguage = (* m_vpLanguages.rbegin());
@@ -245,7 +257,7 @@ const char *CLocalization::LocalizeWithDepth(const char *pLanguageCode, const ch
 	const char *pResult = pLanguage->Localize(pText);
 	if(pResult)
 		return pResult;
-	else if(pLanguage->GetParentFilename()[0] && Depth < 4)
+	else if(pLanguage->GetParentFilename()[0] && str_comp(pLanguage->GetFilename(), pLanguage->GetParentFilename()) && Depth < 4)
 		return LocalizeWithDepth(pLanguage->GetParentFilename(), pText, Depth+1);
 	else
 		return pText;

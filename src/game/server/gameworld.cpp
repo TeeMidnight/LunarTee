@@ -20,6 +20,10 @@ CGameWorld::CGameWorld()
 	m_ResetRequested = false;
 	for(int i = 0; i < NUM_ENTTYPES; i++)
 		m_apFirstEntityTypes[i] = 0;
+	
+	m_Menu = false;
+	m_MenuPagesNum = 0;
+	m_MenuLanguages.clear();
 }
 
 CGameWorld::~CGameWorld()
@@ -294,6 +298,13 @@ void CGameWorld::InitSpawnPos()
 
 bool CGameWorld::GetSpawnPos(bool IsBot, vec2& SpawnPos)
 {
+	if(m_vSpawnPoints[IsBot].size() == 0)
+	{
+		SpawnPos.x = 0;
+		SpawnPos.y = 0;
+		return true;
+	}
+
 	for(int i = 0;i < (int) m_vSpawnPoints[IsBot].size(); i++)
 	{
 		SpawnPos = m_vSpawnPoints[IsBot][random_int(0, m_vSpawnPoints[IsBot].size()-1)];

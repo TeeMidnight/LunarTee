@@ -7,6 +7,7 @@
 #include <game/layers.h>
 #include <base/vmath.h>
 
+#include <map>
 #include <vector>
 
 class CEntity;
@@ -52,6 +53,12 @@ public:
 	void SetCollision(CCollision Collision) { m_Collision = Collision; }
 
 	bool m_ResetRequested;
+
+	int m_MenuPagesNum;
+	std::map<int, char[64]> m_MenuLanguages;
+
+	bool m_Menu;
+
 	CWorldCore m_Core;
 
 	CGameWorld();

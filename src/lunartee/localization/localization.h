@@ -22,6 +22,7 @@ public:
 		char m_aName[64];
 		char m_aFilename[64];
 		char m_aParentFilename[64];
+		char m_aFlag[16];
 		bool m_Loaded;
 		
 		std::map<CUuid, std::string> m_Translations;
@@ -30,10 +31,13 @@ public:
 		CLanguage();
 		CLanguage(const char *pName, const char *pFilename, const char *pParentFilename);
 		~CLanguage();
+
+		void SetFlag(const char *pFlag);
 		
 		inline const char *GetParentFilename() const { return m_aParentFilename; }
 		inline const char *GetFilename() const { return m_aFilename; }
 		inline const char *GetName() const { return m_aName; }
+		inline const char *GetFlag() const { return m_aFlag; }
 		inline bool IsLoaded() const { return m_Loaded; }
 
 		bool Load(CLocalization* pLocalization, class IStorage* pStorage, std::string FileStr, class CDatapack *pDatapack = nullptr);

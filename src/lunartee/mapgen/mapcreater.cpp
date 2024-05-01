@@ -16,19 +16,10 @@
 #include <base/color.h>
 #include <base/logger.h>
 
-#include <ft2build.h>
-#include <freetype/freetype.h>
-#include <freetype/ftglyph.h>
-#include <freetype/ftpfr.h>
-#include <freetype/ftadvanc.h>
-
 // sync for std::thread
 #include <mutex>
 
 #include "mapcreater.h"
-
-static FT_Library s_Library;
-static std::vector<FT_Face> s_vFontFaces;
 
 void FreePNG(CImageInfo *pImg)
 {
@@ -97,12 +88,14 @@ CMapCreater::CMapCreater(IStorage *pStorage, IConsole* pConsole) :
 	m_vGroups.clear();
     m_vpImages.clear();
 
-    FT_Error Error = FT_Init_FreeType(&s_Library);
+    FT_Error Error = FT_Init_FreeType(&m_Library);
     if(Error)
     {
         log_error("mapcreater", "failed to init freetype");
         return;
     }
+
+	FT_Stroker_New(m_Library, &m_FtStroker);
 
 	void *pBuf;
 	unsigned Length;
@@ -111,24 +104,26 @@ CMapCreater::CMapCreater(IStorage *pStorage, IConsole* pConsole) :
 
 	FT_Face FtFace;
 
-    FT_New_Memory_Face(s_Library, (FT_Bytes) pBuf, Length, 0, &FtFace);
+    FT_New_Memory_Face(m_Library, (FT_Bytes) pBuf, Length, 0, &FtFace);
 
-    s_vFontFaces.push_back(FtFace);
+    m_vFontFaces.push_back(FtFace);
 
 	if(!Storage()->ReadFile("fonts/SourceHanSans.ttc", IStorage::TYPE_ALL, &pBuf, &Length))
 		return;
 
-    FT_New_Memory_Face(s_Library, (FT_Bytes) pBuf, Length, 0, &FtFace);
+    FT_New_Memory_Face(m_Library, (FT_Bytes) pBuf, Length, 0, &FtFace);
 
 	int NumFaces = FtFace->num_faces;
+    FT_Done_Face(FtFace);
+
 	for(int i = 0; i < NumFaces; ++i)
 	{
-		if(FT_New_Memory_Face(s_Library, (FT_Bytes) pBuf, Length, i, &FtFace))
+		if(FT_New_Memory_Face(m_Library, (FT_Bytes) pBuf, Length, i, &FtFace))
 		{
 			FT_Done_Face(FtFace);
 			break;
 		}
-        s_vFontFaces.push_back(FtFace);
+        m_vFontFaces.push_back(FtFace);
 	}
 }
 
@@ -159,20 +154,38 @@ CMapCreater::~CMapCreater()
     }
     m_vGroups.clear();
 
-    for(auto Face : s_vFontFaces)
+    for(auto Face : m_vFontFaces)
+    {
         FT_Done_Face(Face);
+    }
 
-    FT_Done_FreeType(s_Library);
+	FT_Stroker_Done(m_FtStroker);
+    FT_Done_FreeType(m_Library);
 }
 
 static std::mutex s_ImageMutex;
-SImage *CMapCreater::AddEmbeddedImage(const char *pImageName, int Width, int Height)
+SImage *CMapCreater::AddEmbeddedImage(const char *pImageName, bool Flag)
 {
+    for(auto& pImage : m_vpImages)
+    {
+        if(str_comp(pImage->m_aName, pImageName) == 0)
+        {
+            return pImage;
+        }
+    }
+
 	CImageInfo img;
 	CImageInfo *pImg = &img;
 
 	char aBuf[IO_MAX_PATH_LENGTH];
-	str_format(aBuf, sizeof(aBuf), "mapres/%s.png", pImageName);
+    if(Flag)
+    {
+        str_format(aBuf, sizeof(aBuf), "flags/%s.png", pImageName);
+    }
+    else
+    {
+        str_format(aBuf, sizeof(aBuf), "mapres/%s.png", pImageName);
+    }
 
 	if(!LoadPNG(pImg, Storage(), aBuf))
     {
@@ -240,6 +253,14 @@ SImage *CMapCreater::AddExternalImage(const char *pImageName, int Width, int Hei
     pImage->m_ImageID = -1;
 
 	return pImage;
+}
+
+static std::mutex s_JsonMutex;
+void CMapCreater::SetJson(nlohmann::json Json)
+{
+    s_JsonMutex.lock();
+    m_Json = Json;
+    s_JsonMutex.unlock();
 }
 
 static std::mutex s_GroupMutex;
@@ -332,7 +353,7 @@ CTile *SLayerTilemap::AddTiles(int Width, int Height)
 }
 
 static std::mutex s_QuadMutex;
-SQuad *SLayerQuads::AddQuad(vec2 Pos, vec2 Size)
+SQuad *SLayerQuads::AddQuad(vec2 Pos, vec2 Size, ColorRGBA Color)
 {
     s_QuadMutex.lock();
 
@@ -355,11 +376,21 @@ SQuad *SLayerQuads::AddQuad(vec2 Pos, vec2 Size)
 	pQuad->m_aPoints[0].y = pQuad->m_aPoints[1].y = Y0;
 	pQuad->m_aPoints[2].y = pQuad->m_aPoints[3].y = Y1;
 
+    for(int i = 0; i < 4; i ++)
+    {
+        pQuad->m_aColors[i] = Color;
+    }
+
+	pQuad->m_aTexcoords[0].x = pQuad->m_aTexcoords[2].x = 0;
+	pQuad->m_aTexcoords[1].x = pQuad->m_aTexcoords[3].x = 1024;
+	pQuad->m_aTexcoords[0].y = pQuad->m_aTexcoords[1].y = 0;
+	pQuad->m_aTexcoords[2].y = pQuad->m_aTexcoords[3].y = 1024;
+
     return pQuad;
 }
 
 static std::mutex s_TextMutex;
-SText *SLayerText::AddText(const char* pText, int Size, ivec2 Pos)
+SText *SLayerText::AddText(const char* pText, int Size, ivec2 Pos, bool Outline, bool Center)
 {
     s_TextMutex.lock();
     m_vText.push_back(SText());
@@ -370,8 +401,273 @@ SText *SLayerText::AddText(const char* pText, int Size, ivec2 Pos)
     str_copy(pTextObj->m_aText, pText);
     pTextObj->m_Size = Size;
     pTextObj->m_Pos = Pos;
+    pTextObj->m_Outline = Outline;
+    pTextObj->m_Center = Center;
 
     return pTextObj;
+}
+
+static int AdjustOutlineThicknessToFontSize(int OutlineThickness, int FontSize)
+{
+	if(FontSize > 36)
+		OutlineThickness *= 4;
+	else if(FontSize >= 18)
+		OutlineThickness *= 2;
+	return OutlineThickness;
+}
+
+void CMapCreater::GenerateQuadsFromTextLayer(SLayerText *pText, std::vector<CQuad> *vpQuads)
+{
+    for(auto& Text : pText->m_vText)
+    {
+        int MaxHeight = 0;
+        int MaxWidth = 0;
+        
+        for(int Step = 0; Step < 2; Step ++) // 0 = get width, 1 = render
+        {
+            if(Step == 0 && !Text.m_Center)
+                continue;
+
+            ivec2 Beginning = Text.m_Pos;
+            ivec2 Pos = Beginning;
+
+            const char* pTextStr = Text.m_aText;
+            int Char;
+
+            while((Char = str_utf8_decode(&pTextStr)) > 0)
+            {
+                if(Char == '\0')
+                    break;
+
+                // find face
+                FT_Face Face;
+                FT_ULong GlyphIndex = 0;
+
+                for(auto FtFace : m_vFontFaces)
+                {
+                    FT_ULong FtChar = Char;
+                    if(FtChar == '\n')
+                        FtChar = ' ';
+                    GlyphIndex = FT_Get_Char_Index(FtFace, (FT_ULong) FtChar);
+                    if(GlyphIndex)
+                    {
+                        Face = FtFace;
+                        break;
+                    }
+                }
+                
+                FT_Set_Char_Size(Face, 0, Text.m_Size * 64, 0, 96);
+
+                // render
+                FT_BitmapGlyph Glyph;
+                FT_Load_Glyph(Face, GlyphIndex, FT_LOAD_NO_BITMAP);
+                FT_Get_Glyph(Face->glyph, (FT_Glyph *) &Glyph);
+                FT_Glyph_To_Bitmap((FT_Glyph *) &Glyph, FT_RENDER_MODE_NORMAL, 0, true);
+
+                FT_Bitmap *pBitmap;
+                pBitmap = &Glyph->bitmap;
+
+                int Width, Height, BitmapLeft, BitmapTop;
+                Width = pBitmap->width;
+                Height = pBitmap->rows;
+                BitmapLeft = Face->glyph->bitmap_left;
+                BitmapTop = Face->glyph->bitmap_top;
+
+                MaxHeight = maximum(MaxHeight, Height);
+
+                if(Char == '\n')
+                {
+                    Beginning.y += MaxHeight * 1.2f;
+                    Pos = Beginning;
+                    if(Step == 0)
+                    {
+                        MaxWidth = 0;
+                    }
+                    continue;
+                }
+
+                if(Step == 0)
+                {
+                    MaxWidth += Face->glyph->advance.x / 64;
+                    continue;
+                }
+
+                ivec2 StartPos = ivec2(Pos.x - MaxWidth / 2, Pos.y);
+
+                StartPos.x += BitmapLeft;
+                StartPos.y -= BitmapTop;
+
+                // create outline
+                if(!Text.m_Outline)
+                {
+                    for(int x = 0; x < Width; x ++)
+                    {
+                        for(int y = 0; y < Height; y ++)
+                        {
+                            unsigned char Alpha = pBitmap->buffer[y * Width + x];
+                            if(Alpha == 0)
+                                continue;
+
+                            ivec2 Pos = ivec2(StartPos.x + x, StartPos.y + y);
+                            CQuad Quad;
+
+                            for(int i = 0; i < 4; i ++)
+                            {
+                                Quad.m_aColors[i].r = 255;
+                                Quad.m_aColors[i].g = 255;
+                                Quad.m_aColors[i].b = 255;
+                                Quad.m_aColors[i].a = Alpha;
+
+                                Quad.m_aTexcoords[i].x = 0;
+                                Quad.m_aTexcoords[i].y = 0;
+                            }
+                            Quad.m_aPoints[0].x = f2fx(Pos.x);
+                            Quad.m_aPoints[0].y = f2fx(Pos.y);
+
+                            Quad.m_aPoints[1].x = f2fx(Pos.x + 1);
+                            Quad.m_aPoints[1].y = f2fx(Pos.y);
+
+                            Quad.m_aPoints[2].x = f2fx(Pos.x);
+                            Quad.m_aPoints[2].y = f2fx(Pos.y + 1);
+
+                            Quad.m_aPoints[3].x = f2fx(Pos.x + 1);
+                            Quad.m_aPoints[3].y = f2fx(Pos.y + 1);
+
+                            Quad.m_aPoints[4].x = f2fx(Pos.x);
+                            Quad.m_aPoints[4].y = f2fx(Pos.y);
+
+                            Quad.m_ColorEnv = -1;
+                            Quad.m_ColorEnvOffset = 0;
+
+                            Quad.m_PosEnv = -1;
+                            Quad.m_PosEnvOffset = 0;
+                            
+                            vpQuads->push_back(Quad);
+                        }
+                    }
+                    Pos.x += Face->glyph->advance.x / 64;
+                    Pos.y += Face->glyph->advance.y / 64;
+
+                    FT_Done_Glyph((FT_Glyph) Glyph);
+
+                    continue;
+                }
+                FT_BitmapGlyph OutlineGlyph;
+                int OutlineThickness = AdjustOutlineThicknessToFontSize(1, Text.m_Size);
+
+                FT_Stroker_Set(m_FtStroker, (OutlineThickness) * 64 + 64, FT_STROKER_LINECAP_ROUND, FT_STROKER_LINEJOIN_ROUND, 0);
+                FT_Get_Glyph(Face->glyph, (FT_Glyph *) &OutlineGlyph);
+                FT_Glyph_Stroke((FT_Glyph *) &OutlineGlyph, m_FtStroker, true);
+                FT_Glyph_To_Bitmap((FT_Glyph *) &OutlineGlyph, FT_RENDER_MODE_NORMAL, 0, true);
+
+                int OutlinedPositionX = Pos.x - MaxWidth / 2 + Face->glyph->bitmap_left - OutlineThickness;
+                int OutlinedPositionY = Pos.y - Face->glyph->bitmap_top - OutlineThickness;
+
+                Width = OutlineGlyph->bitmap.width;
+                Height = OutlineGlyph->bitmap.rows;
+
+                for(int x = 0; x < Width; x ++)
+                {
+                    for(int y = 0; y < Height; y ++)
+                    {
+                        int Alpha = (int) (OutlineGlyph->bitmap.buffer[y * Width + x]) * 3 / 10;
+                        if(Alpha == 0)
+                            continue;
+
+                        ivec2 Pos = ivec2(OutlinedPositionX + x, OutlinedPositionY + y);
+                        CQuad Quad;
+
+                        for(int i = 0; i < 4; i ++)
+                        {
+                            Quad.m_aColors[i].r = 0;
+                            Quad.m_aColors[i].g = 0;
+                            Quad.m_aColors[i].b = 0;
+                            Quad.m_aColors[i].a = Alpha;
+
+                            Quad.m_aTexcoords[i].x = 0;
+                            Quad.m_aTexcoords[i].y = 0;
+                        }
+                        Quad.m_aPoints[0].x = f2fx(Pos.x);
+                        Quad.m_aPoints[0].y = f2fx(Pos.y);
+
+                        Quad.m_aPoints[1].x = f2fx(Pos.x + 1);
+                        Quad.m_aPoints[1].y = f2fx(Pos.y);
+
+                        Quad.m_aPoints[2].x = f2fx(Pos.x);
+                        Quad.m_aPoints[2].y = f2fx(Pos.y + 1);
+
+                        Quad.m_aPoints[3].x = f2fx(Pos.x + 1);
+                        Quad.m_aPoints[3].y = f2fx(Pos.y + 1);
+
+                        Quad.m_aPoints[4].x = f2fx(Pos.x);
+                        Quad.m_aPoints[4].y = f2fx(Pos.y);
+
+                        Quad.m_ColorEnv = -1;
+                        Quad.m_ColorEnvOffset = 0;
+
+                        Quad.m_PosEnv = -1;
+                        Quad.m_PosEnvOffset = 0;
+                        
+                        vpQuads->push_back(Quad);
+                    }
+                }
+
+                Width = pBitmap->width;
+                Height = pBitmap->rows;
+                for(int x = 0; x < Width; x ++)
+                {
+                    for(int y = 0; y < Height; y ++)
+                    {
+                        unsigned char Alpha = pBitmap->buffer[y * Width + x];
+                        if(Alpha == 0)
+                            continue;
+
+                        ivec2 Pos = ivec2(StartPos.x + x, StartPos.y + y);
+                        CQuad Quad;
+
+                        for(int i = 0; i < 4; i ++)
+                        {
+                            Quad.m_aColors[i].r = 255;
+                            Quad.m_aColors[i].g = 255;
+                            Quad.m_aColors[i].b = 255;
+                            Quad.m_aColors[i].a = Alpha;
+
+                            Quad.m_aTexcoords[i].x = 0;
+                            Quad.m_aTexcoords[i].y = 0;
+                        }
+                        Quad.m_aPoints[0].x = f2fx(Pos.x);
+                        Quad.m_aPoints[0].y = f2fx(Pos.y);
+
+                        Quad.m_aPoints[1].x = f2fx(Pos.x + 1);
+                        Quad.m_aPoints[1].y = f2fx(Pos.y);
+
+                        Quad.m_aPoints[2].x = f2fx(Pos.x);
+                        Quad.m_aPoints[2].y = f2fx(Pos.y + 1);
+
+                        Quad.m_aPoints[3].x = f2fx(Pos.x + 1);
+                        Quad.m_aPoints[3].y = f2fx(Pos.y + 1);
+
+                        Quad.m_aPoints[4].x = f2fx(Pos.x);
+                        Quad.m_aPoints[4].y = f2fx(Pos.y);
+
+                        Quad.m_ColorEnv = -1;
+                        Quad.m_ColorEnvOffset = 0;
+
+                        Quad.m_PosEnv = -1;
+                        Quad.m_PosEnvOffset = 0;
+                        
+                        vpQuads->push_back(Quad);
+                    }
+                }
+                
+                Pos.x += Face->glyph->advance.x / 64;
+                Pos.y += Face->glyph->advance.y / 64;
+
+                FT_Done_Glyph((FT_Glyph) Glyph);
+                FT_Done_Glyph((FT_Glyph) OutlineGlyph);
+            }
+        }
+    }
 }
 
 static const char* GetMapByMapType(ELunarMapType MapType)
@@ -380,125 +676,9 @@ static const char* GetMapByMapType(ELunarMapType MapType)
     {
         case ELunarMapType::MAPTYPE_NORMAL: return "maps";
         case ELunarMapType::MAPTYPE_CHUNK: return "chunk";
+        case ELunarMapType::MAPTYPE_MENU: return "menu";
     }
     return "maps";
-}
-
-static void GenerateQuadsFromTextLayer(SLayerText *pText, std::vector<CQuad> *vpQuads)
-{
-    for(auto& Text : pText->m_vText)
-    {
-        ivec2 Beginning = Text.m_Pos;
-        ivec2 Pos = Beginning;
-
-        const char* pTextStr = Text.m_aText;
-
-        int MaxHeight = 0;
-        int Char;
-
-        while((Char = str_utf8_decode(&pTextStr)) > 0)
-        {
-            // find face
-            FT_Face Face;
-            FT_ULong GlyphIndex = 0;
-
-            for(auto FtFace : s_vFontFaces)
-            {
-                FT_ULong FtChar = Char;
-                if(FtChar == '\n')
-                    FtChar = ' ';
-                GlyphIndex = FT_Get_Char_Index(FtFace, (FT_ULong) FtChar);
-                if(GlyphIndex)
-                {
-                    Face = FtFace;
-                    break;
-                }
-            }
-            
-            FT_Set_Char_Size(Face, 0, Text.m_Size * 64, 0, 96);
-
-            // render
-		    FT_BitmapGlyph Glyph;
-            FT_Load_Glyph(Face, GlyphIndex, FT_LOAD_NO_BITMAP);
-            FT_Get_Glyph(Face->glyph, (FT_Glyph *) &Glyph);
-            FT_Glyph_To_Bitmap((FT_Glyph *) &Glyph, FT_RENDER_MODE_NORMAL, 0, true);
-
-            FT_Bitmap *pBitmap;
-            pBitmap = &Glyph->bitmap;
-
-            int Width, Height;
-            Width = pBitmap->width;
-            Height = pBitmap->rows;
-
-            MaxHeight = maximum(MaxHeight, Height);
-
-            if(Char == '\n')
-            {
-                Beginning.y += MaxHeight * 1.2f;
-                Pos = Beginning;
-                continue;
-            }
-
-            FT_BBox BBox;
-            FT_Glyph_Get_CBox((FT_Glyph) Glyph, FT_GLYPH_BBOX_TRUNCATE, &BBox);
-
-            ivec2 StartPos = Pos;
-
-            StartPos.x += Face->glyph->bitmap_left;
-            StartPos.y -= Face->glyph->bitmap_top;
-
-            for(int x = 0; x < Width; x ++)
-            {
-                for(int y = 0; y < Height; y ++)
-                {
-                    unsigned char Alpha = pBitmap->buffer[y * Width + x];
-                    if(Alpha == 0)
-                        continue;
-
-                    ivec2 Pos = ivec2(StartPos.x + x, StartPos.y + y);
-                    CQuad Quad;
-
-                    for(int i = 0; i < 4; i ++)
-                    {
-                        Quad.m_aColors[i].r = 255;
-                        Quad.m_aColors[i].g = 255;
-                        Quad.m_aColors[i].b = 255;
-                        Quad.m_aColors[i].a = Alpha;
-
-                        Quad.m_aTexcoords[i].x = 0;
-                        Quad.m_aTexcoords[i].y = 0;
-                    }
-                    Quad.m_aPoints[0].x = f2fx(Pos.x);
-                    Quad.m_aPoints[0].y = f2fx(Pos.y);
-
-                    Quad.m_aPoints[1].x = f2fx(Pos.x + 1);
-                    Quad.m_aPoints[1].y = f2fx(Pos.y);
-
-                    Quad.m_aPoints[2].x = f2fx(Pos.x);
-                    Quad.m_aPoints[2].y = f2fx(Pos.y + 1);
-
-                    Quad.m_aPoints[3].x = f2fx(Pos.x + 1);
-                    Quad.m_aPoints[3].y = f2fx(Pos.y + 1);
-
-                    Quad.m_aPoints[4].x = f2fx(Pos.x);
-                    Quad.m_aPoints[4].y = f2fx(Pos.y);
-
-                    Quad.m_ColorEnv = -1;
-                    Quad.m_ColorEnvOffset = 0;
-
-                    Quad.m_PosEnv = -1;
-                    Quad.m_PosEnvOffset = 0;
-                    
-                    vpQuads->push_back(Quad);
-                }
-            }
-
-            Pos.x += Face->glyph->advance.x / 64;
-            Pos.y += Face->glyph->advance.y / 64;
-
-            FT_Done_Glyph((FT_Glyph) Glyph);
-        }
-    }
 }
 
 bool CMapCreater::SaveMap(ELunarMapType MapType, const char* pMap)
@@ -691,6 +871,16 @@ bool CMapCreater::SaveMap(ELunarMapType MapType, const char* pMap)
                 DataFile.AddItem(MAPITEMTYPE_LAYER, NumLayers++, sizeof(CMapItemLayerQuads), &Item);
             }
         }
+    }
+
+    if(!m_Json.empty())
+    {
+        CMapItemJson Item;
+
+        Item.m_Data = DataFile.AddData(m_Json.dump().size(), (void *) m_Json.dump().c_str());
+        Item.m_Size = m_Json.dump().size();
+                    
+        DataFile.AddItem(MAPITEMTYPE_JSON, 0, sizeof(CMapItemJson), &Item);
     }
 
 	DataFile.Finish();

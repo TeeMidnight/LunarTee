@@ -19,6 +19,7 @@ CPlayer::CPlayer(CGameWorld *pGameWorld, int ClientID, int Team, SBotData *pBotD
 	m_pBotData = pBotData;
 
 	m_UserID = 0;
+	m_FirstJoin = true;
 
 	Reset();
 }
@@ -67,10 +68,11 @@ void CPlayer::Reset()
 
 	m_PrevTuningParams = GameWorld()->m_Core.m_Tuning;
 	m_NextTuningParams = m_PrevTuningParams;
+
+	m_ViewPos = vec2(0, 0);
 	
 	if(!IsBot())
 	{
-		SetLanguage(Server()->GetClientLanguage(m_ClientID));
 		Server()->ClearIdMap(m_ClientID);
 	}
 	
@@ -134,7 +136,6 @@ void CPlayer::Tick()
 		if(!Server()->ClientIngame(m_ClientID))
 			return;
 		Server()->SetClientScore(m_ClientID, m_Score);
-		Server()->SetClientLanguage(m_ClientID, m_aLanguage);
 
 		// do latency stuff
 		IServer::CClientInfo Info;
@@ -154,6 +155,9 @@ void CPlayer::Tick()
 			m_Latency.m_AccumMin = 1000;
 			m_Latency.m_AccumMax = 0;
 		}
+
+		if(!m_pCharacter && Server()->IsInMenu(m_ClientID))
+			TryRespawn();
 	}
 
 	if(!m_pCharacter && m_DieTick+Server()->TickSpeed()*3 <= Server()->Tick())
@@ -172,7 +176,15 @@ void CPlayer::Tick()
 		}
 	}
 	else if(m_Spawning && m_RespawnTick <= Server()->Tick() && m_Team != TEAM_SPECTATORS)
+	{
+		if(IsBot())
+		{
+			GameServer()->OnBotDead(m_ClientID);
+			return;
+		}
+
 		TryRespawn();
+	}
 
 	HandleTuningParams();
 }
@@ -213,6 +225,9 @@ static int PlayerFlags_SixToSeven(int Flags)
 
 void CPlayer::Snap(int SnappingClient)
 {
+	if(Server()->IsInMenu(SnappingClient) && SnappingClient != m_ClientID)
+		return;
+
 	int id = m_ClientID;
 	if(!Server()->Translate(id, SnappingClient))
 		return;
@@ -310,6 +325,9 @@ void CPlayer::Snap(int SnappingClient)
 
 void CPlayer::SnapBot(int SnappingClient)
 {
+	if(Server()->IsInMenu(SnappingClient))
+		return;
+
 	int id = m_ClientID;
 	if(!Server()->Translate(id, SnappingClient))
 		return;
@@ -318,7 +336,7 @@ void CPlayer::SnapBot(int SnappingClient)
 	if(!pClientInfo)
 		return;
 
-	const char *pLanguage = GameServer()->m_apPlayers[SnappingClient] ? GameServer()->m_apPlayers[SnappingClient]->m_aLanguage : "en";
+	const char *pLanguage = GameServer()->m_apPlayers[SnappingClient] ? GameServer()->m_apPlayers[SnappingClient]->GetLanguage() : "en";
 	const char* pClan = Server()->ClientClan(m_ClientID);
 
 	if(m_pCharacter)
@@ -528,12 +546,12 @@ void CPlayer::TryRespawn()
 
 const char *CPlayer::GetLanguage()
 {
-	return m_aLanguage;
+	return Server()->GetClientLanguage(m_ClientID);
 }
 
 void CPlayer::SetLanguage(const char *pLanguage)
 {
-	str_copy(m_aLanguage, pLanguage, sizeof(m_aLanguage));
+	Server()->SetClientLanguage(m_ClientID, pLanguage);
 }
 
 void CPlayer::SetEmote(int Emote)

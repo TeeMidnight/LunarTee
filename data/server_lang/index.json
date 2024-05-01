@@ -1,11 +1,14 @@
 [	
 	{
 		"file": "en",
-		"name": "English"
+		"name": "English",
+		"parent": "en",
+		"flag": "GB"
 	},
 	{
 		"file": "zh-CN",
 		"name": "简体中文",
-		"parent": "en"
+		"parent": "en",
+		"flag": "CN"
 	}
 ]

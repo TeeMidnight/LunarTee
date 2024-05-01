@@ -10,6 +10,8 @@
 #include <engine/external/perlin-noise/PerlinNoise.hpp>
 #include <engine/gfx/image_loader.h>
 
+#include <lunartee/localization/localization.h>
+
 #include <base/color.h>
 #include <base/logger.h>
 
@@ -52,7 +54,7 @@ void CMapGen::GenerateGameLayer()
 	SGroupInfo *pGroup = m_pMapCreater->AddGroup("Backtiles");
 	SLayerTilemap *pLayer = pGroup->AddTileLayer("Moon");
 
-	pLayer->m_pImage = m_pSpaceImage = m_pMapCreater->AddEmbeddedImage("spacetiles", 1024, 1024);
+	pLayer->m_pImage = m_pSpaceImage = m_pMapCreater->AddEmbeddedImage("spacetiles");
 	// grey
 	pLayer->m_Color = ColorRGBA(200, 200, 200, 255);
 
@@ -217,7 +219,7 @@ void CMapGen::GenerateDoodadsLayer()
 
 	SLayerTilemap *pLayer = m_pMainGroup->AddTileLayer("Doodads");
 
-	pLayer->m_pImage = m_pMapCreater->AddEmbeddedImage("moon_doodads", 1024, 1024);
+	pLayer->m_pImage = m_pMapCreater->AddEmbeddedImage("moon_doodads");
 
 	m_pDoodadsTiles = pLayer->AddTiles(Width, Height);
 	for(int x = 0;x < Width;x ++)
@@ -308,7 +310,7 @@ void CMapGen::GenerateHookable(CMapGen *pParent)
 	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
 	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
 	SLayerTilemap *pLayer = pParent->m_pMainGroup->AddTileLayer("Hookable");
-	pLayer->m_pImage = pParent->m_pMapCreater->AddEmbeddedImage("grass_main_moon", 1024, 1024);
+	pLayer->m_pImage = pParent->m_pMapCreater->AddEmbeddedImage("grass_main_moon");
 
 	pParent->m_pHookableTiles = pLayer->AddTiles(Width, Height);
 
@@ -471,4 +473,82 @@ bool CMapGen::CreateMap(const char *pFilename)
 	GenerateMap();
 
 	return m_pMapCreater->SaveMap(ELunarMapType::MAPTYPE_CHUNK, pFilename);
+}
+
+bool CMapGen::CreateMenu(const char *pFilename)
+{
+	m_pMapCreater = new CMapCreater(Storage(), Console());
+	
+	// game layer
+	{
+		SGroupInfo *pGroup = m_pMapCreater->AddGroup("Game");
+		SLayerTilemap *pLayer = pGroup->AddTileLayer("Game");
+		CTile *pTiles = pLayer->AddTiles(1, 1);
+		pLayer->m_Flags = TILESLAYERFLAG_GAME;
+
+		pTiles[0].m_Flags = 0;
+		pTiles[0].m_Index = 0;
+		pTiles[0].m_Reserved = 0;
+		pTiles[0].m_Skip = 0;
+	}
+	{
+		SGroupInfo *pGroup = m_pMapCreater->AddGroup("Background");
+		pGroup->m_ParallaxX = 0;
+		pGroup->m_ParallaxY = 0;
+
+		SLayerQuads *pQuadLayer = pGroup->AddQuadsLayer("Quad");
+
+		{
+			SQuad *pQuad = pQuadLayer->AddQuad(vec2(0, 0), vec2(1600, 1200));
+			pQuad->m_aColors[0].r = pQuad->m_aColors[1].r = 94;
+			pQuad->m_aColors[0].g = pQuad->m_aColors[1].g = 132;
+			pQuad->m_aColors[0].b = pQuad->m_aColors[1].b = 174;
+			pQuad->m_aColors[2].r = pQuad->m_aColors[3].r = 204;
+			pQuad->m_aColors[2].g = pQuad->m_aColors[3].g = 232;
+			pQuad->m_aColors[2].b = pQuad->m_aColors[3].b = 255;
+		}
+	}
+	// options
+	{
+		SGroupInfo *pGroup = m_pMapCreater->AddGroup("Options");
+		SLayerQuads *pQuadLayer = pGroup->AddQuadsLayer("Quad");
+		SLayerQuads *pArrowLayer = pGroup->AddQuadsLayer("Arrow");
+		SLayerText *pTextLayer = pGroup->AddTextLayer("Text");
+
+		pArrowLayer->m_pImage = m_pMapCreater->AddEmbeddedImage("arrow");
+
+		int PageIndex;
+		PageIndex = 0;
+
+		pQuadLayer->AddQuad(vec2(PageIndex * 960.0f, 0), vec2(480, 480), ColorRGBA(0, 0, 0, 25));
+		pArrowLayer->AddQuad(vec2(PageIndex * 960.0f + 360.0f, 0), vec2(48, 50), ColorRGBA(255, 255, 255, 255));
+		pTextLayer->AddText("LunarTee", 48.0f, ivec2(PageIndex * 960.0f, 0), true, true);
+		
+		PageIndex ++;
+
+		nlohmann::json Json({{"Type", "Menu"}});
+
+		for(auto &pLanguage : Server()->Localization()->m_vpLanguages)
+        {
+			// menu
+			pQuadLayer->AddQuad(vec2(PageIndex * 960.0f, 0), vec2(480, 480), ColorRGBA(0, 0, 0, 25));
+			// pQuadLayer->AddQuad(vec2(PageIndex * 960.0f, 0), vec2(384, 356.0f), ColorRGBA(0, 0, 0, 55));
+			
+			{
+				SLayerQuads *pLayer = pGroup->AddQuadsLayer(pLanguage->GetFilename());
+				pLayer->m_pImage = m_pMapCreater->AddEmbeddedImage(pLanguage->GetFlag(), true);
+
+				pLayer->AddQuad(vec2(PageIndex * 960.0f, -128.0f), vec2(256, 128));
+			}
+			{
+				pTextLayer->AddText(pLanguage->GetName(), 48.0f, ivec2(PageIndex * 960.0f, 24.0f), true, true);
+			}
+			Json.push_back({std::to_string(PageIndex), pLanguage->GetFilename()});
+			PageIndex ++;
+		}
+		Json.push_back({"PagesNum", PageIndex});
+		m_pMapCreater->SetJson(Json);
+	}
+
+	return m_pMapCreater->SaveMap(ELunarMapType::MAPTYPE_MENU, pFilename);
 }

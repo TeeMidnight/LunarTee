@@ -107,7 +107,7 @@ public:
 	~CGameContext();
 
 	void Clear();
-	CGameWorld *CreateNewWorld(IMap *pMap, const char *WorldName);
+	CGameWorld *CreateNewWorld(IMap *pMap, const char *WorldName, bool Menu);
 
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
@@ -183,7 +183,6 @@ public:
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendBroadcast(const char *pText, int ClientID);
 	void SendBroadcast_Localization(const char *pText, int ClientID, ...);
-	void SetClientLanguage(int ClientID, const char *pLanguage);
 
 	const char *Localize(const char *pLanguageCode, const char *pText) const;
 	std::string Localize(const char *pLanguageCode, CUuid Uuid) const;
@@ -210,7 +209,7 @@ public:
 	void *PreProcessMsg(int *pMsgID, CUnpacker *pUnpacker, int ClientID);
 	void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) override;
 
-	void OnClientConnected(int ClientID, const char *WorldName) override;
+	void OnClientConnected(int ClientID, const char *WorldName, bool Menu) override;
 	void OnClientEnter(int ClientID) override;
 	void OnClientDrop(int ClientID, const char *pReason) override;
 	void OnClientDirectInput(int ClientID, void *pInput) override;
@@ -239,6 +238,8 @@ public:
 	//Bot Start
 	int m_FirstFreeBotID;
 
+	std::vector<int> m_vDeadBots;
+
 	CPlayer *GetBotWithCID(int ClientID);
 	int GetBotNum(CGameWorld *pGameWorld) const;
 	int GetBotNum() const;
@@ -259,6 +260,9 @@ public:
 	void Register(const char* pUsername, const char* pPassHash, int ClientID);
 	void Login(const char* pUsername, const char* pPassHash, int ClientID);
 	void UpdatePlayerData(int ClientID);
+
+	void OnPlayerMenuOption(CGameWorld *pWorld, int ClientID, int Page);
+	void OnPlayerChooseLanguage(int ClientID);
 };
 
 #endif

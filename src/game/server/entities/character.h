@@ -45,6 +45,7 @@ public:
 	void HandleEvents();
 	void HandleInput();
 	void HandleStats();
+	void HandleMenu();
 
 	void SyncWeapon();
 	void SyncHealth();

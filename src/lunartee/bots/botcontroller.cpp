@@ -113,6 +113,9 @@ void CBotController::OnCreateBot()
     
 	for(auto& pWorld : GameServer()->m_pWorlds)
 	{
+        if(pWorld.second->m_Menu)
+            continue;
+
 		int NeedSpawn = pWorld.second->Collision()->GetWidth()/16;
 		int BotNum = GameServer()->GetBotNum(pWorld.second);
 		while(BotNum < NeedSpawn)

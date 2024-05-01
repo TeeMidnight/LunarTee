@@ -160,6 +160,7 @@ public:
 		CMapData *m_pMapData;
 
 		bool m_Sixup;
+		bool m_InMenu;
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
@@ -188,6 +189,7 @@ public:
 	CDemoRecorder m_DemoRecorder;
 
 	std::map<CUuid, CMapData> m_MapDatas;
+	CMapData *m_pMenuMapData;
 	CMapData *m_pMainMapData;
 
 	bool m_Active;
@@ -333,6 +335,10 @@ public:
 	void CreateNewTheardJob(std::shared_ptr<IJob> pJob) override;
 
 	bool IsSixup(int ClientID) const override { return ClientID != -1 && m_aClients[ClientID].m_Sixup; }
+	bool IsInMenu(int ClientID) const override { return m_aClients[ClientID].m_InMenu; }
+
+	const char *GetMainMap() override;
+	const char *GetMenuMap() override;
 };
 
 #endif

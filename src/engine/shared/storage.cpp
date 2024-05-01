@@ -68,6 +68,7 @@ public:
 			fs_makedir(GetPath(TYPE_SAVE, "downloads", aPath, sizeof(aPath)));
 			fs_makedir(GetPath(TYPE_SAVE, "datapacks", aPath, sizeof(aPath)));
 			fs_makedir(GetPath(TYPE_SAVE, "chunk", aPath, sizeof(aPath)));
+			fs_makedir(GetPath(TYPE_SAVE, "menu", aPath, sizeof(aPath)));
 		}
 
 		return m_NumPaths ? 0 : 1;

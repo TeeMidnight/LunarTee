@@ -294,12 +294,12 @@ void CServer::CClient::Reset()
 	m_SnapRate = CClient::SNAPRATE_INIT;
 	m_Score = 0;
 	m_NextMapChunk = 0;
-	
-	// str_copy(m_aLanguage, g_Config.m_SvDefaultLanguage, sizeof(m_aLanguage));
 }
 
 const char *CServer::GetClientLanguage(int ClientID)
 {
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS)
+		return "en";
 	return m_aClients[ClientID].m_aLanguage;
 }
 
@@ -332,6 +332,7 @@ CServer::CServer() : m_DemoRecorder(&m_SnapshotDelta)
 	m_Active = false;
 
 	m_pMainMapData = nullptr;
+	m_pMenuMapData = nullptr;
 
 	Init();
 }
@@ -468,6 +469,8 @@ int CServer::Init()
 		m_aClients[i].m_Country = -1;
 		m_aClients[i].m_Snapshots.Init();
 		m_aClients[i].m_Sixup = false;
+		m_aClients[i].m_InMenu = false;
+		str_copy(m_aClients[i].m_aLanguage, g_Config.m_SvDefaultLanguage);
 	}
 
 	m_CurrentGameTick = 0;
@@ -900,7 +903,8 @@ int CServer::NewClientNoAuthCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
 	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_pMapData = pThis->m_pMainMapData;
+	pThis->m_aClients[ClientID].m_pMapData = pThis->m_pMenuMapData ? pThis->m_pMenuMapData : pThis->m_pMainMapData;
+	pThis->m_aClients[ClientID].m_InMenu = pThis->m_pMenuMapData;
 
 	memset(&pThis->m_aClients[ClientID].m_Addr, 0, sizeof(NETADDR));
 	pThis->m_aClients[ClientID].Reset();
@@ -925,11 +929,13 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
 	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_pMapData = pThis->m_pMainMapData;
+	pThis->m_aClients[ClientID].m_pMapData = pThis->m_pMenuMapData ? pThis->m_pMenuMapData : pThis->m_pMainMapData;
 	
 	pThis->m_aClients[ClientID].Reset();
 
 	pThis->m_aClients[ClientID].m_Sixup = Sixup;
+	pThis->m_aClients[ClientID].m_InMenu = pThis->m_pMenuMapData;
+
 	return 0;
 }
 
@@ -955,9 +961,10 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_pMapData = pThis->m_pMainMapData;
+	pThis->m_aClients[ClientID].m_pMapData = nullptr;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
 	pThis->m_aClients[ClientID].m_Sixup = false;
+	pThis->m_aClients[ClientID].m_InMenu = false;
 
 	return 0;
 }
@@ -1260,7 +1267,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 
 				m_aClients[ClientID].m_State = CClient::STATE_READY;
-				GameServer()->OnClientConnected(ClientID, m_aClients[ClientID].m_pMapData->m_aCurrentMap);
+				GameServer()->OnClientConnected(ClientID, m_aClients[ClientID].m_pMapData->m_aCurrentMap, m_aClients[ClientID].m_InMenu);
 			}
 			SendConnectionReady(ClientID);
 		}
@@ -1587,7 +1594,8 @@ void CServer::CacheServerInfoSixup(CCache *pCache, bool SendClients)
 	Packer.AddString(aVersion, 32);
 	Packer.AddString(g_Config.m_SvName, 64);
 	Packer.AddString(g_Config.m_SvHostname, 128);
-	Packer.AddString(m_pMainMapData->m_aCurrentMap, 32);
+	// map
+	Packer.AddString(GameServer()->GameType(), 32);
 
 	// gametype
 	Packer.AddString(GameServer()->GameType(), 16);
@@ -1674,7 +1682,8 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 			p.AddString(aBuf, 64);
 		}
 	}
-	p.AddString(m_pMainMapData->m_aCurrentMap, 32);
+	// map name
+	p.AddString(GameServer()->GameType(), 32);
 
 	if(Type == SERVERINFO_EXTENDED)
 	{
@@ -1986,7 +1995,6 @@ void CServer::UpdateRegisterServerInfo()
 	int MaxClients = maximum(m_NetServer.MaxClients(), ClientCount);
 	char aName[256];
 	char aGameType[32];
-	char aMapName[64];
 	char aVersion[64];
 	char aMapSha256[SHA256_MAXSTRSIZE];
 
@@ -2013,7 +2021,7 @@ void CServer::UpdateRegisterServerInfo()
 		JsonBool(g_Config.m_Password[0]),
 		EscapeJson(aGameType, sizeof(aGameType), GameServer()->GameType()),
 		EscapeJson(aName, sizeof(aName), g_Config.m_SvName),
-		EscapeJson(aMapName, sizeof(aMapName), m_pMainMapData->m_aCurrentMap),
+		EscapeJson(aGameType, sizeof(aGameType), GameServer()->GameType()),
 		aMapSha256,
 		m_pMainMapData->m_CurrentMapSize,
 		EscapeJson(aVersion, sizeof(aVersion), GameServer()->Version()));
@@ -2221,11 +2229,17 @@ int CServer::LoadMap(const char *pMapName)
 
 	MapData.m_pMap = CreateEngineMap();
 
+	bool Menu = false;
 	if(!MapData.m_pMap->Load(aBuf, Storage()))
 	{
 		str_format(aBuf, sizeof(aBuf), "chunk/%s.map", pMapName);
 		if(!MapData.m_pMap->Load(aBuf, Storage()))
-			return 0;
+		{
+			str_format(aBuf, sizeof(aBuf), "menu/%s.map", pMapName); // this is menu
+			if(!MapData.m_pMap->Load(aBuf, Storage()))
+				return 0;
+			Menu = true;
+		}
 	}
 
 	str_copy(MapData.m_aCurrentMap, pMapName, sizeof(MapData.m_aCurrentMap));
@@ -2245,7 +2259,10 @@ int CServer::LoadMap(const char *pMapName)
 	}
 
 	m_MapDatas[Uuid] = MapData;
-	if(m_MapDatas.size() == 1)
+
+	if(Menu && !m_pMenuMapData)
+		m_pMenuMapData = &m_MapDatas[Uuid];
+	else if(!m_pMainMapData)
 		m_pMainMapData = &m_MapDatas[Uuid];
 
 	return 1;
@@ -2302,6 +2319,13 @@ int CServer::Run()
 	m_PrintCBIndex = Console()->RegisterPrintCallback(g_Config.m_ConsoleOutputLevel, SendRconLineAuthed, this);
 	
 	m_MainMapLoaded = false;
+
+	CMapGen MapGen(Storage(), Console(), this);
+	
+	if(!MapGen.CreateMenu("menu"))
+		return 0;
+
+	LoadMap("menu");
 
 	// load map
 	CreateMapThread("moon");
@@ -2895,6 +2919,8 @@ void CServer::ChangeClientMap(int ClientID, CUuid *pMapID)
 		return;
 
 	m_aClients[ClientID].m_pMapData = &m_MapDatas[*pMapID];
+
+	m_aClients[ClientID].m_InMenu = m_aClients[ClientID].m_pMapData == m_pMenuMapData;
 	
 	SendMap(ClientID);
 	m_aClients[ClientID].Reset();
@@ -2915,4 +2941,14 @@ void CServer::CreateNewTheardJob(std::shared_ptr<IJob> pJob)
 {
 	IEngine *pEngine = Kernel()->RequestInterface<IEngine>();
 	pEngine->AddJob(pJob);
+}
+
+const char *CServer::GetMainMap()
+{
+	return m_pMainMapData->m_aCurrentMap;
+}
+
+const char *CServer::GetMenuMap()
+{
+	return m_pMenuMapData->m_aCurrentMap;
 }

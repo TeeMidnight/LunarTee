@@ -95,6 +95,7 @@ public:
 	int m_Authed;
 
 	bool m_LoadingMap;
+	bool m_FirstJoin;
 
 private:
 	CCharacter *m_pCharacter;
@@ -110,7 +111,6 @@ private:
 
 	int m_Team;
 
-	char m_aLanguage[16];
 	int m_Emote;
 
 	int m_UserID;
