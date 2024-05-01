@@ -69,10 +69,7 @@ void CCraftCore::CraftItem(CUuid Uuid, int ClientID)
 		return;
 	}
 
-	GameServer()->SendChatTarget_Localization(ClientID, _("Making {UUID}..."), Uuid);
-
 	ReturnItem(pItemInfo, ClientID);
-	
 }
 
 void CCraftCore::ReturnItem(class CItemData *Item, int ClientID)

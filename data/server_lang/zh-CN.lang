@@ -75,14 +75,11 @@ LunarTee translation
 = Main Menu
 ## 主菜单
 
-= Make finish, you get {LSTR}
-## 制造完成, 你得到了 {LSTR}
+= Make finish, you get {UUID}
+## 制造完成, 你得到了{UUID}
 
-= Make finish, you get {LSTR} x{INT}
-## 制造完成, 你得到了 {LSTR} x{INT}
-
-= Making {LSTR}...
-## 制造 {LSTR} 中...
+= Make finish, you get {UUID} x{INT}
+## 制造完成, 你得到了{UUID}x{INT}
 
 = No player with name '{STR}' found
 ## 没有找到玩家'{STR}'
@@ -180,14 +177,14 @@ LunarTee translation
 = You don't have enough resources
 ## 你没有足够的资源
 
-= You got {LSTR} x{INT}
-## 你得到了 {LSTR} x{INT}
+= You got {UUID} x{INT}
+## 你得到了{UUID}x{INT}
 
-= You had {LSTR}
-## 你已经拥有 {LSTR}
+= You had {UUID}
+## 你已经拥有{UUID}
 
-= You lost {LSTR} x{INT}
-## 你失去了 {LSTR} x{INT}
+= You lost {UUID} x{INT}
+## 你失去了{UUID}x{INT}
 
 = You must wait {INT} seconds before making another vote
 ## 你必须等待{INT}秒才能发起投票
@@ -216,9 +213,9 @@ LunarTee translation
 = spectators
 ## 旁观者
 
-= {LSTR}'s Shop
-## {LSTR}的商店
-
 = {STR} by {STR}
 ## {STR} by {STR}
+
+= {UUID}'s Shop
+## 
 

@@ -864,6 +864,11 @@ void CGameContext::OnClientEnter(int ClientID)
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientID);
 	}
 
+	if(!m_apPlayers[ClientID]->IsLogin())
+	{
+		m_apPlayers[ClientID]->SetTeam(-1, false);
+	}
+
 	if(m_apPlayers[ClientID]->GameWorld() == m_pMainWorld && m_apPlayers[ClientID]->m_FirstJoin)
 	{
 		SendChatTarget_Localization(-1, _("'{STR}' entered the server"), Server()->ClientName(ClientID));

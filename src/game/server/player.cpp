@@ -399,7 +399,7 @@ void CPlayer::OnDisconnect(const char *pReason)
 {
 	KillCharacter();
 
-	if(Server()->ClientIngame(m_ClientID))
+	if(Server()->ClientIngame(m_ClientID) && !m_FirstJoin)
 	{
 		GameServer()->SendChatTarget_Localization(-1, _("'{STR}' left the server"), Server()->ClientName(m_ClientID));
 		char aBuf[512];
