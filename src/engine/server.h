@@ -76,12 +76,25 @@ public:
 		if(ClientID == -1)
 		{
 			for(int i = 0; i < MaxClients(); i++)
-				if(ClientIngame(i) && !IsInMenu(i))
+			{
+				if(!ClientIngame(i))
+					continue;
+
+				bool NoSend = IsInMenu(i);
+				if(IsSixup(i) && (T::ms_MsgID == protocol7::NETMSGTYPE_SV_GAMEMSG || T::ms_MsgID == protocol7::NETMSGTYPE_SV_CLIENTINFO))
+					NoSend = false;
+
+				if(!NoSend)
 					Result = SendPackMsgTranslate(pMsg, Flags, i);
+			}
 		}
 		else
 		{
-			if(!IsInMenu(ClientID))
+			bool NoSend = IsInMenu(ClientID);
+			if(IsSixup(ClientID) && (T::ms_MsgID == protocol7::NETMSGTYPE_SV_GAMEMSG || T::ms_MsgID == protocol7::NETMSGTYPE_SV_CLIENTINFO))
+				NoSend = false;
+
+			if(!NoSend)
 				Result = SendPackMsgTranslate(pMsg, Flags, ClientID);
 		}
 		return Result;

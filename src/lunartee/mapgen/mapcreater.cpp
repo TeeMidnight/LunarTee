@@ -722,12 +722,14 @@ bool CMapCreater::SaveMap(ELunarMapType MapType, const char* pMap)
     for(auto& pImage : m_vpImages)
     {
         CMapItemImage Item;
-        Item.m_Version = 0;
+        Item.m_Version = CMapItemImage::CURRENT_VERSION;
 
         Item.m_External = pImage->m_External;
         Item.m_Width = pImage->m_Width;
         Item.m_Height = pImage->m_Height;
         Item.m_ImageName = DataFile.AddData(str_length(pImage->m_aName)+1, pImage->m_aName);
+
+        Item.m_Format = CImageInfo::FORMAT_RGBA;
 
         if(pImage->m_pImageData)
         {
