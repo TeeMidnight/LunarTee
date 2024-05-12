@@ -117,7 +117,7 @@ void CMenu::PreviousPage(int ClientID)
 
 void CMenu::UpdateMenu(int ClientID, std::vector<CMenuOption> Options, const char* PageName)
 {
-    if(!GameServer()->m_apPlayers[ClientID])
+    if(!GameServer()->m_apPlayers.count(ClientID))
         return;
 
     if(m_avPlayerMenu[ClientID].first == Options)
@@ -163,7 +163,7 @@ void CMenu::UpdateMenu(int ClientID, std::vector<CMenuOption> Options, const cha
 
 bool CMenu::UseOptions(const char *pDesc, const char *pReason, int ClientID)
 {
-    if(!GameServer()->m_apPlayers[ClientID])
+    if(!GameServer()->m_apPlayers.count(ClientID))
         return false;
     
     auto pOption = FindOption(pDesc, ClientID);

@@ -101,15 +101,12 @@ void CGameController::CycleMap()
 
 void CGameController::PostReset()
 {
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(auto& pPlayer : GameServer()->m_apPlayers)
 	{
-		if(GameServer()->m_apPlayers[i])
-		{
-			GameServer()->m_apPlayers[i]->Respawn();
-			GameServer()->m_apPlayers[i]->m_Score = 0;
-			GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
-			GameServer()->m_apPlayers[i]->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
-		}
+		pPlayer.second->Respawn();
+		pPlayer.second->m_Score = 0;
+		pPlayer.second->m_ScoreStartTick = Server()->Tick();
+		pPlayer.second->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
 	}
 }
 
@@ -209,37 +206,24 @@ void CGameController::Tick()
 	// check for inactive players
 	if(g_Config.m_SvInactiveKickTime > 0)
 	{
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(auto& pPlayer : GameServer()->m_apPlayers)
 		{
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsAuthed(i))
+			if(pPlayer.second->GetTeam() != TEAM_SPECTATORS && !Server()->IsAuthed(pPlayer.first))
 			{
-				if(Server()->Tick() > GameServer()->m_apPlayers[i]->m_LastActionTick+g_Config.m_SvInactiveKickTime*Server()->TickSpeed()*60)
+				if(Server()->Tick() > pPlayer.second->m_LastActionTick+g_Config.m_SvInactiveKickTime*Server()->TickSpeed()*60)
 				{
 					switch(g_Config.m_SvInactiveKick)
 					{
 					case 0:
 						{
 							// move player to spectator
-							GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
+							pPlayer.second->SetTeam(TEAM_SPECTATORS);
 						}
 						break;
 					case 1:
 						{
-							// move player to spectator if the reserved slots aren't filled yet, kick him otherwise
-							int Spectators = 0;
-							for(int j = 0; j < MAX_CLIENTS; ++j)
-								if(GameServer()->m_apPlayers[j] && GameServer()->m_apPlayers[j]->GetTeam() == TEAM_SPECTATORS)
-									++Spectators;
-							if(Spectators >= g_Config.m_SvSpectatorSlots)
-								Server()->Kick(i, "Kicked for inactivity");
-							else
-								GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
-						}
-						break;
-					case 2:
-						{
 							// kick the player
-							Server()->Kick(i, "Kicked for inactivity");
+							Server()->Kick(pPlayer.first, "Kicked for inactivity");
 						}
 					}
 				}
@@ -304,20 +288,7 @@ int CGameController::GetAutoTeam(int NotThisID)
 	if(g_Config.m_DbgStress)
 		return 0;
 
-	int aNumplayers[2] = {0,0};
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(GameServer()->m_apPlayers[i] && i != NotThisID)
-		{
-			if(GameServer()->m_apPlayers[i]->GetTeam() >= TEAM_RED && GameServer()->m_apPlayers[i]->GetTeam() <= TEAM_BLUE)
-				aNumplayers[GameServer()->m_apPlayers[i]->GetTeam()]++;
-		}
-	}
-
 	int Team = 0;
-	if(IsTeamplay())
-		Team = aNumplayers[TEAM_RED] > aNumplayers[TEAM_BLUE] ? TEAM_BLUE : TEAM_RED;
-
 	if(CanJoinTeam(Team, NotThisID))
 		return Team;
 	return -1;
@@ -327,49 +298,11 @@ bool CGameController::CanJoinTeam(int Team, int NotThisID)
 {
 	if(Team == TEAM_SPECTATORS || (GameServer()->m_apPlayers[NotThisID] && GameServer()->m_apPlayers[NotThisID]->GetTeam() != TEAM_SPECTATORS))
 		return true;
-
-	int aNumplayers[2] = {0,0};
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(GameServer()->m_apPlayers[i] && i != NotThisID)
-		{
-			if(GameServer()->m_apPlayers[i]->GetTeam() >= TEAM_RED && GameServer()->m_apPlayers[i]->GetTeam() <= TEAM_BLUE)
-				aNumplayers[GameServer()->m_apPlayers[i]->GetTeam()]++;
-		}
-	}
-
-	return (aNumplayers[0] + aNumplayers[1]) < Server()->MaxClients()-g_Config.m_SvSpectatorSlots;
 }
 
 bool CGameController::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 {
-	int aT[2] = {0, 0};
-
 	if (!IsTeamplay() || JoinTeam == TEAM_SPECTATORS)
-		return true;
-
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		CPlayer *pP = GameServer()->m_apPlayers[i];
-		if(pP && pP->GetTeam() != TEAM_SPECTATORS)
-			aT[pP->GetTeam()]++;
-	}
-
-	// simulate what would happen if changed team
-	aT[JoinTeam]++;
-	if (pPlayer->GetTeam() != TEAM_SPECTATORS)
-		aT[JoinTeam^1]--;
-
-	// there is a player-difference of at least 2
-	if(absolute(aT[0]-aT[1]) >= 2)
-	{
-		// player wants to join team with less players
-		if ((aT[0] < aT[1] && JoinTeam == TEAM_RED) || (aT[0] > aT[1] && JoinTeam == TEAM_BLUE))
-			return true;
-		else
-			return false;
-	}
-	else
 		return true;
 }
 

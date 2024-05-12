@@ -10,6 +10,8 @@
 #include <base/math.h>
 #include <base/system.h>
 
+#include <map>
+
 class CHuffman;
 class CNetBan;
 class CPacker;
@@ -60,7 +62,6 @@ enum
 	NET_MAX_PAYLOAD = NET_MAX_PACKETSIZE - 6,
 	NET_MAX_CHUNKHEADERSIZE = 5,
 	NET_PACKETHEADERSIZE = 3,
-	NET_MAX_CLIENTS = MAX_CLIENTS,
 	NET_MAX_CONSOLE_CLIENTS = 4,
 	NET_MAX_SEQUENCE = 1 << 10,
 	NET_SEQUENCE_MASK = NET_MAX_SEQUENCE - 1,
@@ -364,8 +365,7 @@ class CNetServer
 	NETADDR m_Address;
 	NETSOCKET m_Socket;
 	CNetBan *m_pNetBan;
-	CSlot m_aSlots[NET_MAX_CLIENTS];
-	int m_MaxClients;
+	std::map<int, CSlot> m_aSlots;
 	int m_MaxClientsPerIP;
 
 	NETFUNC_NEWCLIENT m_pfnNewClient;
@@ -404,7 +404,7 @@ public:
 	int SetCallbacks(NETFUNC_NEWCLIENT pfnNewClient, NETFUNC_NEWCLIENT_NOAUTH pfnNewClientNoAuth, NETFUNC_CLIENTREJOIN pfnClientRejoin, NETFUNC_DELCLIENT pfnDelClient, void *pUser);
 
 	//
-	bool Open(NETADDR BindAddr, CNetBan *pNetBan, int MaxClients, int MaxClientsPerIP);
+	bool Open(NETADDR BindAddr, CNetBan *pNetBan, int MaxClientsPerIP);
 	int Close();
 
 	//
@@ -416,13 +416,12 @@ public:
 	int Drop(int ClientID, const char *pReason);
 
 	// status requests
-	const NETADDR *ClientAddr(int ClientID) const { return m_aSlots[ClientID].m_Connection.PeerAddress(); }
-	bool HasSecurityToken(int ClientID) const { return m_aSlots[ClientID].m_Connection.SecurityToken() != NET_SECURITY_TOKEN_UNSUPPORTED; }
+	const NETADDR *ClientAddr(int ClientID) { return m_aSlots[ClientID].m_Connection.PeerAddress(); }
+	bool HasSecurityToken(int ClientID) { return m_aSlots[ClientID].m_Connection.SecurityToken() != NET_SECURITY_TOKEN_UNSUPPORTED; }
 	NETADDR Address() const { return m_Address; }
 	NETSOCKET Socket() const { return m_Socket; }
 	CNetBan *NetBan() const { return m_pNetBan; }
 	int NetType() const { return net_socket_type(m_Socket); }
-	int MaxClients() const { return m_MaxClients; }
 
 	void SendTokenSixup(NETADDR &Addr, SECURITY_TOKEN Token);
 	int SendConnlessSixup(CNetChunk *pChunk, SECURITY_TOKEN ResponseToken);

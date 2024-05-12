@@ -148,8 +148,8 @@ Objects = [
 	]),
 
 	NetObject("GameDataFlag", [
-		NetIntRange("m_FlagCarrierRed", 'FLAG_MISSING', 'MAX_CLIENTS-1'),
-		NetIntRange("m_FlagCarrierBlue", 'FLAG_MISSING', 'MAX_CLIENTS-1'),
+		NetIntRange("m_FlagCarrierRed", 'FLAG_MISSING', 'MAX_INT'),
+		NetIntRange("m_FlagCarrierBlue", 'FLAG_MISSING', 'MAX_INT'),
 		NetTick("m_FlagDropTickRed"),
 		NetTick("m_FlagDropTickBlue"),
 	]),
@@ -165,7 +165,7 @@ Objects = [
 		NetIntRange("m_Direction", -1, 1),
 
 		NetIntRange("m_Jumped", 0, 3),
-		NetIntRange("m_HookedPlayer", -1, 'MAX_CLIENTS-1'),
+		NetIntRange("m_HookedPlayer", -1, 'MAX_INT'),
 		NetIntRange("m_HookState", -1, 5),
 		NetTick("m_HookTick"),
 
@@ -193,7 +193,7 @@ Objects = [
 
 	NetObject("SpectatorInfo", [
 		NetIntRange("m_SpecMode", 0, 'NUM_SPECMODES-1'),
-		NetIntRange("m_SpectatorID", -1, 'MAX_CLIENTS-1'),
+		NetIntRange("m_SpectatorID", -1, 'MAX_INT'),
 		NetIntAny("m_X"),
 		NetIntAny("m_Y"),
 	]),
@@ -242,7 +242,7 @@ Objects = [
 	NetEvent("HammerHit:Common", []),
 
 	NetEvent("Death:Common", [
-		NetIntRange("m_ClientID", 0, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", 0, 'MAX_INT'),
 	]),
 
 	NetEvent("SoundWorld:Common", [
@@ -250,7 +250,7 @@ Objects = [
 	]),
 
 	NetEvent("Damage:Common", [ # Unused yet
-		NetIntRange("m_ClientID", 0, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", 0, 'MAX_INT'),
 		NetIntAny("m_Angle"),
 		NetIntRange("m_HealthAmount", 0, 9),
 		NetIntRange("m_ArmorAmount", 0, 9),
@@ -283,21 +283,21 @@ Messages = [
 
 	NetMessage("Sv_Chat", [
 		NetIntRange("m_Mode", 0, 'NUM_CHATS-1'),
-		NetIntRange("m_ClientID", -1, 'MAX_CLIENTS-1'),
-		NetIntRange("m_TargetID", -1, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", -1, 'MAX_INT'),
+		NetIntRange("m_TargetID", -1, 'MAX_INT'),
 		NetStringStrict("m_pMessage"),
 	]),
 
 	NetMessage("Sv_Team", [
-		NetIntRange("m_ClientID", -1, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", -1, 'MAX_INT'),
 		NetIntRange("m_Team", 'TEAM_SPECTATORS', 'TEAM_BLUE'),
 		NetBool("m_Silent"),
 		NetTick("m_CooldownTick"),
 	]),
 
 	NetMessage("Sv_KillMsg", [
-		NetIntRange("m_Killer", -2, 'MAX_CLIENTS-1'),
-		NetIntRange("m_Victim", 0, 'MAX_CLIENTS-1'),
+		NetIntRange("m_Killer", -2, 'MAX_INT'),
+		NetIntRange("m_Victim", 0, 'MAX_INT'),
 		NetIntRange("m_Weapon", -3, 'NUM_WEAPONS-1'),
 		NetIntAny("m_ModeSpecial"),
 	]),
@@ -311,7 +311,7 @@ Messages = [
 	]),
 
 	NetMessage("Sv_Emoticon", [
-		NetIntRange("m_ClientID", 0, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", 0, 'MAX_INT'),
 		NetEnum("m_Emoticon", Emoticons),
 	]),
 
@@ -328,7 +328,7 @@ Messages = [
 	]),
 
 	NetMessage("Sv_VoteSet", [
-		NetIntRange("m_ClientID", -1, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", -1, 'MAX_INT'),
 		NetEnum("m_Type", Votes),
 		NetIntRange("m_Timeout", 0, 60),
 		NetStringStrict("m_pDescription"),
@@ -336,23 +336,23 @@ Messages = [
 	]),
 
 	NetMessage("Sv_VoteStatus", [
-		NetIntRange("m_Yes", 0, 'MAX_CLIENTS'),
-		NetIntRange("m_No", 0, 'MAX_CLIENTS'),
-		NetIntRange("m_Pass", 0, 'MAX_CLIENTS'),
-		NetIntRange("m_Total", 0, 'MAX_CLIENTS'),
+		NetIntRange("m_Yes", 0, 'MAX_INT'),
+		NetIntRange("m_No", 0, 'MAX_INT'),
+		NetIntRange("m_Pass", 0, 'MAX_INT'),
+		NetIntRange("m_Total", 0, 'MAX_INT'),
 	]),
 
 	NetMessage("Sv_ServerSettings", [
 		NetBool("m_KickVote"),
-		NetIntRange("m_KickMin", 0, 'MAX_CLIENTS'),
+		NetIntRange("m_KickMin", 0, 'MAX_INT'),
 		NetBool("m_SpecVote"),
 		NetBool("m_TeamLock"),
 		NetBool("m_TeamBalance"),
-		NetIntRange("m_PlayerSlots", 0, 'MAX_CLIENTS'),
+		NetIntRange("m_PlayerSlots", 0, 'MAX_INT'),
 	]),
 
 	NetMessage("Sv_ClientInfo", [
-		NetIntRange("m_ClientID", 0, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", 0, 'MAX_INT'),
 		NetBool("m_Local"),
 		NetIntRange("m_Team", 'TEAM_SPECTATORS', 'TEAM_BLUE'),
 		NetStringStrict("m_pName"),
@@ -375,7 +375,7 @@ Messages = [
 	]),
 
 	NetMessage("Sv_ClientDrop", [
-		NetIntRange("m_ClientID", 0, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", 0, 'MAX_INT'),
 		NetStringStrict("m_pReason"),
 		NetBool("m_Silent"),
 	]),
@@ -385,20 +385,20 @@ Messages = [
 	## Demo messages
 	NetMessage("De_ClientEnter", [
 		NetStringStrict("m_pName"),
-		NetIntRange("m_ClientID", -1, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", -1, 'MAX_INT'),
 		NetIntRange("m_Team", 'TEAM_SPECTATORS', 'TEAM_BLUE'),
 	]),
 
 	NetMessage("De_ClientLeave", [
 		NetStringStrict("m_pName"),
-		NetIntRange("m_ClientID", -1, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", -1, 'MAX_INT'),
 		NetStringStrict("m_pReason"),
 	]),
 
 	### Client messages
 	NetMessage("Cl_Say", [
 		NetIntRange("m_Mode", 0, 'NUM_CHATS-1'),
-		NetIntRange("m_Target", -1, 'MAX_CLIENTS-1'),
+		NetIntRange("m_Target", -1, 'MAX_INT'),
 		NetStringStrict("m_pMessage"),
 	]),
 
@@ -408,7 +408,7 @@ Messages = [
 
 	NetMessage("Cl_SetSpectatorMode", [
 		NetIntRange("m_SpecMode", 0, 'NUM_SPECMODES-1'),
-		NetIntRange("m_SpectatorID", -1, 'MAX_CLIENTS-1'),
+		NetIntRange("m_SpectatorID", -1, 'MAX_INT'),
 	]),
 
 	NetMessage("Cl_StartInfo", [
@@ -441,7 +441,7 @@ Messages = [
 
 	# todo 0.8: move up
 	NetMessage("Sv_SkinChange", [
-		NetIntRange("m_ClientID", 0, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", 0, 'MAX_INT'),
 		NetArray(NetStringStrict("m_apSkinPartNames"), 6),
 		NetArray(NetBool("m_aUseCustomColors"), 6),
 		NetArray(NetIntAny("m_aSkinPartColors"), 6),
@@ -455,7 +455,7 @@ Messages = [
 
 	## Race
 	NetMessage("Sv_RaceFinish", [
-		NetIntRange("m_ClientID", 0, 'MAX_CLIENTS-1'),
+		NetIntRange("m_ClientID", 0, 'MAX_INT'),
 		NetIntRange("m_Time", -1, 'max_int'),
 		NetIntAny("m_Diff"),
 		NetBool("m_RecordPersonal"),

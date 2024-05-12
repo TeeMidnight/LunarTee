@@ -21,6 +21,8 @@ CItemCore::CItemCore(CGameContext *pGameServer)
     m_pGameServer = pGameServer;
     m_pCraft = new CCraftCore(this);
 
+	m_aInventories.clear();
+
 	RegisterMenu();
 }
 
@@ -242,11 +244,17 @@ CItemData *CItemCore::GetItemData(CUuid Uuid)
 
 std::map<CUuid, int> *CItemCore::GetInventory(int ClientID)
 {
+	if(!m_aInventories.count(ClientID))
+		m_aInventories[ClientID] = std::map<CUuid, int>();
+
 	return &m_aInventories[ClientID];
 }
 
 int CItemCore::GetInvItemNum(CUuid Uuid, int ClientID)
 {
+	if(!m_aInventories.count(ClientID))
+		m_aInventories[ClientID] = std::map<CUuid, int>();
+
 	if(!m_aInventories[ClientID].count(Uuid))
 		return 0;
 	return m_aInventories[ClientID][Uuid];
@@ -254,6 +262,9 @@ int CItemCore::GetInvItemNum(CUuid Uuid, int ClientID)
 
 void CItemCore::AddInvItemNum(CUuid Uuid, int Num, int ClientID, bool Database, bool SendChat)
 {
+	if(!m_aInventories.count(ClientID))
+		m_aInventories[ClientID] = std::map<CUuid, int>();
+
 	if(!m_aInventories[ClientID].count(Uuid))
 	{
 		m_aInventories[ClientID][Uuid] = Num;
@@ -283,6 +294,9 @@ void CItemCore::AddInvItemNum(CUuid Uuid, int Num, int ClientID, bool Database, 
 
 void CItemCore::SetInvItemNum(CUuid Uuid, int Num, int ClientID, bool Database)
 {
+	if(!m_aInventories.count(ClientID))
+		m_aInventories[ClientID] = std::map<CUuid, int>();
+
 	m_aInventories[ClientID][Uuid] = Num;
 
 	if(Database)
@@ -297,7 +311,7 @@ void CItemCore::AddInvItemNumThread(CUuid Uuid, int Num, int ClientID)
 	if(Num == 0)
 		return;
 
-	if(!GameServer()->m_apPlayers[ClientID])
+	if(!GameServer()->m_apPlayers.count(ClientID))
 	{
 		return;
 	}
@@ -368,7 +382,7 @@ void CItemCore::AddInvItemNumThread(CUuid Uuid, int Num, int ClientID)
 
 void CItemCore::SetInvItemNumThread(CUuid Uuid, int Num, int ClientID)
 {
-	if(!GameServer()->m_apPlayers[ClientID])
+	if(!GameServer()->m_apPlayers.count(ClientID))
 	{
 		return;
 	}
@@ -436,7 +450,7 @@ void CItemCore::SetInvItemNumThread(CUuid Uuid, int Num, int ClientID)
 
 void CItemCore::SyncInvItem(int ClientID)
 {
-	if(!GameServer()->m_apPlayers[ClientID])
+	if(!GameServer()->m_apPlayers.count(ClientID))
 	{
 		return;
 	}
@@ -478,5 +492,8 @@ void CItemCore::SyncInvItem(int ClientID)
 
 void CItemCore::ClearInv(int ClientID, bool Database)
 {
-	m_aInventories[ClientID].clear();
+	if(!m_aInventories.count(ClientID))
+		return;
+
+	m_aInventories.erase(ClientID);
 }

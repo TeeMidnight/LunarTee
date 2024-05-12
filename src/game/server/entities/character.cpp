@@ -122,7 +122,7 @@ void CCharacter::SetWeapon(int W)
 	m_LastWeapon = m_ActiveWeapon;
 	m_QueuedWeapon = -1;
 	m_ActiveWeapon = W;
-	GameServer()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
+	GameWorld()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
 
 	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_LUNARTEE_WEAPONS)
 		m_ActiveWeapon = 0;
@@ -193,7 +193,7 @@ void CCharacter::HandleNinja()
 					continue;
 
 				// Hit a player, give him damage and stuffs...
-				GameServer()->CreateSound(pTarget->m_Pos, SOUND_NINJA_HIT);
+				GameWorld()->CreateSound(pTarget->m_Pos, SOUND_NINJA_HIT);
 				// set his velocity to fast upward (for now)
 				if(m_NumObjectsHit < 10)
 					m_apHitObjects[m_NumObjectsHit++] = pTarget;
@@ -305,7 +305,7 @@ void CCharacter::FireWeapon()
 		m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
 		if(m_LastNoAmmoSound+Server()->TickSpeed() <= Server()->Tick())
 		{
-			GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+			GameWorld()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
 			m_LastNoAmmoSound = Server()->Tick();
 		}
 		return;
@@ -359,7 +359,7 @@ void CCharacter::GiveNinja()
 		m_LastWeapon = m_ActiveWeapon;
 	m_ActiveWeapon = WEAPON_NINJA;
 
-	GameServer()->CreateSound(m_Pos, SOUND_PICKUP_NINJA);
+	GameWorld()->CreateSound(m_Pos, SOUND_PICKUP_NINJA);
 }
 
 void CCharacter::SetEmote(int Emote, int Tick)
@@ -655,15 +655,15 @@ void CCharacter::TickDefered()
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 	}
 
-	if(GetCID() < MAX_CLIENTS && !Server()->IsSixup(GetCID()))
+	if(GetCID() >= 0 && !Server()->IsSixup(GetCID()))
 	{
 		int Events = m_Core.m_TriggeredEvents;
-		CClientMask Mask = CmaskAllExceptOne(m_pPlayer->GetCID());
-		if(Events&COREEVENT_GROUND_JUMP) GameServer()->CreateSound(m_Pos, SOUND_PLAYER_JUMP, Mask);
+		CEventMask Mask = GameWorld()->WorldMaskAllExceptOne(m_pPlayer->GetCID());
+		if(Events&COREEVENT_GROUND_JUMP) GameWorld()->CreateSound(m_Pos, SOUND_PLAYER_JUMP, Mask);
 
-		if(Events&COREEVENT_HOOK_ATTACH_PLAYER) GameServer()->CreateSound(m_Pos, SOUND_HOOK_ATTACH_PLAYER, GameWorld()->WorldMask());
-		if(Events&COREEVENT_HOOK_ATTACH_GROUND) GameServer()->CreateSound(m_Pos, SOUND_HOOK_ATTACH_GROUND, Mask);
-		if(Events&COREEVENT_HOOK_HIT_NOHOOK) GameServer()->CreateSound(m_Pos, SOUND_HOOK_NOATTACH, Mask);
+		if(Events&COREEVENT_HOOK_ATTACH_PLAYER) GameWorld()->CreateSound(m_Pos, SOUND_HOOK_ATTACH_PLAYER);
+		if(Events&COREEVENT_HOOK_ATTACH_GROUND) GameWorld()->CreateSound(m_Pos, SOUND_HOOK_ATTACH_GROUND, Mask);
+		if(Events&COREEVENT_HOOK_HIT_NOHOOK) GameWorld()->CreateSound(m_Pos, SOUND_HOOK_NOATTACH, Mask);
 	}
 
 	if(m_pPlayer->GetTeam() == TEAM_SPECTATORS)
@@ -749,7 +749,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
 
 	// a nice sound
-	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
+	GameWorld()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 
 	// this is for auto respawn after 3 secs
 	m_pPlayer->m_DieTick = Server()->Tick();
@@ -758,7 +758,7 @@ void CCharacter::Die(int Killer, int Weapon)
 
 	GameWorld()->RemoveEntity(this);
 	GameWorld()->m_Core.DeleteCharacter(GetCID());
-	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+	GameWorld()->CreateDeath(m_Pos, m_pPlayer->GetCID());
 }
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
@@ -783,12 +783,12 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	if(Server()->Tick() < m_DamageTakenTick+25)
 	{
 		// make sure that the damage indicators doesn't group together
-		GameServer()->CreateDamageInd(m_Pos, m_DamageTaken*0.25f, Dmg);
+		GameWorld()->CreateDamageInd(m_Pos, m_DamageTaken*0.25f, Dmg);
 	}
 	else
 	{
 		m_DamageTaken = 0;
-		GameServer()->CreateDamageInd(m_Pos, 0, Dmg);
+		GameWorld()->CreateDamageInd(m_Pos, 0, Dmg);
 	}
 
 	if(Dmg)
@@ -821,13 +821,13 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	// do damage Hit sound
 	if(From >= 0 && From != m_pPlayer->GetCID() && pFrom && !pFrom->IsBot())
 	{
-		CClientMask Mask = CmaskOne(From);
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		CEventMask Mask = GameWorld()->WorldMaskOne(From);
+		for(auto& pPlayer : GameServer()->m_apPlayers)
 		{
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS && GameServer()->m_apPlayers[i]->m_SpectatorID == From)
-				Mask |= CmaskOne(i);
+			if(pPlayer.second->GetTeam() == TEAM_SPECTATORS && pPlayer.second->m_SpectatorID == From)
+				Mask.Get(pPlayer.first) = true;
 		}
-		GameServer()->CreateSound(pFrom->m_ViewPos, SOUND_HIT, Mask);
+		GameWorld()->CreateSound(pFrom->m_ViewPos, SOUND_HIT, Mask);
 	}
 
 	// check for death
@@ -867,10 +867,10 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return false;
 	}
 
-	if (Dmg > 2)
-		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG);
+	if(Dmg > 2)
+		GameWorld()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG);
 	else
-		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
+		GameWorld()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
 
 	m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
@@ -1359,11 +1359,9 @@ bool CCharacter::CheckPos(vec2 CheckPos)
 
 bool CCharacter::NeedActive()
 {
-	for(auto &Player : GameServer()->m_apPlayers)
+	for(auto& pPlayer : GameServer()->m_apPlayers)
 	{
-		if(!Player)
-			continue;
-		if(distance(Player->m_ViewPos, m_Pos) < 1500.0f)
+		if(distance(pPlayer.second->m_ViewPos, m_Pos) < 1500.0f)
 			return true;
 	}
 	return false;

@@ -104,7 +104,7 @@ void CPlayer::BotInit()
 				TradeData.m_Needs[Need.m_Uuid] = random_int(Need.m_MinNum, Need.m_MaxNum);
 			TradeData.m_Give.first = Trade.m_Give.m_Uuid;
 			TradeData.m_Give.second = random_int(Trade.m_Give.m_MinNum, Trade.m_Give.m_MaxNum);
-			Datas()->Trade()->AddTrade(-m_ClientID, TradeData);
+			Datas()->Trade()->AddTrade(m_ClientID, TradeData);
 		}
 	}
 	
@@ -197,10 +197,11 @@ void CPlayer::PostTick()
 	// update latency value
 	if(!IsBot() && m_PlayerFlags&PLAYERFLAG_SCOREBOARD)
 	{
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		int* pMap = Server()->GetIdMap(m_ClientID);
+		for(int i = 0; i < (Server()->Is64Player(m_ClientID) ? DDNET_MAX_CLIENTS : VANILLA_MAX_CLIENTS); ++i)
 		{
-			if(GameServer()->m_apPlayers[i])
-				m_aActLatency[i] = GameServer()->m_apPlayers[i]->m_Latency.m_Min;
+			if(GameServer()->m_apPlayers.count(pMap[i]))
+				m_aActLatency[i] = GameServer()->m_apPlayers[pMap[i]]->m_Latency.m_Min;
 		}
 	}
 
@@ -519,11 +520,11 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	if(Team == TEAM_SPECTATORS)
 	{
 		// update spectator modes
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(auto& pPlayer : GameServer()->m_apPlayers)
 		{
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_SpectatorID == m_ClientID)
+			if(pPlayer.second->m_SpectatorID == m_ClientID)
 			{
-				GameServer()->m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
+				pPlayer.second->m_SpectatorID = SPEC_FREEVIEW;
 			}
 		}
 	}
@@ -541,7 +542,7 @@ void CPlayer::TryRespawn()
 	m_Spawning = false;
 	m_pCharacter = new CCharacter(GameWorld());
 	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(SpawnPos);
+	GameWorld()->CreatePlayerSpawn(SpawnPos);
 }
 
 const char *CPlayer::GetLanguage()

@@ -41,7 +41,7 @@ static SECURITY_TOKEN ToSecurityToken(const unsigned char *pData)
 	return (int)pData[0] | (pData[1] << 8) | (pData[2] << 16) | (pData[3] << 24);
 }
 
-bool CNetServer::Open(NETADDR BindAddr, CNetBan *pNetBan, int MaxClients, int MaxClientsPerIP)
+bool CNetServer::Open(NETADDR BindAddr, CNetBan *pNetBan, int MaxClientsPerIP)
 {
 	// zero out the whole structure
 	mem_zero(this, sizeof(*this));
@@ -54,7 +54,6 @@ bool CNetServer::Open(NETADDR BindAddr, CNetBan *pNetBan, int MaxClients, int Ma
 	m_Address = BindAddr;
 	m_pNetBan = pNetBan;
 
-	m_MaxClients = clamp(MaxClients, 1, (int)NET_MAX_CLIENTS);
 	m_MaxClientsPerIP = MaxClientsPerIP;
 
 	m_NumConAttempts = 0;
@@ -65,8 +64,7 @@ bool CNetServer::Open(NETADDR BindAddr, CNetBan *pNetBan, int MaxClients, int Ma
 
 	secure_random_fill(m_aSecurityTokenSeed, sizeof(m_aSecurityTokenSeed));
 
-	for(auto &Slot : m_aSlots)
-		Slot.m_Connection.Init(m_Socket, true);
+	m_aSlots.clear();
 
 	return true;
 }
@@ -110,14 +108,14 @@ int CNetServer::Drop(int ClientID, const char *pReason)
 
 int CNetServer::Update()
 {
-	for(int i = 0; i < MaxClients(); i++)
+	for(auto &Slot : m_aSlots)
 	{
-		m_aSlots[i].m_Connection.Update();
-		if(m_aSlots[i].m_Connection.State() == NET_CONNSTATE_ERROR &&
-			(!m_aSlots[i].m_Connection.m_TimeoutProtected ||
-				!m_aSlots[i].m_Connection.m_TimeoutSituation))
+		Slot.second.m_Connection.Update();
+		if(Slot.second.m_Connection.State() == NET_CONNSTATE_ERROR &&
+			(!Slot.second.m_Connection.m_TimeoutProtected ||
+				!Slot.second.m_Connection.m_TimeoutSituation))
 		{
-			Drop(i, m_aSlots[i].m_Connection.ErrorString());
+			Drop(Slot.first, Slot.second.m_Connection.ErrorString());
 		}
 	}
 
@@ -153,15 +151,15 @@ void CNetServer::SendControl(NETADDR &Addr, int ControlMsg, const void *pExtra, 
 int CNetServer::NumClientsWithAddr(NETADDR Addr)
 {
 	int FoundAddr = 0;
-	for(int i = 0; i < MaxClients(); ++i)
+	for(auto &Slot : m_aSlots)
 	{
-		if(m_aSlots[i].m_Connection.State() == NET_CONNSTATE_OFFLINE ||
-			(m_aSlots[i].m_Connection.State() == NET_CONNSTATE_ERROR &&
-				(!m_aSlots[i].m_Connection.m_TimeoutProtected ||
-					!m_aSlots[i].m_Connection.m_TimeoutSituation)))
+		if(Slot.second.m_Connection.State() == NET_CONNSTATE_OFFLINE ||
+			(Slot.second.m_Connection.State() == NET_CONNSTATE_ERROR &&
+				(!Slot.second.m_Connection.m_TimeoutProtected ||
+					!Slot.second.m_Connection.m_TimeoutSituation)))
 			continue;
 
-		if(!net_addr_comp_noport(&Addr, m_aSlots[i].m_Connection.PeerAddress()))
+		if(!net_addr_comp_noport(&Addr, Slot.second.m_Connection.PeerAddress()))
 			FoundAddr++;
 	}
 
@@ -219,23 +217,17 @@ int CNetServer::TryAcceptClient(NETADDR &Addr, SECURITY_TOKEN SecurityToken, boo
 		return -1; // failed to add client
 	}
 
-	int Slot = -1;
-	for(int i = 0; i < MaxClients(); i++)
+	int Slot = 0;
+	for(auto& NetSlot : m_aSlots)
 	{
-		if(m_aSlots[i].m_Connection.State() == NET_CONNSTATE_OFFLINE)
-		{
-			Slot = i;
+		if(Slot != NetSlot.first)
 			break;
-		}
+		Slot++;
 	}
+	// create slot
+	m_aSlots[Slot] = CSlot();
 
-	if(Slot == -1)
-	{
-		const char aFullMsg[] = "This server is full";
-		CNetBase::SendControlMsg(m_Socket, &Addr, 0, NET_CTRLMSG_CLOSE, aFullMsg, sizeof(aFullMsg), SecurityToken, Sixup);
-
-		return -1; // failed to add client
-	}
+	m_aSlots[Slot].m_Connection.Init(m_Socket, true);
 
 	// init connection slot
 	m_aSlots[Slot].m_Connection.DirectInit(Addr, SecurityToken, Token, Sixup);
@@ -572,14 +564,14 @@ int CNetServer::GetClientSlot(const NETADDR &Addr)
 {
 	int Slot = -1;
 
-	for(int i = 0; i < MaxClients(); i++)
+	for(auto& NetSlot : m_aSlots)
 	{
-		if(m_aSlots[i].m_Connection.State() != NET_CONNSTATE_OFFLINE &&
-			m_aSlots[i].m_Connection.State() != NET_CONNSTATE_ERROR &&
-			net_addr_comp(m_aSlots[i].m_Connection.PeerAddress(), &Addr) == 0)
+		if(NetSlot.second.m_Connection.State() != NET_CONNSTATE_OFFLINE &&
+			NetSlot.second.m_Connection.State() != NET_CONNSTATE_ERROR &&
+			net_addr_comp(NetSlot.second.m_Connection.PeerAddress(), &Addr) == 0)
 
 		{
-			Slot = i;
+			Slot = NetSlot.first;
 		}
 	}
 
@@ -732,8 +724,7 @@ int CNetServer::Send(CNetChunk *pChunk)
 	else
 	{
 		int Flags = 0;
-		dbg_assert(pChunk->m_ClientID >= 0, "erroneous client id");
-		dbg_assert(pChunk->m_ClientID < MaxClients(), "erroneous client id");
+		dbg_assert(m_aSlots.count(pChunk->m_ClientID), "erroneous client id");
 
 		if(pChunk->m_Flags & NETSENDFLAG_VITAL)
 			Flags = NET_CHUNKFLAG_VITAL;
@@ -781,8 +772,6 @@ void CNetServer::SetMaxClientsPerIP(int Max)
 	// clamp
 	if(Max < 1)
 		Max = 1;
-	else if(Max > NET_MAX_CLIENTS)
-		Max = NET_MAX_CLIENTS;
 
 	m_MaxClientsPerIP = Max;
 }

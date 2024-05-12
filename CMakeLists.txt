@@ -1,40 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 
-file(STRINGS src/game/version.h VERSION_LINE
-  LIMIT_COUNT 1
-  REGEX "^#define GAME_RELEASE_VERSION "
-)
-
-if(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\"")
-  set(VERSION_MAJOR ${CMAKE_MATCH_1})
-  set(VERSION_MINOR ${CMAKE_MATCH_2})
-  set(VERSION_PATCH ${CMAKE_MATCH_3})
-elseif(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\"")
-  set(VERSION_MAJOR ${CMAKE_MATCH_1})
-  set(VERSION_MINOR ${CMAKE_MATCH_2})
-  set(VERSION_PATCH "0")
-else()
-  message(FATAL_ERROR "Couldn't parse version from src/game/version.h")
-endif()
-
-if(POLICY CMP0048)
-  cmake_policy(SET CMP0048 NEW)
-  if(VERSION_PATCH STREQUAL "0")
-    project(LunarTee VERSION ${VERSION_MAJOR}.${VERSION_MINOR})
-  else()
-    project(LunarTee VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-  endif()
-else()
-  project(LunarTee)
-  set(PROJECT_VERSION_MAJOR ${VERSION_MAJOR})
-  set(PROJECT_VERSION_MINOR ${VERSION_MINOR})
-  set(PROJECT_VERSION_PATCH ${VERSION_PATCH})
-  if(VERSION_PATCH STREQUAL "0")
-    set(PROJECT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR})
-  else()
-    set(PROJECT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-  endif()
-endif()
+project(LunarTee)
 
 set(ORIGINAL_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
 set(ORIGINAL_CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
@@ -438,13 +404,6 @@ if(GIT_FOUND)
   )
 endif()
 
-chash("src/generated/nethash.cpp"
-  "src/engine/shared/protocol.h"
-  "src/generated/protocol.h"
-  "src/game/tuning.h"
-  "src/game/gamecore.cpp"
-)
-
 generate_source("src/generated/protocol.cpp" "network_source")
 generate_source("src/generated/protocol.h" "network_header")
 generate_source("src/generated/server_data.cpp" "server_content_source")
@@ -474,7 +433,6 @@ file(GLOB ENGINE_GFX "src/engine/gfx/*.cpp" "src/engine/gfx/*.h")
 file(GLOB ENGINE_SHARED "src/engine/shared/*.cpp" "src/engine/shared/*.h")
 
 set(ENGINE_GENERATED_SHARED 
-  src/generated/nethash.cpp
   src/generated/protocolglue.cpp
   src/generated/protocolglue.h
   src/generated/protocol7.cpp
@@ -486,7 +444,6 @@ set(ENGINE_GENERATED_SHARED
 file(GLOB GAME_SHARED "src/game/*.cpp" "src/game/*.h")
 
 set(GAME_GENERATED_SHARED
-  src/generated/nethash.cpp
   src/generated/protocolglue.h
   src/generated/protocol7.h
   src/generated/protocol.h

@@ -19,7 +19,7 @@ void CWeaponFreezeRifle::Fire(CGameWorld *pGameWorld, int Owner, vec2 Dir, vec2 
         GetWeaponID(),
         1);
 
-    GameServer()->CreateSound(Pos, SOUND_RIFLE_FIRE);
+    pGameWorld->CreateSound(Pos, SOUND_RIFLE_FIRE);
     
     return;
 }

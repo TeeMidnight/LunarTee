@@ -27,7 +27,7 @@ void CWeaponShotgun::Fire(CGameWorld *pGameWorld, int Owner, vec2 Dir, vec2 Pos)
             GetDamage(), 0, 0, -1, GetShowType(), 0);
     }
 
-    GameServer()->CreateSound(Pos, SOUND_SHOTGUN_FIRE);
+    pGameWorld->CreateSound(Pos, SOUND_SHOTGUN_FIRE);
     
     return;
 }

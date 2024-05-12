@@ -55,16 +55,16 @@ public:
 	int Tick() const { return m_CurrentGameTick; }
 	int TickSpeed() const { return m_TickSpeed; }
 
-	virtual int MaxClients() const = 0;
+	virtual int EndClientID() const = 0;
 	virtual const char *ClientName(int ClientID) = 0;
 	virtual const char *ClientClan(int ClientID) = 0;
 	virtual int ClientCountry(int ClientID) = 0;
 	virtual bool ClientIngame(int ClientID) = 0;
-	virtual bool GetClientInfo(int ClientID, CClientInfo *pInfo) const = 0;
+	virtual bool GetClientInfo(int ClientID, CClientInfo *pInfo) = 0;
 	virtual void SetClientDDNetVersion(int ClientID, int DDNetVersion) = 0;
 	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size) = 0;
-	virtual int GetClientVersion(int ClientID) const = 0;
-	virtual bool Is64Player(int ClientID) const = 0;
+	virtual int GetClientVersion(int ClientID) = 0;
+	virtual bool Is64Player(int ClientID) = 0;
 	virtual class IMap *GetClientMap(int ClientID) = 0;
 
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;
@@ -75,7 +75,7 @@ public:
 		int Result = 0;
 		if(ClientID == -1)
 		{
-			for(int i = 0; i < MaxClients(); i++)
+			for(int i = 0; i < EndClientID(); i++)
 			{
 				if(!ClientIngame(i))
 					continue;
@@ -233,12 +233,12 @@ public:
 	virtual void ChangeClientMap(int ClientID, CUuid *pMapID) = 0;
 	virtual int GetLoadedMapNum() const = 0;
 
-	virtual int GetOneWorldPlayerNum(int ClientID) const = 0;
+	virtual int GetOneWorldPlayerNum(int ClientID) = 0;
 
 	virtual void CreateNewTheardJob(std::shared_ptr<IJob> pJob) = 0;
 
-	virtual bool IsSixup(int ClientID) const = 0;
-	virtual bool IsInMenu(int ClientID) const = 0;
+	virtual bool IsSixup(int ClientID) = 0;
+	virtual bool IsInMenu(int ClientID) = 0;
 
 	virtual const char *GetMainMap() = 0;
 	virtual const char *GetMenuMap() = 0;
@@ -269,11 +269,9 @@ public:
 	virtual bool IsClientReady(int ClientID) = 0;
 	virtual bool IsClientPlayer(int ClientID) = 0;
 
-	virtual int GetOneWorldPlayerNum(int ClientID) const = 0;
+	virtual int GetOneWorldPlayerNum(int ClientID) = 0;
 
 	virtual const char *GameType() = 0;
-	virtual const char *Version() = 0;
-	virtual const char *NetVersion() = 0;
 
 	virtual void OnSetAuthed(int ClientID, int Level) = 0;
 	

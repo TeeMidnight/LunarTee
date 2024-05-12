@@ -14,7 +14,7 @@ class CItemCore
 
     class CCraftCore *m_pCraft;
 
-    std::map<CUuid, int> m_aInventories[MAX_CLIENTS];
+    std::map<int, std::map<CUuid, int>> m_aInventories;
 
     int m_ItemTypeNum;
 

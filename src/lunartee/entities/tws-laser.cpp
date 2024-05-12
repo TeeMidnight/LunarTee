@@ -71,7 +71,7 @@ void CTWSLaser::DoBounce()
 			if(m_Bounces > GameWorld()->m_Core.m_Tuning.m_LaserBounceNum)
 				m_Energy = -1;
 
-			GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
+			GameWorld()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
 		}
 	}
 	else

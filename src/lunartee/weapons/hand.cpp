@@ -15,7 +15,7 @@ void CWeaponHand::Fire(CGameWorld *pGameWorld, int Owner, vec2 Dir, vec2 Pos)
         return;
     }
     
-	GameServer()->CreateSound(Pos, SOUND_HAMMER_FIRE);
+	pGameWorld->CreateSound(Pos, SOUND_HAMMER_FIRE);
 
     int Hits = 0;
 
@@ -32,9 +32,9 @@ void CWeaponHand::Fire(CGameWorld *pGameWorld, int Owner, vec2 Dir, vec2 Pos)
 
         // set his velocity to fast upward (for now)
         if(length(pTarget->m_Pos-Pos) > 0.0f)
-            GameServer()->CreateHammerHit(pTarget->m_Pos-normalize(pTarget->m_Pos-Pos)*pOwnerChr->m_ProximityRadius*0.5f);
+            pGameWorld->CreateHammerHit(pTarget->m_Pos-normalize(pTarget->m_Pos-Pos)*pOwnerChr->m_ProximityRadius*0.5f);
         else
-            GameServer()->CreateHammerHit(Pos);
+            pGameWorld->CreateHammerHit(Pos);
 
         vec2 Dir;
         if (length(pTarget->m_Pos - pOwnerChr->m_Pos) > 0.0f)

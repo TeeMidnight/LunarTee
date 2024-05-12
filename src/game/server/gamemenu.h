@@ -60,6 +60,8 @@ public:
 	}
 };
 
+using CPlayerMenu = std::pair<std::vector<CMenuOption>, CMenuPage>;
+
 class CMenu
 {
 	class CGameContext *m_pGameServer;
@@ -85,10 +87,19 @@ private:
 	void PreviousPage(int ClientID);
 	CMenuOption *FindOption(const char *pDesc, int ClientID);
 
-	std::pair<std::vector<CMenuOption>, CMenuPage> m_avPlayerMenu[MAX_CLIENTS];
+	std::map<int, CPlayerMenu> m_avPlayerMenu;
 	std::vector<CMenuPage> m_vMenuPages;
 
 public:
+	void NewPlayer(int ClientID)
+	{
+		m_avPlayerMenu[ClientID] = CPlayerMenu();
+	}
+
+	void DropPlayer(int ClientID)
+	{
+		m_avPlayerMenu.erase(ClientID);
+	}
 
     void UpdateMenu(int ClientID, std::vector<CMenuOption> Options, const char* PageName);
 
