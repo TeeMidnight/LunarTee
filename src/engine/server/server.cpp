@@ -985,22 +985,22 @@ void CServer::SendMap(int ClientID)
 	{
 		CMsgPacker Msg(NETMSG_MAP_DETAILS, true);
 		Msg.AddString(GetMapName(pMapData), 0);
-		Msg.AddRaw(&pMapData->m_CurrentMapSha256.data, sizeof(pMapData->m_CurrentMapSha256.data));
-		Msg.AddInt(pMapData->m_CurrentMapCrc);
-		Msg.AddInt(pMapData->m_CurrentMapSize);
+		Msg.AddRaw(&pMapData->m_MapSha256.data, sizeof(pMapData->m_MapSha256.data));
+		Msg.AddInt(pMapData->m_MapCrc);
+		Msg.AddInt(pMapData->m_MapSize);
 		Msg.AddString("", 0); // HTTPS map download URL
 		SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 	}
 	{
 		CMsgPacker Msg(NETMSG_MAP_CHANGE, true);
 		Msg.AddString(GetMapName(pMapData), 0);
-		Msg.AddInt(pMapData->m_CurrentMapCrc);
-		Msg.AddInt(pMapData->m_CurrentMapSize);
+		Msg.AddInt(pMapData->m_MapCrc);
+		Msg.AddInt(pMapData->m_MapSize);
 		if(IsSixup(ClientID))
 		{
 			Msg.AddInt(g_Config.m_SvMapWindow);
 			Msg.AddInt(1024 - 128);
-			Msg.AddRaw(&pMapData->m_CurrentMapSha256.data, sizeof(pMapData->m_CurrentMapSha256.data));
+			Msg.AddRaw(&pMapData->m_MapSha256.data, sizeof(pMapData->m_MapSha256.data));
 		}
 		SendMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID);
 	}
@@ -1017,12 +1017,12 @@ void CServer::SendMapData(int ClientID, int Chunk)
 	int Last = 0;
 
 	// drop faulty map data requests
-	if(Chunk < 0 || Offset > pMapData->m_CurrentMapSize)
+	if(Chunk < 0 || Offset > pMapData->m_MapSize)
 		return;
 
-	if(Offset + ChunkSize >= pMapData->m_CurrentMapSize)
+	if(Offset + ChunkSize >= pMapData->m_MapSize)
 	{
-		ChunkSize = pMapData->m_CurrentMapSize - Offset;
+		ChunkSize = pMapData->m_MapSize - Offset;
 		Last = 1;
 	}
 
@@ -1030,11 +1030,11 @@ void CServer::SendMapData(int ClientID, int Chunk)
 	if(!IsSixup(ClientID))
 	{
 		Msg.AddInt(Last);
-		Msg.AddInt(pMapData->m_CurrentMapCrc);
+		Msg.AddInt(pMapData->m_MapCrc);
 		Msg.AddInt(Chunk);
 		Msg.AddInt(ChunkSize);
 	}
-	Msg.AddRaw(&pMapData->m_pCurrentMapData[Offset], ChunkSize);
+	Msg.AddRaw(&pMapData->m_pMapData[Offset], ChunkSize);
 	SendMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
 
 	if(g_Config.m_Debug)
@@ -1264,7 +1264,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 
 				m_aClients[ClientID].m_State = CClient::STATE_READY;
-				GameServer()->OnClientConnected(ClientID, m_aClients[ClientID].m_pMapData->m_aCurrentMap, m_aClients[ClientID].m_InMenu);
+				GameServer()->OnClientConnected(ClientID, m_aClients[ClientID].m_pMapData->m_aMap, m_aClients[ClientID].m_InMenu);
 			}
 			SendConnectionReady(ClientID);
 		}
@@ -1696,8 +1696,8 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 
 	if(Type == SERVERINFO_EXTENDED)
 	{
-		ADD_INT(p, m_pMainMapData->m_CurrentMapCrc);
-		ADD_INT(p, m_pMainMapData->m_CurrentMapSize);
+		ADD_INT(p, m_pMainMapData->m_MapCrc);
+		ADD_INT(p, m_pMainMapData->m_MapSize);
 	}
 
 	// gametype
@@ -2003,7 +2003,7 @@ void CServer::UpdateRegisterServerInfo()
 	else
 		str_format(aName, sizeof(aName), "%s [%d/%d]", g_Config.m_SvName, ClientCount, g_Config.m_SvMaxClients);
 
-	sha256_str(m_pMainMapData->m_CurrentMapSha256, aMapSha256, sizeof(aMapSha256));
+	sha256_str(m_pMainMapData->m_MapSha256, aMapSha256, sizeof(aMapSha256));
 
 	char aInfo[16384];
 	str_format(aInfo, sizeof(aInfo),
@@ -2028,7 +2028,7 @@ void CServer::UpdateRegisterServerInfo()
 		EscapeJson(aName, sizeof(aName), aName),
 		EscapeJson(aGameType, sizeof(aGameType), GameServer()->GameType()),
 		aMapSha256,
-		m_pMainMapData->m_CurrentMapSize,
+		m_pMainMapData->m_MapSize,
 		EscapeJson(aVersion, sizeof(aVersion), "0.7↔0.6 Teeworlds"));
 
 	bool FirstPlayer = true;
@@ -2209,11 +2209,11 @@ void CServer::ClearIdMap(int ClientID)
 char *CServer::GetMapName(CMapData *pMapData)
 {
 	// get the name of the map without his path
-	char *pMapShortName = &pMapData->m_aCurrentMap[0];
-	for(int i = 0; i < str_length(pMapData->m_aCurrentMap)-1; i++)
+	char *pMapShortName = &pMapData->m_aMap[0];
+	for(int i = 0; i < str_length(pMapData->m_aMap)-1; i++)
 	{
-		if(pMapData->m_aCurrentMap[i] == '/' || pMapData->m_aCurrentMap[i] == '\\')
-			pMapShortName = &pMapData->m_aCurrentMap[i+1];
+		if(pMapData->m_aMap[i] == '/' || pMapData->m_aMap[i] == '\\')
+			pMapShortName = &pMapData->m_aMap[i+1];
 	}
 	return pMapShortName;
 }
@@ -2235,8 +2235,8 @@ int CServer::LoadMap(const char *pMapName)
 	str_format(aBuf, sizeof(aBuf), "maps/%s.map", pMapName);
 
 	CMapData MapData;
-	MapData.m_pCurrentMapData = 0;
-	MapData.m_CurrentMapSize = 0;
+	MapData.m_pMapData = 0;
+	MapData.m_MapSize = 0;
 
 	MapData.m_pMap = CreateEngineMap();
 
@@ -2253,20 +2253,20 @@ int CServer::LoadMap(const char *pMapName)
 		}
 	}
 
-	str_copy(MapData.m_aCurrentMap, pMapName, sizeof(MapData.m_aCurrentMap));
+	str_copy(MapData.m_aMap, pMapName, sizeof(MapData.m_aMap));
 	//map_set(df);
 
 	// load complete map into memory for download
 	{
-		free(MapData.m_pCurrentMapData);
+		free(MapData.m_pMapData);
 		void *pData;
-		Storage()->ReadFile(aBuf, IStorage::TYPE_ALL, &pData, &MapData.m_CurrentMapSize);
-		MapData.m_pCurrentMapData = (unsigned char *)pData;
+		Storage()->ReadFile(aBuf, IStorage::TYPE_ALL, &pData, &MapData.m_MapSize);
+		MapData.m_pMapData = (unsigned char *)pData;
 
-		MapData.m_CurrentMapSha256 = sha256(MapData.m_pCurrentMapData, MapData.m_CurrentMapSize);
+		MapData.m_MapSha256 = sha256(MapData.m_pMapData, MapData.m_MapSize);
 		
 		// get the crc of the map
-		MapData.m_CurrentMapCrc = MapData.m_pMap->Crc();
+		MapData.m_MapCrc = MapData.m_pMap->Crc();
 	}
 
 	m_MapDatas[Uuid] = MapData;
@@ -2534,8 +2534,8 @@ int CServer::Run()
 	{
 		Data.second.m_pMap->Unload();
 
-		if(Data.second.m_pCurrentMapData)
-			free(Data.second.m_pCurrentMapData);
+		if(Data.second.m_pMapData)
+			free(Data.second.m_pMapData);
 	}
 	return 0;
 }
@@ -2588,7 +2588,7 @@ void CServer::DemoRecorder_HandleAutoStart()
 		char aDate[20];
 		str_timestamp(aDate, sizeof(aDate));
 		str_format(aFilename, sizeof(aFilename), "demos/%s_%s.demo", "auto/autorecord", aDate);
-		m_DemoRecorder.Start(Storage(), m_pConsole, aFilename, "0.6 626fce9a778df4d4", m_pMainMapData->m_aCurrentMap, m_pMainMapData->m_CurrentMapCrc, "server");
+		m_DemoRecorder.Start(Storage(), m_pConsole, aFilename, "0.6 626fce9a778df4d4", m_pMainMapData->m_aMap, m_pMainMapData->m_MapCrc, "server");
 		if(g_Config.m_SvAutoDemoMax)
 		{
 			// clean up auto recorded demos
@@ -2616,7 +2616,7 @@ void CServer::ConRecord(IConsole::IResult *pResult, void *pUser)
 		str_timestamp(aDate, sizeof(aDate));
 		str_format(aFilename, sizeof(aFilename), "demos/demo_%s.demo", aDate);
 	}
-	pServer->m_DemoRecorder.Start(pServer->Storage(), pServer->Console(), aFilename, "0.6 626fce9a778df4d4", pServer->m_pMainMapData->m_aCurrentMap, pServer->m_pMainMapData->m_CurrentMapCrc, "server");
+	pServer->m_DemoRecorder.Start(pServer->Storage(), pServer->Console(), aFilename, "0.6 626fce9a778df4d4", pServer->m_pMainMapData->m_aMap, pServer->m_pMainMapData->m_MapCrc, "server");
 }
 
 void CServer::ConStopRecord(IConsole::IResult *pResult, void *pUser)
@@ -2982,10 +2982,10 @@ bool CServer::IsInMenu(int ClientID)
 
 const char *CServer::GetMainMap()
 {
-	return m_pMainMapData->m_aCurrentMap;
+	return m_pMainMapData->m_aMap;
 }
 
 const char *CServer::GetMenuMap()
 {
-	return m_pMenuMapData->m_aCurrentMap;
+	return m_pMenuMapData->m_aMap;
 }

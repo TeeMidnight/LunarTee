@@ -33,11 +33,11 @@ struct CMapData
 {
     IEngineMap *m_pMap;
 
-    char m_aCurrentMap[64];
-    SHA256_DIGEST m_CurrentMapSha256;
-    unsigned m_CurrentMapCrc;
-    unsigned char *m_pCurrentMapData;
-    unsigned int m_CurrentMapSize;
+    char m_aMap[64];
+    SHA256_DIGEST m_MapSha256;
+    unsigned m_MapCrc;
+    unsigned char *m_pMapData;
+    unsigned int m_MapSize;
 };
 
 #endif
