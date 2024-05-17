@@ -298,12 +298,14 @@ bool CGameController::CanJoinTeam(int Team, int NotThisID)
 {
 	if(Team == TEAM_SPECTATORS || (GameServer()->m_apPlayers[NotThisID] && GameServer()->m_apPlayers[NotThisID]->GetTeam() != TEAM_SPECTATORS))
 		return true;
+	return true;
 }
 
 bool CGameController::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 {
 	if (!IsTeamplay() || JoinTeam == TEAM_SPECTATORS)
 		return true;
+	return true;
 }
 
 void CGameController::DoWincheck()
