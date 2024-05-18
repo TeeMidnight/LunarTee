@@ -115,8 +115,9 @@ private:
 
 	int m_UserID;
 
-	void HandleTuningParams(); //This function will send the new parameters if needed
+	char m_aTimeoutCode[32];
 
+	void HandleTuningParams(); //This function will send the new parameters if needed
 public:
 	nlohmann::json m_Datas;
 
@@ -129,6 +130,9 @@ public:
 	int GetEmote() const {return m_Emote;}
 
 	void SetEmote(int Emote);
+
+	const char *GetTimeoutCode() { return m_aTimeoutCode; };
+	void SetTimeoutCode(const char *pCode);
 
 	bool m_Sit;
 	// Bot

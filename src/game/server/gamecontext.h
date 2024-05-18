@@ -78,8 +78,8 @@ class CGameContext : public IGameServer
 	static void ConEmote(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConWhisper(IConsole::IResult *pResult, void *pUserData);
-	static void ConRegister(IConsole::IResult *pResult, void *pUserData);
-	static void ConLogin(IConsole::IResult *pResult, void *pUserData);
+	static void ConPin(IConsole::IResult *pResult, void *pUserData);
+	static void ConTimeout(IConsole::IResult *pResult, void *pUserData);
 
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
@@ -241,8 +241,9 @@ public:
 
 	void LoadNewSkin(std::string Buffer, class CDatapack *pDatapack);
 
-	void Register(const char* pUsername, const char* pPassHash, int ClientID);
-	void Login(const char* pUsername, const char* pPassHash, int ClientID);
+	void DoRegisterLogin(const char* PinHash, int ClientID, bool TimeoutCode);
+	void SetAccountPin(const char* PinHash, int ClientID);
+
 	void UpdatePlayerData(int ClientID);
 
 	void OnPlayerMenuOption(CGameWorld *pWorld, int ClientID, int Page);

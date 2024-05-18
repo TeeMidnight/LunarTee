@@ -759,9 +759,12 @@ void CGameContext::OnClientEnter(int ClientID)
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientID);
 	}
 
-	if(!m_apPlayers[ClientID]->IsLogin())
+	if(!m_apPlayers[ClientID]->IsLogin() && !Server()->IsInMenu(ClientID) && m_apPlayers[ClientID]->GetTimeoutCode()[0])
 	{
-		m_apPlayers[ClientID]->SetTeam(-1, false);
+		char aHash[64];
+		Crypt(m_apPlayers[ClientID]->GetTimeoutCode(), (const unsigned char*) "d9", 1, 14, aHash);
+
+		DoRegisterLogin(aHash, ClientID, true);
 	}
 
 	if(m_apPlayers[ClientID]->GameWorld() == m_pMainWorld && m_apPlayers[ClientID]->m_FirstJoin)
@@ -781,6 +784,16 @@ void CGameContext::OnClientEnter(int ClientID)
 	else if(m_apPlayers[ClientID]->GameWorld() != m_pMainWorld && !m_apPlayers[ClientID]->m_FirstJoin)
 	{
 		SendChatTarget_Localization(-1, _("'{STR}' entered other world"), Server()->ClientName(ClientID));
+	}
+
+	if(!m_apPlayers[ClientID]->IsLogin() && !Server()->IsInMenu(ClientID))
+	{
+		if(Server()->GetClientVersion(ClientID) > VERSION_DDNET_OLD)
+		{
+			SendChatTarget_Localization(ClientID, _("You're playing on DDNet, wait for your client to send timeout code to auto login."));
+		}
+
+		m_apPlayers[ClientID]->SetTeam(-1, false);
 	}
 
 
@@ -1861,82 +1874,83 @@ static bool CheckStringSQL(const char *string)
 	return true;
 }
 
-void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
+void CGameContext::ConPin(IConsole::IResult *pResult, void *pUserData)
 {
-	CGameContext *pSelf = (CGameContext *)pUserData;
+	CGameContext *pSelf = (CGameContext *) pUserData;
 	int ClientID = pResult->GetClientID();
 
 	if(!pSelf->m_apPlayers.count(ClientID))
 		return;
 
-	if(pResult->NumArguments() < 2)
+	if(pResult->NumArguments() < 1)
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _("Use /register <username> <password> to register"));
+		pSelf->SendChatTarget_Localization(ClientID, _("Use /pin <pin> to set your pin, register, or login"));
 		return;
 	}
 
-	if(!CheckStringSQL(pResult->GetString(0)) || !CheckStringSQL(pResult->GetString(1)))
+	if(!CheckStringSQL(pResult->GetString(1)))
 	{
 		pSelf->SendChatTarget_Localization(ClientID, _("Invalid char"));
 
-		pSelf->SendChatTarget_Localization(ClientID, _("Please input 0-9, A-Z, a-z for your username and password"));
+		pSelf->SendChatTarget_Localization(ClientID, _("Please input 0-9, A-Z, a-z for your pin"));
 		return;
 	}
 
-	if(str_length(pResult->GetString(0)) > MAX_ACCOUNTS_NAME_LENTH || str_length(pResult->GetString(0)) < MIN_ACCOUNTS_NAME_LENTH)
+	if(str_length(pResult->GetString(0)) != ACCOUNTS_PIN_LENTH)
 	{
-		pSelf->SendChatTarget_Localization(ClientID, _("The length of the <Username> should be between {INT}-{INT}"), MIN_ACCOUNTS_NAME_LENTH, MAX_ACCOUNTS_NAME_LENTH);
+		pSelf->SendChatTarget_Localization(ClientID, _("The length of the pin should be {INT} characters"), ACCOUNTS_PIN_LENTH);
 		return;
 	}
 
-	if(str_length(pResult->GetString(1)) > MAX_ACCOUNTS_PASSWORD_LENTH || str_length(pResult->GetString(0)) < MIN_ACCOUNTS_PASSWORD_LENTH)
-	{
-		pSelf->SendChatTarget_Localization(ClientID, _("The length of the <Password> should be between {INT}-{INT}"), MIN_ACCOUNTS_PASSWORD_LENTH, MAX_ACCOUNTS_PASSWORD_LENTH);
-		return;
-	}
-
-    char Username[MAX_ACCOUNTS_NAME_LENTH];
-    char Password[MAX_ACCOUNTS_PASSWORD_LENTH];
-    str_copy(Username, pResult->GetString(0));
-    str_copy(Password, pResult->GetString(1));
+    char Pin[ACCOUNTS_PIN_LENTH];
+    str_copy(Pin, pResult->GetString(0));
 
     char aHash[64];
-	Crypt(Password, (const unsigned char*) "d9", 1, 14, aHash);
+	Crypt(Pin, (const unsigned char*) "d9", 1, 14, aHash);
 
-	pSelf->Register(Username, aHash, ClientID);
+	if(pSelf->m_apPlayers[ClientID]->IsLogin())
+	{
+		if(pSelf->m_apPlayers[ClientID]->m_Datas["Pin"] == aHash)
+			return;
+
+		pSelf->m_apPlayers[ClientID]->m_Datas["Pin"] = aHash;
+		pSelf->UpdatePlayerData(ClientID);
+
+		pSelf->SendChatTarget_Localization(ClientID, _("Successfully set a new pin for your account"));
+	}
+	else
+	{
+		pSelf->DoRegisterLogin(aHash, ClientID, false);
+	}
 }
 
-void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
+void CGameContext::ConTimeout(IConsole::IResult *pResult, void *pUserData)
 {
-	CGameContext *pSelf = (CGameContext *)pUserData;
-	int ClientID = pResult->GetClientID();
+	CGameContext *pSelf = (CGameContext *) pUserData;
 
+	int ClientID = pResult->GetClientID();
 	if(!pSelf->m_apPlayers.count(ClientID))
 		return;
 
-	if(pResult->NumArguments() < 2)
-	{
-		pSelf->SendChatTarget_Localization(ClientID, _("Use /login <username> <password> to login"));
+	if(pSelf->Server()->IsSixup(ClientID))
 		return;
-	}
 
-	if(!CheckStringSQL(pResult->GetString(0)) || !CheckStringSQL(pResult->GetString(1)))
-	{
-		pSelf->SendChatTarget_Localization(ClientID, _("Invalid char"));
-
-		pSelf->SendChatTarget_Localization(ClientID, _("Please input 0-9, A-Z, a-z for your username and password"));
+	const char *pTimeoutCode = pResult->GetString(0);
+	if(!pTimeoutCode || !pTimeoutCode[0])
 		return;
+
+	pSelf->m_apPlayers[ClientID]->SetTimeoutCode(pTimeoutCode);
+
+	if(!pSelf->Server()->IsInMenu(ClientID))
+	{
+		if(!pSelf->m_apPlayers[ClientID]->IsLogin() && pTimeoutCode[0])
+		{
+			char aHash[64];
+			Crypt(pTimeoutCode, (const unsigned char*) "d9", 1, 14, aHash);
+
+			pSelf->DoRegisterLogin(aHash, ClientID, true);
+		}
 	}
-
-    char Username[MAX_ACCOUNTS_NAME_LENTH];
-    char Password[MAX_ACCOUNTS_PASSWORD_LENTH];
-    str_copy(Username, pResult->GetString(0));
-    str_copy(Password, pResult->GetString(1));
-
-    char aHash[64];
-	Crypt(Password, (const unsigned char*) "d9", 1, 14, aHash);
-
-	pSelf->Login(Username, aHash, ClientID);
 }
 
 const char *CGameContext::Localize(const char *pLanguageCode, const char *pText) const
@@ -2028,8 +2042,8 @@ void CGameContext::OnConsoleInit()
 
 	Console()->Register("emote", "s?i", CFGFLAG_CHAT, ConEmote, this, "change emote");
 
-	Console()->Register("register", "?s?s", CFGFLAG_CHAT, ConRegister, this, "register");
-	Console()->Register("login", "?s?s", CFGFLAG_CHAT, ConLogin, this, "login");
+	Console()->Register("pin", "s", CFGFLAG_CHAT, ConPin, this, "Set your pin, register, or login");
+	Console()->Register("timeout", "s", CFGFLAG_CHAT, ConTimeout, this, "set timeout code (In fact, it's a pin now)");
 
 	Console()->Register("w", "sr", CFGFLAG_CHAT, ConWhisper, this, "Whisper something to someone (private message)");
 	Console()->Register("whisper", "sr", CFGFLAG_CHAT, ConWhisper, this, "Whisper something to someone (private message)");
@@ -2745,127 +2759,145 @@ void CGameContext::OnPlayerChooseLanguage(int ClientID)
 }
 
 static std::mutex s_RegisterMutex;
-void CGameContext::Register(const char* pUsername, const char* pPassHash, int ClientID)
+void CGameContext::DoRegisterLogin(const char* PinHash, int ClientID, bool TimeoutCode)
 {
 	if(!m_apPlayers.count(ClientID))
 	{
 		return;
 	}
 
-	std::string Username(pUsername);
-	std::string PassHash(pPassHash);
-
-	std::thread Thread([this, Username, PassHash, ClientID]()
+	if(m_apPlayers[ClientID]->IsLogin())
 	{
-		std::string Buffer;
-		
-		CUuid Uuid = CalculateUuid(Username.c_str());
+		SendChatTarget_Localization(ClientID, _("You have logined"));
+		return;
+	}
 
-		char aUuidStr[UUID_MAXSTRSIZE];
-		FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
+	std::string Buffer;
 
-		Buffer.append("WHERE Uuid='");
-		Buffer.append(aUuidStr);
-		Buffer.append("';");
+	CUuid Uuid = CalculateUuid(Server()->ClientName(ClientID));
 
-		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
-			Buffer.c_str(), "*");
+	char aUuidStr[UUID_MAXSTRSIZE];
+	FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
 
-		if(!pSqlResult)
+	Buffer.append("WHERE Uuid='");
+	Buffer.append(aUuidStr);
+	Buffer.append("';");
+
+	SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
+		Buffer.c_str(), "*");
+
+	if(!pSqlResult)
+	{
+		return;
+	}
+
+	if(!pSqlResult->size()) // register part
+	{
+		nlohmann::json Json;
+		if(TimeoutCode)
 		{
-			return;
-		}
-
-		if(!pSqlResult->size())
-		{
-			nlohmann::json Json = {{"Password", PassHash.c_str()}, 
+			Json = {{"TimeoutCode", PinHash}, 
 				{"Nickname", Server()->ClientName(ClientID)}};
-			
-			Buffer.clear();
-			Buffer.append("(Uuid, Data) VALUES ('");
-			Buffer.append(aUuidStr);
-			Buffer.append("', '");
-			Buffer.append(Json.dump());
-			Buffer.append("');");
-
-			s_RegisterMutex.lock();
-
-			Sql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
-
-			s_RegisterMutex.unlock();
-
-			SendChatTarget_Localization(ClientID, _("You are now registered."));
-			SendChatTarget_Localization(ClientID, _("Use /login <username> <password> to login"));
-		}else
-		{
-			SendChatTarget_Localization(ClientID, _("User already exists!"));
+			SendChatTarget_Localization(ClientID, _("Auto registered! Because of your timeout code!"));
+			SendChatTarget_Localization(ClientID, _("Don't forget to use /pin to set your pin!"));
 		}
-	});
-	Thread.detach();
-	
-	return;
-}
+		else
+		{
+			Json = {{"Pin", PinHash}, 
+				{"Nickname", Server()->ClientName(ClientID)}};
 
-void CGameContext::Login(const char* pUsername, const char* pPassHash, int ClientID)
-{
-	if(!m_apPlayers.count(ClientID))
-	{
-		return;
-	}
-
-	std::string Username(pUsername);
-	std::string PassHash(pPassHash);
-
-	std::thread Thread([this, Username, PassHash, ClientID]()
-	{
-		std::string Buffer;
-
-		CUuid Uuid = CalculateUuid(Username.c_str());
-
-		char aUuidStr[UUID_MAXSTRSIZE];
-		FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
-
-		Buffer.append("WHERE Uuid='");
+			SendChatTarget_Localization(ClientID, _("Registered with pin."));
+		}
+		Buffer.clear();
+		Buffer.append("(Uuid, Data) VALUES ('");
 		Buffer.append(aUuidStr);
-		Buffer.append("';");
+		Buffer.append("', '");
+		Buffer.append(Json.dump());
+		Buffer.append("');");
 
-		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
-			Buffer.c_str(), "*");
+		s_RegisterMutex.lock();
 
-		if(!pSqlResult)
+		Sql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
+
+		s_RegisterMutex.unlock();
+
+		DoRegisterLogin(PinHash, ClientID, TimeoutCode);
+	}
+	else // login part
+	{
+		SqlResult::const_iterator Iter = pSqlResult->begin(); // no need to use for()
+
+		nlohmann::json Json = nlohmann::json::parse(Iter["Data"].as<const char*>());
+		if(!Json.contains("Pin") && !Json.contains("TimeoutCode"))
 		{
+			SendChatTarget_Localization(ClientID, _("Oops! The database of this server has something wrong!"));
 			return;
 		}
 
-		if(!pSqlResult->size())
+		std::string Pin;
+		if(TimeoutCode)
 		{
-			SendChatTarget_Localization(ClientID, _("No such account"));
-			return;
-		}
-
-		for(SqlResult::const_iterator Iter = pSqlResult->begin(); Iter != pSqlResult->end(); ++ Iter)
-		{
-			nlohmann::json Json = nlohmann::json::parse(Iter["Data"].as<const char*>());
-
-			std::string Password = Json["Password"];
-			std::string Nickname = Json["Nickname"];
-
-			if(Password == PassHash)
+			if(!Json.contains("TimeoutCode"))
 			{
-				SendChatTarget_Localization(ClientID, _("You are now logged in."));
-				m_apPlayers[ClientID]->m_Datas = Json;
-				m_apPlayers[ClientID]->Login(Iter["UserID"].as<int>());
+				SendChatTarget_Localization(ClientID, _("The account of this nickname doesn't have any timeout code."));
+				SendChatTarget_Localization(ClientID, _("Use the pin of account to login to set a new timeout code."));
+				return;
+			}
+			Pin = Json["TimeoutCode"];
+			if(Pin != PinHash)
+			{
+				SendChatTarget_Localization(ClientID, _("Wrong timeout code."));
+				SendChatTarget_Localization(ClientID, _("Use the pin of account to login to set a new timeout code."));
 
-				Datas()->Item()->SyncInvItem(ClientID);
+				return;
+			}
+		}
+		else 
+		{
+			if(!Json.contains("Pin"))
+			{
+				SendChatTarget_Localization(ClientID, _("The account of this nickname doesn't have any pin."));
+				SendChatTarget_Localization(ClientID, _("Use the timeout code of account to login to set a new pin."));
+				return;
+			}
+
+			Pin = Json["Pin"];
+			if(Pin != PinHash)
+			{
+				SendChatTarget_Localization(ClientID, _("Wrong pin."));
+				SendChatTarget_Localization(ClientID, _("Use the timeout code of account to login to set a new pin."));
+
 				return;
 			}
 		}
 
-		SendChatTarget_Localization(ClientID, _("Wrong password!"));
-	});
-	Thread.detach();
+		SendChatTarget_Localization(ClientID, _("You are now logged in."));
 
-	return;
+		if(!Json.contains("Pin"))
+		{
+			SendChatTarget_Localization(ClientID, _("Warning!!! Please use /pin to set your pin!"));
+		}
+
+		const char *pTimeoutCode = m_apPlayers[ClientID]->GetTimeoutCode();
+
+		m_apPlayers[ClientID]->m_Datas = Json;
+		m_apPlayers[ClientID]->Login(Iter["UserID"].as<int>());
+
+		Datas()->Item()->SyncInvItem(ClientID);
+
+		if(!pTimeoutCode || !pTimeoutCode[0])
+			return;
+
+		char aHash[64];
+		Crypt(pTimeoutCode, (const unsigned char*) "d9", 1, 14, aHash);
+
+		if(!Json.contains("TimeoutCode") || Json["TimeoutCode"] != pTimeoutCode)
+		{
+			m_apPlayers[ClientID]->m_Datas["TimeoutCode"] = aHash;
+		}
+
+		UpdatePlayerData(ClientID);
+	}
 }
 
 static std::mutex s_UpdateMutex;

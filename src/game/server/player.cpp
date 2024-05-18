@@ -20,6 +20,10 @@ CPlayer::CPlayer(CGameWorld *pGameWorld, int ClientID, int Team, SBotData *pBotD
 
 	m_UserID = 0;
 	m_FirstJoin = true;
+	
+	m_Datas.clear();
+
+	m_aTimeoutCode[0] = 0;
 
 	Reset();
 }
@@ -75,8 +79,6 @@ void CPlayer::Reset()
 	{
 		Server()->ClearIdMap(m_ClientID);
 	}
-	
-	m_Datas.clear();
 
 	if(IsBot())
 	{
@@ -274,7 +276,7 @@ void CPlayer::Snap(int SnappingClient)
 			pPlayerInfo->m_PlayerFlags |= protocol7::PLAYERFLAG_AIM;
 
 		pPlayerInfo->m_Score = m_Score;
-		pPlayerInfo->m_Latency = GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
+		pPlayerInfo->m_Latency = GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[id];
 	}
 
 	if(m_ClientID == SnappingClient && m_Team == TEAM_SPECTATORS)
@@ -574,4 +576,9 @@ void CPlayer::Login(int UserID)
 bool CPlayer::IsDonor()
 {
 	return !m_Datas["donor"].empty() && m_Datas["donor"].get<bool>();
+}
+
+void CPlayer::SetTimeoutCode(const char *pCode)
+{
+	str_copy(m_aTimeoutCode, pCode);
 }

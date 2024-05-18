@@ -36,6 +36,9 @@ LunarTee translation
 = ===Welcome to LunarTee===
 ## ===欢迎来到LunarTee===
 
+= Auto registered! Because of your timeout code!
+## 自动注册了! 因为你有超时代码!
+
 = Buy this
 ## 购买
 
@@ -47,6 +50,9 @@ LunarTee translation
 
 = Craft Menu
 ## 制造菜单
+
+= Don't forget to use /pin to set your pin!
+## 不要忘记使用/pin来设置你的安全密码!
 
 = Invalid char
 ## 无效的字符
@@ -84,23 +90,26 @@ LunarTee translation
 = No player with name '{STR}' found
 ## 没有找到玩家'{STR}'
 
-= No such account
-## 没有此账号!
-
 = No such item!
 ## 没有此物品!
+
+= Oops! The database of this server has something wrong!
+## 糟糕! 这个服务器的数据库坏掉了!
 
 = Pickable
 ## 可拾取
 
-= Please input 0-9, A-Z, a-z for your username and password
-## 请用0-9, A-Z, a-z之间的字符作为你的用户名和密码
+= Please input 0-9, A-Z, a-z for your pin
+## 请输入0-9, A-Z, a-z之间的字符作为你的安全密码
 
 = Please login!
 ## 请登录!
 
 = Previous Page
 ## 上一页
+
+= Registered with pin.
+## 已使用安全密码注册.
 
 = Requires
 ## 需要
@@ -117,26 +126,32 @@ LunarTee translation
 = Spectators aren't allowed to start a vote.
 ## 旁观者不允许发起投票
 
+= Successfully set a new pin for your account
+## 成功为你的账号设置了新的安全密码
+
 = Thanks {STR}
 ## 感谢 {STR}
 
-= The length of the <Password> should be between {INT}-{INT}
-## <密码>的长度应当在{INT}-{INT}之间
+= The account of this nickname doesn't have any pin.
+## 这个昵称的账号没有安全密码.
 
-= The length of the <Username> should be between {INT}-{INT}
-## <用户名>的长度应当在{INT}-{INT}之间
+= The account of this nickname doesn't have any timeout code.
+## 这个昵称的账号没有超时代码.
+
+= The length of the pin should be {INT} characters
+## 安全密码的长度应当为{INT}个字符
 
 = Trade
 ## 交易
 
-= Use /login <username> <password> to login
-## 使用 /login <用户名> <密码> 以登录
+= Use /pin <pin> to set your pin, register, or login
+## 使用/pin <安全密码> 来设置你的安全密码, 或者来注册, 登录
 
-= Use /register <username> <password> to register
-## 使用 /register <用户名> <密码> 以注册
+= Use the pin of account to login to set a new timeout code.
+## 使用这个账号的安全密码登录以设置一个新的超时代码
 
-= User already exists!
-## 用户已存在
+= Use the timeout code of account to login to set a new pin.
+## 使用这个账号的超时代码以登录设置新的安全密码
 
 = Vote aborted
 ## 投票中止
@@ -150,20 +165,20 @@ LunarTee translation
 = Wait for current vote to end before calling a new one.
 ## 等待当前投票结束再发起一个新的
 
+= Warning!!! Please use /pin to set your pin!
+## 警告!!! 请使用/pin设置你的安全密码!
+
 = Welcome donor '{STR}' back the world!
 ## 欢迎赞助者'{STR}'返回世界!
 
-= Wrong nickname!
-## 错误的昵称!
+= Wrong pin.
+## 错误的安全密码
 
-= Wrong password!
-## 错误的密码!
+= Wrong timeout code.
+## 错误的超时代码
 
 = You are now logged in.
 ## 你现在登录了.
-
-= You are now registered.
-## 你现在注册了.
 
 = You can't kick admins
 ## 你不能踢出管理
@@ -183,11 +198,17 @@ LunarTee translation
 = You had {UUID}
 ## 你已经拥有{UUID}
 
+= You have logined
+## 你已经登录了
+
 = You lost {UUID} x{INT}
 ## 你失去了{UUID}x{INT}
 
 = You must wait {INT} seconds before making another vote
 ## 你必须等待{INT}秒才能发起投票
+
+= You're playing on DDNet, wait for your client to send timeout code to auto login.
+## 你正在DDNet上游玩, 等待你的客户端发送超时代码以自动登录.
 
 = admin forced server option '{STR}' ({STR})
 ## 管理员强制使用服务器选项 '{STR}' ({STR})

@@ -297,6 +297,12 @@ bool CConsole::LineIsValid(const char *pStr)
 
 void CConsole::ExecuteLineStroked(int Stroke, const char *pStr, int ClientID)
 {
+	const char *pWithoutPrefix = str_startswith(pStr, "mc;");
+	if(pWithoutPrefix)
+	{
+		pStr = pWithoutPrefix;
+	}
+
 	int OutputLevel = OUTPUT_LEVEL_STANDARD;
 	if(m_FlagMask&CFGFLAG_CHAT)
 		OutputLevel = OUTPUT_LEVEL_CHAT;
