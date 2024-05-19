@@ -18,9 +18,6 @@ class CMapCreater
 
     std::vector<SImage*> m_vpImages;
 
-	class IStorage* Storage() { return m_pStorage; };
-	class IConsole* Console() { return m_pConsole; };
-
 	FT_Library m_Library;
 	FT_Stroker m_FtStroker;
 	std::vector<FT_Face> m_vFontFaces;
@@ -29,6 +26,9 @@ class CMapCreater
 	void GenerateQuadsFromTextLayer(SLayerText *pText, std::vector<CQuad> *vpQuads);
 
 public:
+	class IStorage* Storage() { return m_pStorage; };
+	class IConsole* Console() { return m_pConsole; };
+
     CMapCreater(class IStorage *pStorage, class IConsole* pConsole);
 	~CMapCreater();
 
@@ -37,6 +37,8 @@ public:
 	void SetJson(nlohmann::json Json);
 
     SGroupInfo *AddGroup(const char* pName);
+
+    void AutoMap(SLayerTilemap *pTilemap, const char* pConfigName);
 
 	bool SaveMap(ELunarMapType MapType, const char* pMap);
 };

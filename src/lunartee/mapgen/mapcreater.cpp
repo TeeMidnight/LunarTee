@@ -21,6 +21,8 @@
 
 #include "mapcreater.h"
 
+#include "auto_map.h"
+
 void FreePNG(CImageInfo *pImg)
 {
 	free(pImg->m_pData);
@@ -405,6 +407,33 @@ SText *SLayerText::AddText(const char* pText, int Size, ivec2 Pos, bool Outline,
     pTextObj->m_Center = Center;
 
     return pTextObj;
+}
+
+void CMapCreater::AutoMap(SLayerTilemap *pTilemap, const char* pConfigName)
+{
+    CAutoMapper AutoMapper(this);
+
+    AutoMapper.Load(pTilemap->m_pImage->m_aName);
+
+    if(!AutoMapper.IsLoaded())
+        return;
+
+    int ConfigID = -1;
+    for(int i = 0; i < AutoMapper.ConfigNamesNum(); i ++)
+    {
+        if(str_comp(AutoMapper.GetConfigName(i), pConfigName) == 0)
+        {
+            ConfigID = i;
+            break;
+        }
+    }
+
+    if(ConfigID == -1)
+    {
+        return;
+    }
+
+    AutoMapper.Proceed(pTilemap, ConfigID);
 }
 
 static int AdjustOutlineThicknessToFontSize(int OutlineThickness, int FontSize)

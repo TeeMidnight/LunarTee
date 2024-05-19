@@ -314,9 +314,6 @@ void CMapGen::GenerateHookable(CMapGen *pParent)
 
 	pParent->m_pHookableTiles = pLayer->AddTiles(Width, Height);
 
-	static std::mutex ms_mutex;
-	ms_mutex.lock();
-
 	auto FillThread = [pParent, Width, Height](int ChunkX, int ChunkY)
 	{
 		for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x ++)
@@ -355,7 +352,7 @@ void CMapGen::GenerateHookable(CMapGen *pParent)
 
 	pParent->m_HookableReady = true;
 
-	ms_mutex.unlock();
+	pParent->m_pMapCreater->AutoMap(pLayer, "Default");
 }
 
 void CMapGen::GenerateUnhookable(CMapGen *pParent)
@@ -367,9 +364,6 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 
 	pLayer->m_pImage = pParent->m_pMapCreater->AddExternalImage("generic_unhookable", 1024, 1024);
 	pParent->m_pUnhookableTiles = pLayer->AddTiles(Width, Height);
-
-	static std::mutex ms_mutex;
-	ms_mutex.lock();
 
 	for(int x = 0;x < Width;x ++)
 	{
@@ -391,7 +385,7 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 
 	pParent->m_UnhookableReady = true;
 
-	ms_mutex.unlock();
+	pParent->m_pMapCreater->AutoMap(pLayer, "Random Silver");
 }
 
 void CMapGen::GenerateCenter()
@@ -470,7 +464,12 @@ bool CMapGen::CreateMap(const char *pFilename)
 {
 	m_pMapCreater = new CMapCreater(Storage(), Console());
 
+	int64_t Time = time_get();
+
 	GenerateMap();
+
+	float UseTime = (time_get() - Time) / (float) time_freq();
+	dbg_msg("mapgen", "generate map in %.02f seconds", UseTime);
 
 	return m_pMapCreater->SaveMap(ELunarMapType::MAPTYPE_CHUNK, pFilename);
 }
