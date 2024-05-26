@@ -3,8 +3,6 @@
 #ifndef ENGINE_SHARED_PROTOCOL_H
 #define ENGINE_SHARED_PROTOCOL_H
 
-#include <bitset>
-
 /*
 	Connection diagram - How the initialization works.
 
@@ -130,7 +128,6 @@ enum
 
 struct CIDMap
 {
-	int m_VanillaIDMap[VANILLA_MAX_CLIENTS];
 	int m_IDMap[DDNET_MAX_CLIENTS];
 };
 

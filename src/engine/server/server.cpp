@@ -2185,7 +2185,7 @@ int* CServer::GetIdMap(int ClientID)
 	if(!m_aClients.count(ClientID))
 		return nullptr;
 
-	return Is64Player(ClientID) ?  m_aClients[ClientID].m_IDMap.m_IDMap : m_aClients[ClientID].m_IDMap.m_VanillaIDMap;
+	return m_aClients[ClientID].m_IDMap.m_IDMap;
 }
 
 void CServer::ClearIdMap(int ClientID)
@@ -2198,12 +2198,6 @@ void CServer::ClearIdMap(int ClientID)
 		m_aClients[ClientID].m_IDMap.m_IDMap[i] = -1;
 	}
 	m_aClients[ClientID].m_IDMap.m_IDMap[0] = ClientID;
-
-	for(int i = 0;i < VANILLA_MAX_CLIENTS; i ++)
-	{
-		m_aClients[ClientID].m_IDMap.m_VanillaIDMap[i] = -1;
-	}
-	m_aClients[ClientID].m_IDMap.m_VanillaIDMap[0] = ClientID;
 }
 
 char *CServer::GetMapName(CMapData *pMapData)

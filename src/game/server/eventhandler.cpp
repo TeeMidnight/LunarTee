@@ -58,7 +58,7 @@ void CEventHandler::Snap(int SnappingClient)
 		if(SnappingClient == -1 || m_aClientMasks[i].Test(SnappingClient))
 		{
 			CNetEvent_Common *pEvent = (CNetEvent_Common *)&m_aData[m_aOffsets[i]];
-			if(!NetworkClipped(GameServer()->m_pMainWorld, SnappingClient, vec2(pEvent->m_X, pEvent->m_Y)))
+			if(!NetworkClipped(GameWorld(), SnappingClient, vec2(pEvent->m_X, pEvent->m_Y)))
 			{
 				int Type = m_aTypes[i];
 				int Size = m_aSizes[i];
