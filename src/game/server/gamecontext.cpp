@@ -2132,12 +2132,12 @@ void CGameContext::OnPostSnap()
 
 bool CGameContext::IsClientReady(int ClientID)
 {
-	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->m_IsReady ? true : false;
+	return m_apPlayers.count(ClientID) && m_apPlayers[ClientID]->m_IsReady ? true : false;
 }
 
 bool CGameContext::IsClientPlayer(int ClientID)
 {
-	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
+	return m_apPlayers.count(ClientID) && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
 }
 
 int CGameContext::GetClientVersion(int ClientID) const
@@ -2272,6 +2272,10 @@ static char *EscapeJson(char *pBuffer, int BufferSize, const char *pString)
 
 void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)
 {
+	dbg_msg("yee", "%d", m_apPlayers.count(ID));
+	if(!m_apPlayers.count(ID))
+		return;
+
 	if(!m_apPlayers[ID])
 		return;
 
