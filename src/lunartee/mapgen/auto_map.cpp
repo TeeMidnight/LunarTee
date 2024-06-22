@@ -166,9 +166,6 @@ void CAutoMapper::Proceed(SLayerTilemap *pLayer, int ConfigID)
 
 			pTile->m_Index = BaseTile;
 
-			if(y == 0 || y == pLayer->m_Height-1 || x == 0 || x == pLayer->m_Width-1)
-				continue;
-
 			for(int i = 0; i < pConf->m_aIndexRules.size(); ++i)
 			{
 				if(pConf->m_aIndexRules[i].m_BaseTile)
@@ -207,7 +204,7 @@ void CAutoMapper::Proceed(SLayerTilemap *pLayer, int ConfigID)
 					}
 					else
 					{
-						if(CheckIndex > 0 && pRule->m_Value == CPosRule::EMPTY)
+						if(CheckIndex != 0 && pRule->m_Value == CPosRule::EMPTY)
 							RespectRules = false;
 
 						if(CheckIndex == 0 && pRule->m_Value == CPosRule::FULL)
