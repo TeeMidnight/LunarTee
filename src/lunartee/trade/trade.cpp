@@ -155,6 +155,7 @@ void CTradeCore::MenuShopper(int ClientID, const char* pCmd, const char* pReason
                     pThis->GameServer()->Server()->GetClientLanguage(ClientID), _("Buy this")));
 
         Options.push_back(CMenuOption(aBuy, aCmd, "@ {STR}"));
+        Options.push_back(CMenuOption(" ", "SHOW", "{STR}"));
 
         Order ++;
     }
