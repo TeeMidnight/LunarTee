@@ -10,6 +10,7 @@ class CTradeCore
 {
     class CGameContext *m_pGameServer;
 
+    static void MenuShopper(int ClientID, const char* pCmd, const char* pReason, void *pUserData);
     static void MenuTrade(int ClientID, const char* pCmd, const char* pReason, void *pUserData);
     void RegisterMenu();
 
