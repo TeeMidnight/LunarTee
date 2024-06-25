@@ -75,6 +75,12 @@ void CTradeCore::MenuShopper(int ClientID, const char* pCmd, const char* pReason
         
         if(!pTradeData)
             return;
+        
+        if(TraderID == ClientID)
+        {
+            pThis->GameServer()->SendChatTarget_Localization(ClientID, _("You can't buy your own items."));
+            return;
+        }
 
         for(auto& Need : pTradeData->m_Needs)
         {
@@ -93,7 +99,19 @@ void CTradeCore::MenuShopper(int ClientID, const char* pCmd, const char* pReason
         Datas()->Item()->AddInvItemNum(pTradeData->m_Give.first, pTradeData->m_Give.second, ClientID, true, true);
 
         if(TraderID > 0)
+        {
+            pThis->GameServer()->SendChatTarget_Localization(ClientID, _("'{STR}' has bought your {UUID}x{INT}"),
+                pThis->GameServer()->Server()->ClientName(ClientID),
+                pTradeData->m_Give.first,
+                pTradeData->m_Give.second);
+
             pThis->m_vTraders[TraderID].erase(std::find(pThis->m_vTraders[TraderID].begin(), pThis->m_vTraders[TraderID].end(), *pTradeData));
+            for(auto& Need : pTradeData->m_Needs)
+            {
+                Datas()->Item()->AddInvItemNum(Need.first, Need.second, TraderID);
+            }
+            Datas()->Item()->AddInvItemNum(pTradeData->m_Give.first, -pTradeData->m_Give.second, ClientID, true, false);
+        }
 
         return;
     }
