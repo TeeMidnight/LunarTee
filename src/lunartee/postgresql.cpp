@@ -39,6 +39,7 @@ void CSqlConnection::Disconnect()
 	{
 		if(m_pConnection)
 		{
+		// pqxx 7.x.x use "close" to take "disconnect"'s place
 		#if PQXX_VERSION_MAJOR >= 7
 			m_pConnection->close();
 		#else
@@ -61,7 +62,8 @@ SqlResult *CSqlWork::Commit(const char* pExec)
 	{
 		pResult = new SqlResult(m_pWork->exec(pExec));
 		m_pWork->commit();
-	}catch (std::exception &e)
+	}
+	catch (std::exception &e)
 	{
 		log_error("Postgresql", "ERROR: SQL failed when exec (%s)", e.what());
 	}
