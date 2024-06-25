@@ -1,4 +1,4 @@
-#include <stdio.h>	// sscanf
+#include <cstdio>
 
 #include <engine/console.h>
 #include <engine/storage.h>
