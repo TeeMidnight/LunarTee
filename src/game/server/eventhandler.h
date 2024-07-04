@@ -3,28 +3,9 @@
 #ifndef GAME_SERVER_EVENTHANDLER_H
 #define GAME_SERVER_EVENTHANDLER_H
 
-#include <engine/uuid.h>
+#include <cstdint>
 
-#include <map>
-
-class CEventMask
-{
-	std::map<int, bool> m_ClientMaskMap;
-public:
-	bool &Get(int ClientID)
-	{
-		if(!m_ClientMaskMap.count(ClientID))
-			m_ClientMaskMap[ClientID] = false;
-
-		return m_ClientMaskMap[ClientID];
-	}
-
-	// Test ClientID
-	bool Test(int ClientID)
-	{
-		return m_ClientMaskMap.count(ClientID) && m_ClientMaskMap[ClientID];
-	}
-};
+#include <engine/shared/protocol.h>
 
 class CEventHandler
 {
@@ -37,26 +18,23 @@ class CEventHandler
 	int m_aTypes[MAX_EVENTS]; // TODO: remove some of these arrays
 	int m_aOffsets[MAX_EVENTS];
 	int m_aSizes[MAX_EVENTS];
-	CEventMask m_aClientMasks[MAX_EVENTS];
+	CClientMask m_aClientMasks[MAX_EVENTS];
 	char m_aData[MAX_DATASIZE];
 
 	class CGameContext *m_pGameServer;
-	class CGameWorld *m_pGameWorld;
 
 	int m_CurrentOffset;
 	int m_NumEvents;
 
 public:
 	CGameContext *GameServer() const { return m_pGameServer; }
-	CGameWorld *GameWorld() const { return m_pGameWorld; }
 	void SetGameServer(CGameContext *pGameServer);
-	void SetGameWorld(CGameWorld *pGameWorld);
 
 	CEventHandler();
-	void *Create(int Type, int Size, CEventMask Mask);
+	void *Create(int Type, int Size, CClientMask Mask = CClientMask().set());
 
 	template<typename T>
-	T *Create(CEventMask Mask)
+	T *Create(CClientMask Mask = CClientMask().set())
 	{
 		return static_cast<T *>(Create(T::ms_MsgID, sizeof(T), Mask));
 	}

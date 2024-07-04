@@ -104,7 +104,8 @@ public:
 
 		enum
 		{
-			STATE_PREAUTH=0,
+			STATE_EMPTY = 0,
+			STATE_PREAUTH,
 			STATE_AUTH,
 			STATE_CONNECTING,
 			STATE_READY,
@@ -146,8 +147,6 @@ public:
 
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
 		
-		CClient();
-
 		void Reset();
 
 		char m_aLanguage[16];
@@ -162,11 +161,11 @@ public:
 
 		bool m_Sixup;
 		bool m_InMenu;
-
-		CIDMap m_IDMap;
 	};
 
-	std::map<int, CClient> m_aClients;
+	CClient m_aClients[MAX_CLIENTS];
+
+	CIDMap m_aIDMap[MAX_CLIENTS];
 
 	CSnapshotDelta m_SnapshotDelta;
 	CSnapshotBuilder m_SnapshotBuilder;
@@ -219,16 +218,16 @@ public:
 	void SendRconLogLine(int ClientID, const CLogMessage *pMessage);
 	void SetRconCID(int ClientID);
 	bool IsAuthed(int ClientID);
-	bool GetClientInfo(int ClientID, CClientInfo *pInfo) override;
+	bool GetClientInfo(int ClientID, CClientInfo *pInfo) const override;
 	void SetClientDDNetVersion(int ClientID, int DDNetVersion) override;
 	void GetClientAddr(int ClientID, char *pAddrStr, int Size);
 	const char *ClientName(int ClientID);
 	const char *ClientClan(int ClientID);
 	int ClientCountry(int ClientID);
 	bool ClientIngame(int ClientID);
-	int EndClientID() const;
-	int GetClientVersion(int ClientID) override;
-	bool Is64Player(int ClientID) override;
+	int MaxClients() const;
+	int GetClientVersion(int ClientID) const override;
+	bool Is64Player(int ClientID) const override;
 	IMap *GetClientMap(int ClientID) override;
 
 	int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) override;
@@ -307,8 +306,7 @@ class CCache
 	static void ConRecord(IConsole::IResult *pResult, void *pUser);
 	static void ConStopRecord(IConsole::IResult *pResult, void *pUser);
 	static void ConLogout(IConsole::IResult *pResult, void *pUser);
-	static void ConchainSpecialInfoUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	static void ConchainMaxclientsUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainConsoleOutputLevelUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -333,11 +331,11 @@ public:
 	void ChangeClientMap(int ClientID, CUuid *pMapID) override;
 	int GetLoadedMapNum() const override;
 
-	int GetOneWorldPlayerNum(int ClientID) override;
+	int GetOneWorldPlayerNum(int ClientID) const override;
 	void CreateNewTheardJob(std::shared_ptr<IJob> pJob) override;
 
-	bool IsSixup(int ClientID) override;
-	bool IsInMenu(int ClientID) override;
+	bool IsSixup(int ClientID) const override { return ClientID != -1 && m_aClients[ClientID].m_Sixup; }
+	bool IsInMenu(int ClientID) const override { return m_aClients[ClientID].m_InMenu; }
 
 	const char *GetMainMap() override;
 	const char *GetMenuMap() override;

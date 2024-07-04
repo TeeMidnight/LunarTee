@@ -15,6 +15,7 @@
 #include <game/layers.h>
 #include <game/voting.h>
 
+#include "eventhandler.h"
 #include "gamecontroller.h"
 #include "gameworld.h"
 #include "gamemenu.h"
@@ -43,6 +44,11 @@
 			All players (CPlayer::snap)
 
 */
+CClientMask const& CmaskAll();
+CClientMask CmaskOne(int ClientID);
+CClientMask CmaskAllExceptOne(int ClientID);
+
+inline bool CmaskIsSet(CClientMask const& Mask, int ClientID) { return Mask[ClientID]; }
 
 class CGameContext : public IGameServer
 {
@@ -103,8 +109,8 @@ public:
 	void Clear();
 	CGameWorld *CreateNewWorld(IMap *pMap, const char *WorldName, bool Menu);
 
-	std::map<int, CPlayer*> m_apPlayers;
-	std::unordered_map<int, CPlayer*> m_vpBotPlayers;
+	CPlayer *m_apPlayers[MAX_CLIENTS];
+	std::unordered_map<int, CPlayer*> m_pBotPlayers;
 
 	CGameController *m_pController;
 	CBotController *m_pBotController;
@@ -142,12 +148,19 @@ public:
 	CVoteOptionServer *m_pVoteOptionFirst;
 	CVoteOptionServer *m_pVoteOptionLast;
 
-	CGameWorld *FindWorldWithClientID(int ClientID);
+	CGameWorld *FindWorldWithClientID(int ClientID) const;
 	CGameWorld *FindWorldWithMap(IMap *pMap);
 	CGameWorld *FindWorldWithName(const char *WorldName);
 
 	// helper functions
+	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount, CClientMask Mask = CClientMask().set());
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, CClientMask Mask = CClientMask().set());
+	void CreateHammerHit(vec2 Pos, CClientMask Mask = CClientMask().set());
+	void CreatePlayerSpawn(vec2 Pos, CClientMask Mask = CClientMask().set());
+	void CreateDeath(vec2 Pos, int ClientID, CClientMask Mask = CClientMask().set());
+	void CreateSound(vec2 Pos, int Sound, CClientMask Mask = CClientMask().set());
 	void CreateSoundGlobal(int Sound, int Target=-1);
+
 
 	enum
 	{
@@ -195,7 +208,7 @@ public:
 	void *PreProcessMsg(int *pMsgID, CUnpacker *pUnpacker, int ClientID);
 	void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) override;
 
-	void OnClientConnected(int ClientID, const char *WorldName, bool IsMenu) override;
+	void OnClientConnected(int ClientID, const char *WorldName, bool Menu) override;
 	void OnClientEnter(int ClientID) override;
 	void OnClientDrop(int ClientID, const char *pReason) override;
 	void OnClientDirectInput(int ClientID, void *pInput) override;
@@ -208,11 +221,13 @@ public:
 	void OnSetAuthed(int ClientID,int Level) override;
 	
 	const char *GameType() override;
+	const char *Version() override;
+	const char *NetVersion() override;
 	
 	void OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID) override;
 
-	int GetOneWorldPlayerNum(CGameWorld *pGameWorld);
-	int GetOneWorldPlayerNum(int ClientID) override;
+	int GetOneWorldPlayerNum(CGameWorld *pGameWorld) const;
+	int GetOneWorldPlayerNum(int ClientID) const override;
 
 	// CraftItem
 	void CraftItem(int ClientID, CUuid Uuid);

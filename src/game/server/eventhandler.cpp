@@ -13,8 +13,7 @@
 //////////////////////////////////////////////////
 CEventHandler::CEventHandler()
 {
-	m_pGameServer = nullptr;
-	m_pGameWorld = nullptr;
+	m_pGameServer = 0;
 	Clear();
 }
 
@@ -23,12 +22,7 @@ void CEventHandler::SetGameServer(CGameContext *pGameServer)
 	m_pGameServer = pGameServer;
 }
 
-void CEventHandler::SetGameWorld(CGameWorld *pGameWorld)
-{
-	m_pGameWorld = pGameWorld;
-}
-
-void *CEventHandler::Create(int Type, int Size, CEventMask Mask)
+void *CEventHandler::Create(int Type, int Size, CClientMask Mask)
 {
 	if(m_NumEvents == MAX_EVENTS)
 		return 0;
@@ -55,7 +49,7 @@ void CEventHandler::Snap(int SnappingClient)
 {
 	for(int i = 0; i < m_NumEvents; i++)
 	{
-		if(SnappingClient == -1 || m_aClientMasks[i].Test(SnappingClient))
+		if(SnappingClient == -1 || m_aClientMasks[i].test(SnappingClient))
 		{
 			CNetEvent_Common *pEvent = (CNetEvent_Common *)&m_aData[m_aOffsets[i]];
 			if(!NetworkClipped(GameWorld(), SnappingClient, vec2(pEvent->m_X, pEvent->m_Y)))

@@ -211,7 +211,7 @@ void CTradeCore::MenuTrade(int ClientID, const char* pCmd, const char* pReason, 
             continue;
         }
 
-        int TraderID = Trader.first;
+        int TraderID = -Trader.first;
         CPlayer *pTrader = pThis->GameServer()->GetPlayer(TraderID);
 
         if(!pTrader)

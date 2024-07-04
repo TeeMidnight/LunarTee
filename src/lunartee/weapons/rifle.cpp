@@ -19,7 +19,7 @@ void CWeaponRifle::Fire(CGameWorld *pGameWorld, int Owner, vec2 Dir, vec2 Pos)
         GetWeaponID(),
         0);
 
-    pGameWorld->CreateSound(Pos, SOUND_RIFLE_FIRE);
+    GameServer()->CreateSound(Pos, SOUND_RIFLE_FIRE);
     
     return;
 }

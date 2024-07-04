@@ -49,7 +49,7 @@ public:
 	int m_PlayerFlags;
 
 	// used for snapping to just update latency if the scoreboard is active
-	int m_aActLatency[DDNET_MAX_CLIENTS];
+	int m_aActLatency[MAX_CLIENTS];
 
 	// used for spectator mode
 	int m_SpectatorID;
@@ -138,7 +138,7 @@ public:
 	// Bot
 	SBotData *m_pBotData;
 
-	bool IsBot() { return (m_ClientID < 0); }
+	bool IsBot() { return (m_ClientID >= MAX_CLIENTS); }
 	bool IsLogin() { return m_UserID > 0; }
 	int GetUserID() { return m_UserID; }
 	void Login(int UserID);

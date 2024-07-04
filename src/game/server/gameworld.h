@@ -7,8 +7,6 @@
 #include <game/layers.h>
 #include <base/vmath.h>
 
-#include "eventhandler.h"
-
 #include <map>
 #include <vector>
 
@@ -59,8 +57,6 @@ public:
 	int m_MenuPagesNum;
 	std::map<int, char[64]> m_MenuLanguages;
 
-	CEventHandler m_Events;
-
 	bool m_Menu;
 
 	CWorldCore m_Core;
@@ -71,6 +67,8 @@ public:
 	void SetGameServer(CGameContext *pGameServer);
 
 	CEntity *FindFirst(int Type);
+
+	CClientMask WorldMask();
 	/*
 		Function: find_entities
 			Finds entities close to a position and returns them in a list.
@@ -170,25 +168,6 @@ public:
 	bool GetSpawnPos(bool IsBot, vec2& SpawnPos);
 	std::vector<vec2> m_vSpawnPoints[2];
 	std::vector<int> m_vSpawnPointsID;
-
-	CEventMask WorldMaskAll();
-	CEventMask WorldMaskOne(int ClientID);
-	CEventMask WorldMaskAllExceptOne(int ClientID);
-
-	// helper functions
-	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount, CEventMask Mask);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, CEventMask Mask);
-	void CreateHammerHit(vec2 Pos, CEventMask Mask);
-	void CreatePlayerSpawn(vec2 Pos, CEventMask Mask);
-	void CreateDeath(vec2 Pos, int ClientID, CEventMask Mask);
-	void CreateSound(vec2 Pos, int Sound, CEventMask Mask);
-
-	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage);
-	void CreateHammerHit(vec2 Pos);
-	void CreatePlayerSpawn(vec2 Pos);
-	void CreateDeath(vec2 Pos, int ClientID);
-	void CreateSound(vec2 Pos, int Sound);
 };
 
 #endif
