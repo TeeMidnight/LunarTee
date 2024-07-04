@@ -512,16 +512,19 @@ bool CMapGen::CreateMenu(const char *pFilename)
 		SGroupInfo *pGroup = m_pMapCreater->AddGroup("Options");
 		SLayerQuads *pQuadLayer = pGroup->AddQuadsLayer("Quad");
 		SLayerQuads *pArrowLayer = pGroup->AddQuadsLayer("Arrow");
+		SLayerQuads *pLogoLayer = pGroup->AddQuadsLayer("Logo");
 		SLayerText *pTextLayer = pGroup->AddTextLayer("Text");
 
 		pArrowLayer->m_pImage = m_pMapCreater->AddEmbeddedImage("arrow");
+		pLogoLayer->m_pImage = m_pMapCreater->AddEmbeddedImage("logo");
 
 		int PageIndex;
 		PageIndex = 0;
 
-		pQuadLayer->AddQuad(vec2(PageIndex * 960.0f, 0), vec2(480, 480), ColorRGBA(0, 0, 0, 25));
-		pArrowLayer->AddQuad(vec2(PageIndex * 960.0f + 360.0f, 0), vec2(48, 50), ColorRGBA(255, 255, 255, 255));
-		pTextLayer->AddText("LunarTee", 48.0f, ivec2(PageIndex * 960.0f, 0), true, true);
+		pQuadLayer->AddQuad(vec2(PageIndex * 960.0f, 0.f), vec2(480, 480), ColorRGBA(0, 0, 0, 25));
+		pArrowLayer->AddQuad(vec2(PageIndex * 960.0f + 360.0f, 0.f), vec2(48, 50));
+		pTextLayer->AddText("LunarTee", 48.0f, ivec2(PageIndex * 960.0f, 128.0f), true, true);
+		pLogoLayer->AddQuad(vec2(PageIndex * 960.0f, -96.0f), vec2(256, 256));
 		
 		PageIndex ++;
 

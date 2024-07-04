@@ -576,9 +576,6 @@ void CCharacter::OnWeaponFire(int Weapon)
 
 void CCharacter::Tick()
 {
-	if(m_pPlayer->IsBot())
-		return;
-
 	DoBotActions();
 
 	if(!m_Alive)
