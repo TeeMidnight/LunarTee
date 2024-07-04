@@ -576,14 +576,17 @@ void CCharacter::OnWeaponFire(int Weapon)
 
 void CCharacter::Tick()
 {
-	// Sync
-	SyncWeapon();
-	SyncHealth();
-	
+	if(m_pPlayer->IsBot())
+		return;
+
 	DoBotActions();
 
 	if(!m_Alive)
 		return;
+
+	// Sync
+	SyncWeapon();
+	SyncHealth();
 
 	HandleMenu();
 
@@ -1052,24 +1055,7 @@ void CCharacter::Freeze(float Seconds)
 
 void CCharacter::DoBotActions()
 {
-	if(!m_pPlayer)
-		return;
-	if(!m_pPlayer->IsBot())
-		return;
-	if(!m_Alive)
-		return;
-	if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_RESOURCE)
-		return;
-
 	if(!NeedActive())
-	{
-		bool BotPickable = Pickable();
-		mem_zero(&m_Botinfo, sizeof(CBotInfo));
-		m_Botinfo.m_Pickable = BotPickable;
-		return;
-	}
-
-	if(Pickable())
 		return;
 
 	CCharacter *pOldTarget = GameServer()->GetPlayerChar(m_Botinfo.m_Target);
@@ -1359,6 +1345,15 @@ bool CCharacter::CheckPos(vec2 CheckPos)
 
 bool CCharacter::NeedActive()
 {
+	if(!m_pPlayer)
+		return false;
+	if(!m_pPlayer->IsBot())
+		return false;
+	if(m_pPlayer->m_pBotData->m_Type == EBotType::BOTTYPE_RESOURCE)
+		return false;
+	if(Pickable())
+		return false;
+
 	for(auto& pPlayer : GameServer()->m_apPlayers)
 	{
 		if(distance(pPlayer.second->m_ViewPos, m_Pos) < 1500.0f)

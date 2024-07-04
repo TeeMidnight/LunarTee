@@ -104,7 +104,7 @@ public:
 	CGameWorld *CreateNewWorld(IMap *pMap, const char *WorldName, bool Menu);
 
 	std::map<int, CPlayer*> m_apPlayers;
-	std::unordered_map<int, CPlayer*> m_pBotPlayers;
+	std::unordered_map<int, CPlayer*> m_vpBotPlayers;
 
 	CGameController *m_pController;
 	CBotController *m_pBotController;

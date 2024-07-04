@@ -62,6 +62,7 @@
 #endif
 
 volatile sig_atomic_t InterruptSignaled = 0;
+static std::vector<int> s_ClientsRemoveList;
 
 static const char *StrLtrim(const char *pStr)
 {
@@ -339,6 +340,8 @@ CServer::CServer() : m_DemoRecorder(&m_SnapshotDelta)
 
 	m_pMainMapData = nullptr;
 	m_pMenuMapData = nullptr;
+
+	s_ClientsRemoveList.clear();
 
 	Init();
 }
@@ -952,8 +955,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	if(pThis->m_aClients[ClientID].m_State >= CClient::STATE_READY)
 		pThis->GameServer()->OnClientDrop(ClientID, pReason);
 
-	if(pThis->m_RunServer)
-		pThis->m_aClients.erase(ClientID);
+	s_ClientsRemoveList.push_back(ClientID);
 
 	return 0;
 }
@@ -1606,7 +1608,7 @@ void CServer::CacheServerInfoSixup(CCache *pCache, bool SendClients)
 	Packer.AddString("0.7↔0.6 Teeworlds", 32);
 
 	char aBuf[64];
-	const int MaxClients = minimum(g_Config.m_SvMaxClients == -1 ? 256 : g_Config.m_SvMaxClients, (int) DDNET_MAX_CLIENTS);
+	const int MaxClients = minimum(g_Config.m_SvMaxClients == -1 ? DDNET_MAX_CLIENTS : g_Config.m_SvMaxClients, (int) DDNET_MAX_CLIENTS);
 	if(g_Config.m_SvMaxClients == -1)
 		str_format(aBuf, sizeof(aBuf), "%s [%d/∞]", g_Config.m_SvName, ClientCount);
 	else
@@ -1684,12 +1686,12 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 
 	p.AddString("0.6↔0.7 Teeworlds", 32);
 
-	const int MaxClients = minimum(g_Config.m_SvMaxClients == -1 ? 256 : g_Config.m_SvMaxClients, 256);
+	const int MaxClients = minimum(g_Config.m_SvMaxClients == -1 ? SERVERINFO_MAX_CLIENTS : g_Config.m_SvMaxClients, (int) SERVERINFO_MAX_CLIENTS);
 	if(g_Config.m_SvMaxClients == -1)
 		str_format(aBuf, sizeof(aBuf), "%s [%d/∞]", g_Config.m_SvName, ClientCount);
 	else
 		str_format(aBuf, sizeof(aBuf), "%s [%d/%d]", g_Config.m_SvName, ClientCount, g_Config.m_SvMaxClients);
-	p.AddString(aBuf, Type == SERVERINFO_VANILLA ? 64 : 256);
+	p.AddString(aBuf, Type == SERVERINFO_VANILLA ? 64 : SERVERINFO_MAX_CLIENTS);
 			
 	// map name
 	p.AddString(GameServer()->GameType(), 32);
@@ -2396,6 +2398,12 @@ int CServer::Run()
 		{
 			if(!m_Active && m_MainMapLoaded)
 				PumpNetwork(PacketWaiting);
+
+			for(auto& ClientID : s_ClientsRemoveList)
+			{
+				m_aClients.erase(ClientID);
+			}
+			s_ClientsRemoveList.clear();
 
 			set_new_tick();
 

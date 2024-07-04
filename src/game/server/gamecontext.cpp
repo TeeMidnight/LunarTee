@@ -82,7 +82,7 @@ CGameContext::~CGameContext()
 {
 	for(auto& pPlayer : m_apPlayers)
 		delete pPlayer.second;
-	for(auto &pPlayer : m_pBotPlayers)
+	for(auto &pPlayer : m_vpBotPlayers)
 		delete pPlayer.second;
 	for(auto &pWorld : m_pWorlds)
 		delete pWorld.second;
@@ -549,13 +549,13 @@ void CGameContext::OnTick()
 
 	for(auto& BotID : m_vDeadBots)
 	{
-		if(m_pBotPlayers[BotID]->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
+		if(m_vpBotPlayers[BotID]->m_pBotData->m_Type == EBotType::BOTTYPE_TRADER)
 			Datas()->Trade()->RemoveTrade(-BotID);
 
-		m_pBotPlayers[BotID]->m_pBotData->m_Count--;
+		m_vpBotPlayers[BotID]->m_pBotData->m_Count--;
 
-		delete m_pBotPlayers[BotID];
-		m_pBotPlayers.erase(BotID);
+		delete m_vpBotPlayers[BotID];
+		m_vpBotPlayers.erase(BotID);
 	}
 	m_vDeadBots.clear();
 
@@ -567,7 +567,7 @@ void CGameContext::OnTick()
 		pPlayer.second->PostTick();
 	}
 
-	for(auto& pBotPlayer : m_pBotPlayers)
+	for(auto& pBotPlayer : m_vpBotPlayers)
 	{
 		if(pBotPlayer.second)
 		{
@@ -1815,12 +1815,12 @@ void CGameContext::ConAbout(IConsole::IResult *pResult, void *pUserData)
 
 	char aThanksList[256];
 
-	str_copy(aThanksList, "necropotame, DDNet, Kurosio");
+	str_copy(aThanksList, "necropotame, DDNet, Kurosio, ChillerDragon, fokkonaut");
 	// necropotame made this frame, Localization from Kurosio.
 
 	pSelf->SendChatTarget_Localization(ClientID, "====={STR}=====", MOD_NAME);
 	pSelf->SendChatTarget_Localization(ClientID, _("{STR} by {STR}"), 
-		MOD_NAME , "RemakePower");
+		MOD_NAME , "Bamcane");
 	pSelf->SendChatTarget_Localization(ClientID, _("Thanks {STR}"), aThanksList);
 	
 }
@@ -2112,7 +2112,7 @@ void CGameContext::OnSnap(int ClientID)
 
 	m_pController->Snap(ClientID);
 
-	for(auto& pBotPlayer : m_pBotPlayers)
+	for(auto& pBotPlayer : m_vpBotPlayers)
 	{
 		pBotPlayer.second->SnapBot(ClientID);
 	}
@@ -2161,15 +2161,15 @@ int CGameContext::GetPlayerNum() const
 
 CPlayer *CGameContext::GetBotWithCID(int ClientID)
 {
-	if(m_pBotPlayers.count(ClientID))
-		return m_pBotPlayers[ClientID];
+	if(m_vpBotPlayers.count(ClientID))
+		return m_vpBotPlayers[ClientID];
 	return nullptr;
 }
 
 int CGameContext::GetBotNum(CGameWorld *pGameWorld) const
 {
 	int Num = 0;
-	for(auto& pBotPlayer : m_pBotPlayers)
+	for(auto& pBotPlayer : m_vpBotPlayers)
 	{
 		if(pBotPlayer.second->GameWorld() == pGameWorld && 
 			(pBotPlayer.second->GetCharacter() && !pBotPlayer.second->GetCharacter()->Pickable()
@@ -2181,12 +2181,12 @@ int CGameContext::GetBotNum(CGameWorld *pGameWorld) const
 
 int CGameContext::GetBotNum() const
 {
-	return (int) m_pBotPlayers.size();
+	return (int) m_vpBotPlayers.size();
 }
 
 void CGameContext::OnBotDead(int ClientID)
 {
-	if(!m_pBotPlayers.count(ClientID))
+	if(!m_vpBotPlayers.count(ClientID))
 		return;
 
 	m_vDeadBots.push_back(ClientID);
@@ -2195,7 +2195,7 @@ void CGameContext::OnBotDead(int ClientID)
 void CGameContext::UpdateBot()
 {
 	m_FirstFreeBotID = -2;
-	while(m_pBotPlayers.count(m_FirstFreeBotID))
+	while(m_vpBotPlayers.count(m_FirstFreeBotID))
 	{
 		m_FirstFreeBotID --;
 	}
@@ -2205,8 +2205,8 @@ void CGameContext::CreateBot(CGameWorld *pGameWorld, SBotData *pBotData)
 {
 	UpdateBot();
 
-	m_pBotPlayers[m_FirstFreeBotID] = new CPlayer(pGameWorld, m_FirstFreeBotID, 0, pBotData);
-	m_pBotPlayers[m_FirstFreeBotID]->TryRespawn();
+	m_vpBotPlayers[m_FirstFreeBotID] = new CPlayer(pGameWorld, m_FirstFreeBotID, 0, pBotData);
+	m_vpBotPlayers[m_FirstFreeBotID]->TryRespawn();
 
 	pBotData->m_Count++;
 }
@@ -2328,13 +2328,12 @@ bool distCompare(std::pair<float, int> a, std::pair<float, int> b)
 
 void CGameContext::UpdatePlayerMaps(int ClientID)
 {
-	if(Server()->Tick() % g_Config.m_SvMapUpdateRate != 0)
-		return;
-
 	if(!Server()->ClientIngame(ClientID)) 
 		return;
-
 	if(!m_apPlayers.count(ClientID))
+		return;
+
+	if((Server()->Tick() - m_apPlayers[ClientID]->m_ScoreStartTick) % g_Config.m_SvMapUpdateRate != 0)
 		return;
 
 	int *pMap = Server()->GetIdMap(ClientID);
@@ -2374,7 +2373,7 @@ void CGameContext::UpdatePlayerMaps(int ClientID)
 		}
 	}
 
-	for(auto& pBotPlayer : m_pBotPlayers)
+	for(auto& pBotPlayer : m_vpBotPlayers)
 	{
 		if(pBotPlayer.second->GameWorld() != m_apPlayers[ClientID]->GameWorld())
 			continue;

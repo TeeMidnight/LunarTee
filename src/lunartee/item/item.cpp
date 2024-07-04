@@ -123,7 +123,7 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 	std::vector<CMenuOption> Options;
 
 	Options.push_back(CMenuOption(_("Craft Menu"), 0, "# {STR} "));
-	Options.push_back(CMenuOption("#", 0, "{STR}"));
+	Options.push_back(CMenuOption("", 0, "{STR}"));
 
 	char aCmd[VOTE_CMD_LENGTH];
 	char aCmdCraft[VOTE_CMD_LENGTH];
@@ -136,12 +136,12 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 		str_format(aCmd, sizeof(aCmd), "LIST %s", aUuidStr);
 		if(Uuid == Type.first)
 		{
-			Options.push_back(CMenuOption(pThis->Menu()->Localize(Type.first), aCmd, "* {STR} ▲"));
+			Options.push_back(CMenuOption(pThis->Menu()->Localize(Type.first), aCmd, "= {STR} ▲"));
 			continue;
 		}
 		else
 		{
-			Options.push_back(CMenuOption(pThis->Menu()->Localize(Type.first), aCmd, "* {STR} ▼"));
+			Options.push_back(CMenuOption(pThis->Menu()->Localize(Type.first), aCmd, "= {STR} ▼"));
 		}
 
 		for(auto &Item : Type.second)
@@ -156,7 +156,7 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 
 			if(str_comp(pSelect, aUuidStr) == 0)
 			{
-				Options.push_back(CMenuOption(pThis->Menu()->Localize(Item.m_Uuid), aCmd, "= {STR} ▼"));
+				Options.push_back(CMenuOption(pThis->Menu()->Localize(Item.m_Uuid), aCmd, "* {STR} ▼"));
 				Options.push_back(CMenuOption(_("Requires"), aCmd, "- {STR}:"));
 				
 				char aBuf[VOTE_DESC_LENGTH];
@@ -174,10 +174,12 @@ void CItemCore::MenuCraft(int ClientID, const char* pCmd, const char* pReason, v
 					pThis->Menu()->Localize(_("Craft")),
 					pThis->Menu()->Localize(Item.m_Uuid).c_str());
 				Options.push_back(CMenuOption(aBuf, aCmdCraft, "@ {STR}"));
+				Options.push_back(CMenuOption("", 0, "{STR}"));
 			}
 			else 
-				Options.push_back(CMenuOption(pThis->Menu()->Localize(Item.m_Uuid), aCmd, "= {STR} ▲"));
+				Options.push_back(CMenuOption(pThis->Menu()->Localize(Item.m_Uuid), aCmd, "* {STR} ▲"));
 		}
+		Options.push_back(CMenuOption("", 0, "{STR}"));
 	}
 
 	pThis->Menu()->UpdateMenu(ClientID, Options, "CRAFT");
