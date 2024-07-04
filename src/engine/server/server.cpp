@@ -1991,8 +1991,8 @@ void CServer::UpdateRegisterServerInfo()
 		ClientCount++;
 	}
 
-	int MaxPlayers = minimum(PlayerCount, 255);
-	int MaxClients = minimum(((ClientCount / 64) + 1) * 64, 256);
+	int MaxPlayers = minimum(PlayerCount, SERVERINFO_MAX_CLIENTS - 1);
+	int MaxClients = minimum(ClientCount + 1, (int) SERVERINFO_MAX_CLIENTS);
 	char aName[256];
 	char aGameType[32];
 	char aVersion[64];
