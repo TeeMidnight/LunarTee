@@ -24,11 +24,12 @@ public:
 	IStorage *m_pStorage;
 	IConsole *m_pConsole;
 	CServer *m_pServer;
-	
+
+	struct SLayerTilemap* m_pHookableLayer;
+	struct SLayerTilemap* m_pUnhookableLayer;
+
 	CTile* m_pBackGroundTiles;
 	CTile* m_pGameTiles;
-	CTile* m_pHookableTiles;
-	CTile* m_pUnhookableTiles;
 	CTile* m_pDoodadsTiles;
 
 	class SGroupInfo *m_pMainGroup;
@@ -48,12 +49,12 @@ public:
 	void GenerateDoodadsLayer();
 	void GenerateCenter();
 
-	void GenerateMap();
+	void GenerateMap(bool CreateCenter);
 
 	CMapGen(IStorage *pStorage, IConsole* pConsole, CServer *pServer);
 	~CMapGen();
 
-	bool CreateMap(const char *pFilename);
+	bool CreateMap(const char *pFilename, bool CreateCenter);
 	bool CreateMenu(const char *pFilename);
 };
 

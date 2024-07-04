@@ -2279,7 +2279,7 @@ int CServer::GenerateMap(const char *pMapName)
 {
 	CMapGen MapGen(Storage(), Console(), this);
 	
-	if(!MapGen.CreateMap(pMapName))
+	if(!MapGen.CreateMap(pMapName, true))
 		return 0;
 
 	LoadMap(pMapName);

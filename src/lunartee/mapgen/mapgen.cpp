@@ -33,8 +33,6 @@ CMapGen::CMapGen(IStorage *pStorage, IConsole* pConsole, CServer *pServer) :
 	m_pBackGroundTiles = 0;
 	m_pGameTiles = 0;
 	m_pDoodadsTiles = 0;
-	m_pHookableTiles = 0;
-	m_pUnhookableTiles = 0;
 
 	m_HookableReady = false;
 	m_UnhookableReady = false;
@@ -137,50 +135,6 @@ void CMapGen::GenerateGameLayer()
 	{
 		Thread.join();
 	}
-
-	// create spawn center (for moon)
-	{
-		// spawn center
-		int GenerateHeight = (int)(0.03f * Height + 3);
-		for(int x = Width/2-17;x < Width/2+17; x ++)
-		{
-			for(int y = -GenerateHeight-1;y < GenerateHeight+1; y ++)
-			{
-				if((x == Width/2-17) || (x == Width/2+16) || (y == -GenerateHeight-1) || (y == GenerateHeight))
-				{
-					m_pGameTiles[(y + Height/7*6)*Width+x].m_Index = TILE_SOLID;
-					m_pBackGroundTiles[(y + Height/7*6)*Width+x].m_Index = 1;
-				}
-				else 
-				{
-					m_pGameTiles[(y + Height/7*6)*Width+x].m_Index = TILE_MOONCENTER;
-					m_pBackGroundTiles[(y + Height/7*6)*Width+x].m_Index = 1;
-				}
-			}
-		}
-
-		// Out area
-		for(int x = Width/2-3;x < Width/2+3; x ++)
-		{
-			for(int y = 0;y < Height/7*6-GenerateHeight; y ++)
-			{
-				if(m_pGameTiles[y * Width + x].m_Index)
-				{
-					if((x == Width/2-3) || (x == Width/2+2))
-					{
-						m_pBackGroundTiles[y * Width + x].m_Index = 1;
-						m_pGameTiles[y * Width + x].m_Index = TILE_SOLID;
-					}
-					else 
-					{
-						m_pBackGroundTiles[y * Width + x].m_Index = 1;
-						m_pGameTiles[y * Width + x].m_Index = TILE_MOONCENTER;
-					}
-				}
-			}
-		}
-	}
-	
 
 	// create border
 	for(int x = 0;x < Width; x ++)
@@ -309,50 +263,29 @@ void CMapGen::GenerateHookable(CMapGen *pParent)
 {
 	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
 	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
-	SLayerTilemap *pLayer = pParent->m_pMainGroup->AddTileLayer("Hookable");
-	pLayer->m_pImage = pParent->m_pMapCreater->AddEmbeddedImage("grass_main_moon");
 
-	pParent->m_pHookableTiles = pLayer->AddTiles(Width, Height);
+	CTile *pTiles = pParent->m_pHookableLayer->AddTiles(Width, Height);
 
-	auto FillThread = [pParent, Width, Height](int ChunkX, int ChunkY)
+	for(int x = 0; x < Width; x ++)
 	{
-		for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x ++)
+		for(int y = 0; y < Height; y ++)
 		{
-			for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y ++)
+			pTiles[y * Width + x].m_Flags = 0;
+			pTiles[y * Width + x].m_Reserved = 0;
+			pTiles[y * Width + x].m_Skip = 0;
+			if(pParent->m_pGameTiles[y * Width + x].m_Index == TILE_SOLID || pParent->m_pGameTiles[y * Width + x].m_Index == TILE_NOHOOK)
 			{
-				pParent->m_pHookableTiles[y * Width + x].m_Flags = 0;
-				pParent->m_pHookableTiles[y * Width + x].m_Reserved = 0;
-				pParent->m_pHookableTiles[y * Width + x].m_Skip = 0;
-				if(pParent->m_pGameTiles[y * Width + x].m_Index == TILE_SOLID || pParent->m_pGameTiles[y * Width + x].m_Index == TILE_NOHOOK)
-				{
-					pParent->m_pHookableTiles[y * Width + x].m_Index = 1;
-				}else 
-				{
-					pParent->m_pHookableTiles[y * Width + x].m_Index = 0;
-				}
+				pTiles[y * Width + x].m_Index = 1;
+			}else 
+			{
+				pTiles[y * Width + x].m_Index = 0;
 			}
 		}
-	};
-
-	std::vector<std::thread> vThreads;
-	for(int x = 0; x < MAP_CHUNK_WIDTH; x ++)
-	{
-		for(int y = 0; y < MAP_CHUNK_HEIGHT; y ++)
-		{
-			vThreads.push_back(std::thread(FillThread, x, y));
-		}
 	}
-
-	for(auto &Thread : vThreads)
-	{
-		Thread.join();
-	}
-
-	vThreads.clear();
 
 	pParent->m_HookableReady = true;
 
-	pParent->m_pMapCreater->AutoMap(pLayer, "Default");
+	pParent->m_pMapCreater->AutoMap(pParent->m_pHookableLayer, "Default");
 }
 
 void CMapGen::GenerateUnhookable(CMapGen *pParent)
@@ -360,32 +293,22 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
 	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
 
-	SLayerTilemap *pLayer = pParent->m_pMainGroup->AddTileLayer("Unhookable");
+	CTile *pTiles = pParent->m_pUnhookableLayer->AddTiles(Width, Height);
 
-	pLayer->m_pImage = pParent->m_pMapCreater->AddExternalImage("generic_unhookable", 1024, 1024);
-	pParent->m_pUnhookableTiles = pLayer->AddTiles(Width, Height);
-
-	for(int x = 0;x < Width;x ++)
+	for(int x = 0; x < Width; x ++)
 	{
-		for(int y = 0;y < Height;y ++)
+		for(int y = 0; y < Height; y ++)
 		{
-			pParent->m_pUnhookableTiles[y * Width + x].m_Flags = 0;
-			pParent->m_pUnhookableTiles[y * Width + x].m_Reserved = 0;
-			pParent->m_pUnhookableTiles[y * Width + x].m_Skip = 0;
-			if(y > 1 && pParent->m_pGameTiles[y * Width + x].m_Index == TILE_NOHOOK)
-			{
-				pParent->m_pUnhookableTiles[y * Width + x].m_Index = 1;
-			}
-			else 
-			{
-				pParent->m_pUnhookableTiles[y * Width + x].m_Index = 0;
-			}
+			pTiles[y * Width + x].m_Flags = 0;
+			pTiles[y * Width + x].m_Reserved = 0;
+			pTiles[y * Width + x].m_Skip = 0;
+			pTiles[y * Width + x].m_Index = pParent->m_pGameTiles[y * Width + x].m_Index == TILE_NOHOOK;
 		}
 	}
 
 	pParent->m_UnhookableReady = true;
 
-	pParent->m_pMapCreater->AutoMap(pLayer, "Random Silver");
+	pParent->m_pMapCreater->AutoMap(pParent->m_pUnhookableLayer, "Random Silver");
 }
 
 void CMapGen::GenerateCenter()
@@ -417,6 +340,17 @@ void CMapGen::GenerateCenter()
 		{
 			for(int y = -GenerateHeight-1;y < GenerateHeight+1; y ++)
 			{
+				if((x == Width/2-17) || (x == Width/2+16) || (y == -GenerateHeight-1) || (y == GenerateHeight))
+				{
+					m_pGameTiles[(y + Height/7*6)*Width+x].m_Index = TILE_SOLID;
+					m_pBackGroundTiles[(y + Height/7*6)*Width+x].m_Index = 1;
+				}
+				else 
+				{
+					m_pGameTiles[(y + Height/7*6)*Width+x].m_Index = TILE_MOONCENTER;
+					m_pBackGroundTiles[(y + Height/7*6)*Width+x].m_Index = 1;
+				}
+
 				if(m_pGameTiles[(y + Height/7*6)*Width+x].m_Index == 1)
 				{
 					pTiles[(y + Height/7*6)*Width+x].m_Index = 1;
@@ -429,6 +363,19 @@ void CMapGen::GenerateCenter()
 		{
 			for(int y = 0;y < Height/7*6-GenerateHeight; y ++)
 			{
+				if(m_pGameTiles[y * Width + x].m_Index)
+				{
+					if((x == Width/2-3) || (x == Width/2+2))
+					{
+						m_pBackGroundTiles[y * Width + x].m_Index = 1;
+						m_pGameTiles[y * Width + x].m_Index = TILE_SOLID;
+					}
+					else 
+					{
+						m_pBackGroundTiles[y * Width + x].m_Index = 1;
+						m_pGameTiles[y * Width + x].m_Index = TILE_MOONCENTER;
+					}
+				}
 				if(m_pGameTiles[y * Width + x].m_Index == 1)
 				{
 					pTiles[y * Width + x].m_Index = 1;
@@ -438,7 +385,7 @@ void CMapGen::GenerateCenter()
 	}
 }
 
-void CMapGen::GenerateMap()
+void CMapGen::GenerateMap(bool CreateCenter)
 {
 	// Generate background
 	GenerateBackground();
@@ -447,8 +394,20 @@ void CMapGen::GenerateMap()
 	// fast generate
 	{
 		m_pMainGroup = m_pMapCreater->AddGroup("Tiles");
+
 		// Generate doodads tile
 		GenerateDoodadsLayer();
+		{
+			m_pHookableLayer = m_pMainGroup->AddTileLayer("Hookable");
+			m_pHookableLayer->m_pImage = m_pMapCreater->AddEmbeddedImage("grass_main_moon");
+		}
+		{
+			m_pUnhookableLayer = m_pMainGroup->AddTileLayer("Unhookable");
+			m_pUnhookableLayer->m_pImage = m_pMapCreater->AddExternalImage("generic_unhookable", 1024, 1024);
+		}
+		// Generate center
+		if(CreateCenter)
+			GenerateCenter();
 		// Generate hookable tile
 		std::thread(&CMapGen::GenerateHookable, this).join();
 		// Generate unhookable tile
@@ -456,17 +415,15 @@ void CMapGen::GenerateMap()
 	}
 
 	while(!m_HookableReady || !m_UnhookableReady) {}
-	// Generate moon center
-	GenerateCenter();
 }
 
-bool CMapGen::CreateMap(const char *pFilename)
+bool CMapGen::CreateMap(const char *pFilename, bool CreateCenter)
 {
 	m_pMapCreater = new CMapCreater(Storage(), Console());
 
 	int64_t Time = time_get();
 
-	GenerateMap();
+	GenerateMap(CreateCenter);
 
 	float UseTime = (time_get() - Time) / (float) time_freq();
 	dbg_msg("mapgen", "generate map in %.02f seconds", UseTime);
