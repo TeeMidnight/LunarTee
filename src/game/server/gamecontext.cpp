@@ -2272,7 +2272,6 @@ static char *EscapeJson(char *pBuffer, int BufferSize, const char *pString)
 
 void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)
 {
-	dbg_msg("yee", "%d", m_apPlayers.count(ID));
 	if(!m_apPlayers.count(ID))
 		return;
 
