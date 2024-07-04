@@ -62,7 +62,6 @@
 #endif
 
 volatile sig_atomic_t InterruptSignaled = 0;
-static std::vector<int> s_ClientsRemoveList;
 
 static const char *StrLtrim(const char *pStr)
 {
@@ -334,8 +333,6 @@ CServer::CServer() : m_DemoRecorder(&m_SnapshotDelta)
 
 	m_pMainMapData = nullptr;
 	m_pMenuMapData = nullptr;
-
-	s_ClientsRemoveList.clear();
 
 	Init();
 }
@@ -1609,7 +1606,7 @@ void CServer::CacheServerInfoSixup(CCache *pCache, bool SendClients)
 	}
 
 	char aVersion[32];
-	str_format(aVersion, sizeof(aVersion), "0.7↔0.6 Teeworlds", GameServer()->Version());
+	str_format(aVersion, sizeof(aVersion), "0.7↔0.6 Teeworlds");
 	Packer.AddString(aVersion, 32);
 	Packer.AddString(g_Config.m_SvName, 64);
 	Packer.AddString(g_Config.m_SvHostname, 128);
@@ -1682,7 +1679,7 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	} while(0)
 
 	char aVersion[32];
-	str_format(aVersion, sizeof(aVersion), "0.6↔0.7 Teeworlds", GameServer()->Version());
+	str_format(aVersion, sizeof(aVersion), "0.6↔0.7 Teeworlds");
 	p.AddString(aVersion, 32);
 	if(Type != SERVERINFO_VANILLA)
 	{
@@ -2014,7 +2011,6 @@ void CServer::UpdateRegisterServerInfo()
 	int MaxClients = maximum(m_NetServer.MaxClients(), ClientCount);
 	char aName[256];
 	char aGameType[32];
-	char aVersion[64];
 	char aMapSha256[SHA256_MAXSTRSIZE];
 
 	sha256_str(m_pMainMapData->m_MapSha256, aMapSha256, sizeof(aMapSha256));
@@ -2032,7 +2028,7 @@ void CServer::UpdateRegisterServerInfo()
 		"\"sha256\":\"%s\","
 		"\"size\":%d"
 		"},"
-		"\"version\":\"0.7↔%s\","
+		"\"version\":\"0.6↔0.7 Teeworlds\","
 		"\"client_score_kind\":\"score\","
 		"\"clients\":[",
 		MaxClients,
@@ -2042,8 +2038,7 @@ void CServer::UpdateRegisterServerInfo()
 		EscapeJson(aName, sizeof(aName), g_Config.m_SvName),
 		EscapeJson(aGameType, sizeof(aGameType), GameServer()->GameType()),
 		aMapSha256,
-		m_pMainMapData->m_MapSize,
-		EscapeJson(aVersion, sizeof(aVersion), "0.6↔0.7 Teeworlds"));
+		m_pMainMapData->m_MapSize);
 
 	bool FirstPlayer = true;
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -2407,12 +2402,6 @@ int CServer::Run()
 			if(!m_Active && m_MainMapLoaded)
 				PumpNetwork(PacketWaiting);
 
-			for(auto& ClientID : s_ClientsRemoveList)
-			{
-				m_aClients.erase(ClientID);
-			}
-			s_ClientsRemoveList.clear();
-
 			set_new_tick();
 
 			int64_t  t = time_get();
@@ -2609,11 +2598,7 @@ void CServer::DemoRecorder_HandleAutoStart()
 		char aDate[20];
 		str_timestamp(aDate, sizeof(aDate));
 		str_format(aFilename, sizeof(aFilename), "demos/%s_%s.demo", "auto/autorecord", aDate);
-<<<<<<< HEAD
 		m_DemoRecorder.Start(Storage(), m_pConsole, aFilename, "0.6 626fce9a778df4d4", m_pMainMapData->m_aMap, m_pMainMapData->m_MapCrc, "server");
-=======
-		m_DemoRecorder.Start(Storage(), m_pConsole, aFilename, GameServer()->NetVersion(), m_pMainMapData->m_aCurrentMap, m_pMainMapData->m_CurrentMapCrc, "server");
->>>>>>> parent of 9513c25 (Infinite players)
 		if(g_Config.m_SvAutoDemoMax)
 		{
 			// clean up auto recorded demos

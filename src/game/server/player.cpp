@@ -543,7 +543,7 @@ void CPlayer::TryRespawn()
 	m_Spawning = false;
 	m_pCharacter = new CCharacter(GameWorld());
 	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(SpawnPos);
+	GameWorld()->CreatePlayerSpawn(SpawnPos);
 }
 
 const char *CPlayer::GetLanguage()

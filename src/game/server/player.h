@@ -138,7 +138,7 @@ public:
 	// Bot
 	SBotData *m_pBotData;
 
-	bool IsBot() { return (m_ClientID >= MAX_CLIENTS); }
+	bool IsBot() { return (m_ClientID < 0); }
 	bool IsLogin() { return m_UserID > 0; }
 	int GetUserID() { return m_UserID; }
 	void Login(int UserID);

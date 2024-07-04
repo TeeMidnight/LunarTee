@@ -96,7 +96,6 @@ int CNetServer::Close()
 	return net_udp_close(m_Socket);
 }
 
-static std::vector<int> s_RemoveList;
 int CNetServer::Drop(int ClientID, const char *pReason)
 {
 	// TODO: insert lots of checks here
@@ -105,7 +104,6 @@ int CNetServer::Drop(int ClientID, const char *pReason)
 		m_pfnDelClient(ClientID, pReason, m_pUser);
 
 	m_aSlots[ClientID].m_Connection.Disconnect(pReason);
-	s_RemoveList.push_back(ClientID);
 
 	return 0;
 }
@@ -122,12 +120,6 @@ int CNetServer::Update()
 			Drop(i, m_aSlots[i].m_Connection.ErrorString());
 		}
 	}
-
-	for(auto &Remove : s_RemoveList)
-	{
-		m_aSlots.erase(Remove);
-	}
-	s_RemoveList.clear();
 	return 0;
 }
 

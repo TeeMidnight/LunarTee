@@ -17,7 +17,7 @@ void CWeaponGun::Fire(CGameWorld *pGameWorld, int Owner, vec2 Dir, vec2 Pos)
     (int)(GameServer()->Server()->TickSpeed()*pGameWorld->m_Core.m_Tuning.m_GunLifetime),
     GetDamage(), 0, 0, -1, WEAPON_GUN, 0);
 
-    GameServer()->CreateSound(Pos, SOUND_GUN_FIRE);
+    pGameWorld->CreateSound(Pos, SOUND_GUN_FIRE);
     
     return;
 }

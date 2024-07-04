@@ -43,11 +43,6 @@ enum
 	NO_RESET
 };
 
-
-CClientMask const& CmaskAll() { static CClientMask bs; static bool init = false; if (!init) { init = true; bs.set(); } return bs; }
-CClientMask CmaskOne(int ClientID) { CClientMask bs; bs[ClientID] = 1; return bs; }
-CClientMask CmaskAllExceptOne(int ClientID) { CClientMask bs; bs.set(); bs[ClientID] = 0; return bs; }
-
 void CGameContext::Construct(int Resetting)
 {
 	m_Resetting = 0;
@@ -87,7 +82,7 @@ CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		delete m_apPlayers[i];
-	for(auto &pPlayer : m_pBotPlayers)
+	for(auto &pPlayer : m_vpBotPlayers)
 		delete pPlayer.second;
 	for(auto &pWorld : m_pWorlds)
 		delete pWorld.second;
@@ -230,113 +225,9 @@ CGameWorld *CGameContext::FindWorldWithName(const char *WorldName)
 	return nullptr;
 }
 
-void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, CClientMask Mask)
-{
-	float a = 3 * pi / 2 + Angle;
-	//float a = get_angle(dir);
-	float s = a - pi / 3;
-	float e = a + pi / 3;
-	for(int i = 0; i < Amount; i++)
-	{
-		float f = mix(s, e, (i + 1) / (float)(Amount + 2));
-		CNetEvent_DamageInd *pEvent = m_Events.Create<CNetEvent_DamageInd>(Mask);
-		if(pEvent)
-		{
-			pEvent->m_X = (int)Pos.x;
-			pEvent->m_Y = (int)Pos.y;
-			pEvent->m_Angle = (int)(f * 256.0f);
-		}
-	}
-}
-
-void CGameContext::CreateHammerHit(vec2 Pos, CClientMask Mask)
-{
-	// create the event
-	CNetEvent_HammerHit *pEvent = m_Events.Create<CNetEvent_HammerHit>(Mask);
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
-}
-
-void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, CClientMask Mask)
-{
-	// create the event
-	CNetEvent_Explosion *pEvent = m_Events.Create<CNetEvent_Explosion>(Mask);
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
-
-	// deal damage
-	CGameWorld *pGameWorld = FindWorldWithClientID(Owner);
-
-	if(!pGameWorld)
-		return;
-
-	float Radius = 135.0f;
-	float InnerRadius = 48.0f;
-
-	for(CCharacter *pChr = (CCharacter *) pGameWorld->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChr; pChr = (CCharacter *) pChr->TypeNext())
-	{
-		vec2 Diff = pChr->m_Pos - Pos;
-		vec2 ForceDir(0, 1);
-		float l = length(Diff);
-		if(l)
-			ForceDir = normalize(Diff);
-		l = 1 - clamp((l - InnerRadius) / (Radius - InnerRadius), 0.0f, 1.0f);
-
-		float Dmg = 6.0f * l;
-		if(!(int)Dmg)
-			continue;
-
-		pChr->TakeDamage(ForceDir * Dmg * 2, NoDamage ? 0 : (int)Dmg, Owner, Weapon);
-	}
-}
-
-void CGameContext::CreatePlayerSpawn(vec2 Pos, CClientMask Mask)
-{
-	// create the event
-	CNetEvent_Spawn *pEvent = m_Events.Create<CNetEvent_Spawn>(Mask);
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
-}
-
-void CGameContext::CreateDeath(vec2 Pos, int ClientID, CClientMask Mask)
-{
-	// create the event
-	CNetEvent_Death *pEvent = m_Events.Create<CNetEvent_Death>(Mask);
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-		pEvent->m_ClientID = ClientID;
-	}
-}
-
-void CGameContext::CreateSound(vec2 Pos, int Sound, CClientMask Mask)
-{
-	if(Sound < 0)
-		return;
-
-	// create a sound
-	CNetEvent_SoundWorld *pEvent = m_Events.Create<CNetEvent_SoundWorld>(Mask);
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-		pEvent->m_SoundID = Sound;
-	}
-}
-
 void CGameContext::CreateSoundGlobal(int Sound, int Target)
 {
-	if (Sound < 0)
+	if(Sound < 0)
 		return;
 
 	CNetMsg_Sv_SoundGlobal Msg;
@@ -356,7 +247,7 @@ void CGameContext::CreateSoundGlobal(int Sound, int Target)
 
 			if(Server()->IsSixup(Target))
 			{
-				CreateSound(m_apPlayers[Target]->m_ViewPos, Sound, CmaskOne(Target));
+				m_apPlayers[Target]->GameWorld()->CreateSound(m_apPlayers[Target]->m_ViewPos, Sound, m_apPlayers[Target]->GameWorld()->WorldMaskOne(Target));
 				return;
 			}
 
@@ -371,7 +262,7 @@ void CGameContext::CreateSoundGlobal(int Sound, int Target)
 
 				if(Server()->IsSixup(i))
 				{
-					CreateSound(m_apPlayers[i]->m_ViewPos, Sound, CmaskOne(i));
+					m_apPlayers[i]->GameWorld()->CreateSound(m_apPlayers[i]->m_ViewPos, Sound, m_apPlayers[i]->GameWorld()->WorldMaskOne(Target));
 					continue;
 				}
 
@@ -2040,6 +1931,7 @@ void CGameContext::ConTimeout(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *) pUserData;
 
+	int ClientID = pResult->GetClientID();
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS)
 		return;
 
@@ -2167,7 +2059,6 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
-	m_Events.SetGameServer(this);
 
 	//if(!data) // only load once
 		//data = load_data_from_memory(internal_data);
@@ -2223,7 +2114,6 @@ void CGameContext::OnSnap(int ClientID)
 	}
 
 	m_pController->Snap(ClientID);
-	m_Events.Snap(ClientID);
 
 	for(auto& pBotPlayer : m_vpBotPlayers)
 	{
@@ -2241,17 +2131,16 @@ void CGameContext::OnSnap(int ClientID)
 void CGameContext::OnPreSnap() {}
 void CGameContext::OnPostSnap()
 {
-	m_Events.Clear();
 }
 
 bool CGameContext::IsClientReady(int ClientID)
 {
-	return m_apPlayers.count(ClientID) && m_apPlayers[ClientID]->m_IsReady ? true : false;
+	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->m_IsReady ? true : false;
 }
 
 bool CGameContext::IsClientPlayer(int ClientID)
 {
-	return m_apPlayers.count(ClientID) && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
+	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
 }
 
 int CGameContext::GetClientVersion(int ClientID) const
@@ -2397,9 +2286,6 @@ static char *EscapeJson(char *pBuffer, int BufferSize, const char *pString)
 
 void CGameContext::OnUpdatePlayerServerInfo(char *aBuf, int BufSize, int ID)
 {
-	if(!m_apPlayers.count(ID))
-		return;
-
 	if(!m_apPlayers[ID])
 		return;
 

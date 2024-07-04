@@ -44,11 +44,6 @@
 			All players (CPlayer::snap)
 
 */
-CClientMask const& CmaskAll();
-CClientMask CmaskOne(int ClientID);
-CClientMask CmaskAllExceptOne(int ClientID);
-
-inline bool CmaskIsSet(CClientMask const& Mask, int ClientID) { return Mask[ClientID]; }
 
 class CGameContext : public IGameServer
 {
@@ -110,7 +105,7 @@ public:
 	CGameWorld *CreateNewWorld(IMap *pMap, const char *WorldName, bool Menu);
 
 	CPlayer *m_apPlayers[MAX_CLIENTS];
-	std::unordered_map<int, CPlayer*> m_pBotPlayers;
+	std::unordered_map<int, CPlayer*> m_vpBotPlayers;
 
 	CGameController *m_pController;
 	CBotController *m_pBotController;
@@ -153,12 +148,6 @@ public:
 	CGameWorld *FindWorldWithName(const char *WorldName);
 
 	// helper functions
-	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount, CClientMask Mask = CClientMask().set());
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, CClientMask Mask = CClientMask().set());
-	void CreateHammerHit(vec2 Pos, CClientMask Mask = CClientMask().set());
-	void CreatePlayerSpawn(vec2 Pos, CClientMask Mask = CClientMask().set());
-	void CreateDeath(vec2 Pos, int ClientID, CClientMask Mask = CClientMask().set());
-	void CreateSound(vec2 Pos, int Sound, CClientMask Mask = CClientMask().set());
 	void CreateSoundGlobal(int Sound, int Target=-1);
 
 

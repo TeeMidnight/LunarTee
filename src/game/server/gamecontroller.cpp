@@ -332,8 +332,6 @@ bool CGameController::CanJoinTeam(int Team, int NotThisID)
 
 bool CGameController::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 {
-	int aT[2] = {0, 0};
-
 	if (!IsTeamplay() || JoinTeam == TEAM_SPECTATORS)
 		return true;
 	return true;

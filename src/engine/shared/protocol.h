@@ -129,6 +129,4 @@ struct CIDMap
 	int m_IDMap[DDNET_MAX_CLIENTS];
 };
 
-typedef std::bitset<MAX_CLIENTS> CClientMask;
-
 #endif

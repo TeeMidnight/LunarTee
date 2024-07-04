@@ -43,27 +43,14 @@ void CGameWorld::SetGameServer(CGameContext *pGameServer)
 {
 	m_pGameServer = pGameServer;
 	m_pServer = m_pGameServer->Server();
+
+	m_Events.SetGameServer(pGameServer);
+	m_Events.SetGameWorld(this);
 }
 
 CEntity *CGameWorld::FindFirst(int Type)
 {
 	return Type < 0 || Type >= NUM_ENTTYPES ? 0 : m_apFirstEntityTypes[Type];
-}
-
-CClientMask CGameWorld::WorldMask()
-{
-	CClientMask Mask;
-	for(int i = 0; i < MAX_CLIENTS; ++i)
-	{
-		if(!GameServer()->m_apPlayers[i])
-			continue; // Player doesn't exist
-
-		if(GameServer()->m_apPlayers[i]->GameWorld() != this)
-			continue;
-
-		Mask.set(i);
-	}
-	return Mask;
 }
 
 void CGameWorld::FindEntities(vec2 Pos, float Radius, std::vector<CEntity*> *vpEnts, int Type)
@@ -123,9 +110,6 @@ void CGameWorld::RemoveEntity(CEntity *pEnt)
 //
 void CGameWorld::Snap(int SnappingClient)
 {
-	if(GameServer()->m_apPlayers[SnappingClient]->GameWorld() != this)
-		return;
-
 	for(int i = 0; i < NUM_ENTTYPES; i++)
 	{
 		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
@@ -135,6 +119,9 @@ void CGameWorld::Snap(int SnappingClient)
 			pEnt = m_pNextTraverseEntity;
 		}
 	}
+
+	m_Events.Snap(SnappingClient);
+	m_Events.Clear();
 }
 
 void CGameWorld::Reset()
@@ -339,4 +326,162 @@ int CGameWorld::CheckBotInRadius(vec2 Pos, float Radius)
 	}
 
 	return Num;
+}
+
+CEventMask CGameWorld::WorldMaskAll()
+{
+	CEventMask Mask;
+	for(auto& pPlayer : GameServer()->m_apPlayers)
+	{
+		if(!pPlayer)
+			continue;
+		if(pPlayer->GameWorld() != this)
+			continue;
+
+		Mask.Get(pPlayer->GetCID()) = true;
+	}
+	return Mask;
+}
+
+CEventMask CGameWorld::WorldMaskOne(int ClientID)
+{
+	CEventMask Mask;
+	Mask.Get(ClientID) = true;
+	return Mask;
+}
+
+CEventMask CGameWorld::WorldMaskAllExceptOne(int ClientID)
+{
+	CEventMask Mask = WorldMaskAll();
+	Mask.Get(ClientID) = false;
+	return Mask;
+}
+
+void CGameWorld::CreateDamageInd(vec2 Pos, float Angle, int Amount, CEventMask Mask)
+{
+	float a = 3 * pi / 2 + Angle;
+	//float a = get_angle(dir);
+	float s = a - pi / 3;
+	float e = a + pi / 3;
+	for(int i = 0; i < Amount; i++)
+	{
+		float f = mix(s, e, (i + 1) / (float)(Amount + 2));
+		CNetEvent_DamageInd *pEvent = m_Events.Create<CNetEvent_DamageInd>(Mask);
+		if(pEvent)
+		{
+			pEvent->m_X = (int)Pos.x;
+			pEvent->m_Y = (int)Pos.y;
+			pEvent->m_Angle = (int)(f * 256.0f);
+		}
+	}
+}
+
+void CGameWorld::CreateHammerHit(vec2 Pos, CEventMask Mask)
+{
+	// create the event
+	CNetEvent_HammerHit *pEvent = m_Events.Create<CNetEvent_HammerHit>(Mask);
+	if(pEvent)
+	{
+		pEvent->m_X = (int)Pos.x;
+		pEvent->m_Y = (int)Pos.y;
+	}
+}
+
+void CGameWorld::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, CEventMask Mask)
+{
+	// create the event
+	CNetEvent_Explosion *pEvent = m_Events.Create<CNetEvent_Explosion>(Mask);
+	if(pEvent)
+	{
+		pEvent->m_X = (int)Pos.x;
+		pEvent->m_Y = (int)Pos.y;
+	}
+
+	float Radius = 135.0f;
+	float InnerRadius = 48.0f;
+
+	for(CCharacter *pChr = (CCharacter *) FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChr; pChr = (CCharacter *) pChr->TypeNext())
+	{
+		vec2 Diff = pChr->m_Pos - Pos;
+		vec2 ForceDir(0, 1);
+		float l = length(Diff);
+		if(l)
+			ForceDir = normalize(Diff);
+		l = 1 - clamp((l - InnerRadius) / (Radius - InnerRadius), 0.0f, 1.0f);
+
+		float Dmg = 6.0f * l;
+		if(!(int)Dmg)
+			continue;
+
+		pChr->TakeDamage(ForceDir * Dmg * 2, NoDamage ? 0 : (int)Dmg, Owner, Weapon);
+	}
+}
+
+void CGameWorld::CreatePlayerSpawn(vec2 Pos, CEventMask Mask)
+{
+	// create the event
+	CNetEvent_Spawn *pEvent = m_Events.Create<CNetEvent_Spawn>(Mask);
+	if(pEvent)
+	{
+		pEvent->m_X = (int)Pos.x;
+		pEvent->m_Y = (int)Pos.y;
+	}
+}
+
+void CGameWorld::CreateDeath(vec2 Pos, int ClientID, CEventMask Mask)
+{
+	// create the event
+	CNetEvent_Death *pEvent = m_Events.Create<CNetEvent_Death>(Mask);
+	if(pEvent)
+	{
+		pEvent->m_X = (int)Pos.x;
+		pEvent->m_Y = (int)Pos.y;
+		pEvent->m_ClientID = ClientID;
+	}
+}
+
+void CGameWorld::CreateSound(vec2 Pos, int Sound, CEventMask Mask)
+{
+	if(Sound < 0)
+		return;
+
+	// create a sound
+	CNetEvent_SoundWorld *pEvent = m_Events.Create<CNetEvent_SoundWorld>(Mask);
+	if(pEvent)
+	{
+		pEvent->m_X = (int)Pos.x;
+		pEvent->m_Y = (int)Pos.y;
+		pEvent->m_SoundID = Sound;
+	}
+}
+
+
+void CGameWorld::CreateDamageInd(vec2 Pos, float Angle, int Amount)
+{
+	CreateDamageInd(Pos, Angle, Amount, WorldMaskAll());
+}
+
+void CGameWorld::CreateHammerHit(vec2 Pos)
+{
+	CreateHammerHit(Pos, WorldMaskAll());
+}
+
+void CGameWorld::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage)
+{
+	CreateExplosion(Pos, Owner, Weapon, NoDamage, WorldMaskAll());
+}
+
+void CGameWorld::CreatePlayerSpawn(vec2 Pos)
+{
+	CreatePlayerSpawn(Pos, WorldMaskAll());
+}
+
+void CGameWorld::CreateDeath(vec2 Pos, int ClientID)
+{
+	CreateDeath(Pos, ClientID, WorldMaskAll());
+}
+
+void CGameWorld::CreateSound(vec2 Pos, int Sound)
+{
+	CreateSound(Pos, Sound, WorldMaskAll());
 }
