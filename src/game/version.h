@@ -8,7 +8,7 @@
 #include "generated/nethash.cpp"
 
 #define MOD_NAME "LunarTee"
-#define MOD_VERSION "b0.1.4"
+#define MOD_VERSION "b0.1.5pre1"
 
 #define DDNET_VERSIONNR 17100
 #define DATAPACK_VERSION 5
