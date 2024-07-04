@@ -113,6 +113,23 @@ void CCharacter::DestroyChar()
 	if(m_pPlayer->IsBot())
 		GameServer()->OnBotDead(GetCID());
 }
+// F-DDrace
+void CCharacter::SendBroadcastHUD(const char *pMessage)
+{
+	char aBuf[256] = "";
+	for (int i = 0; i < (Server()->IsSixup(m_pPlayer->GetCID()) ? 0 : 4); i++)
+		str_append(aBuf, "\n", sizeof(aBuf));
+
+	str_append(aBuf, pMessage, sizeof(aBuf));
+
+	if(!Server()->IsSixup(m_pPlayer->GetCID()))
+	{
+		for(int i = 0; i < 128; i++)
+			str_append(aBuf, " ", sizeof(aBuf));
+	}
+
+	GameServer()->SendBroadcast(aBuf, m_pPlayer->GetCID());
+}
 
 void CCharacter::SetWeapon(int W)
 {
@@ -214,6 +231,12 @@ void CCharacter::DoWeaponSwitch()
 	// make sure we can switch
 	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1)
 		return;
+
+	if(m_QueuedWeapon != m_ActiveWeapon)
+	{
+		SendBroadcastHUD(GameServer()->LocalizeFormat(m_pPlayer->GetLanguage(), "> {UUID}", 
+			g_Weapons.m_aWeapons[m_QueuedWeapon]->GetItemUuid()));
+	}
 
 	// switch Weapon
 	SetWeapon(m_QueuedWeapon);

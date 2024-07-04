@@ -40,6 +40,8 @@ public:
 	void HandleWeaponSwitch();
 	void DoWeaponSwitch();
 
+	void SendBroadcastHUD(const char *pMessage);
+
 	void HandleWeapons();
 	void HandleNinja();
 	void HandleEvents();
