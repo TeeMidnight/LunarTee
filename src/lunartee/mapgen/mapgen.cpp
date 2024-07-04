@@ -334,29 +334,7 @@ void CMapGen::GenerateCenter()
 
 	// create spawn center (for moon)
 	{
-		// spawn center
 		int GenerateHeight = (int)(0.03f * Height + 3);
-		for(int x = Width/2-17;x < Width/2+17; x ++)
-		{
-			for(int y = -GenerateHeight-1;y < GenerateHeight+1; y ++)
-			{
-				if((x == Width/2-17) || (x == Width/2+16) || (y == -GenerateHeight-1) || (y == GenerateHeight))
-				{
-					m_pGameTiles[(y + Height/7*6)*Width+x].m_Index = TILE_SOLID;
-					m_pBackGroundTiles[(y + Height/7*6)*Width+x].m_Index = 1;
-				}
-				else 
-				{
-					m_pGameTiles[(y + Height/7*6)*Width+x].m_Index = TILE_MOONCENTER;
-					m_pBackGroundTiles[(y + Height/7*6)*Width+x].m_Index = 1;
-				}
-
-				if(m_pGameTiles[(y + Height/7*6)*Width+x].m_Index == 1)
-				{
-					pTiles[(y + Height/7*6)*Width+x].m_Index = 1;
-				}
-			}
-		}
 
 		// Out area
 		for(int x = Width/2-3;x < Width/2+3; x ++)
@@ -379,6 +357,29 @@ void CMapGen::GenerateCenter()
 				if(m_pGameTiles[y * Width + x].m_Index == 1)
 				{
 					pTiles[y * Width + x].m_Index = 1;
+				}
+			}
+		}
+
+		// spawn center
+		for(int x = Width/2-17;x < Width/2+17; x ++)
+		{
+			for(int y = -GenerateHeight - 1;y < GenerateHeight + 1; y ++)
+			{
+				if((x == Width/2-17) || (x == Width/2+16) || (y == -GenerateHeight-1) || (y == GenerateHeight))
+				{
+					m_pGameTiles[(y + Height/7*6)*Width+x].m_Index = m_pGameTiles[(y + Height/7*6)*Width+x].m_Index != TILE_MOONCENTER ? TILE_SOLID : TILE_AIR;
+					m_pBackGroundTiles[(y + Height/7*6)*Width+x].m_Index = 1;
+				}
+				else 
+				{
+					m_pGameTiles[(y + Height/7*6)*Width+x].m_Index = TILE_MOONCENTER;
+					m_pBackGroundTiles[(y + Height/7*6)*Width+x].m_Index = 1;
+				}
+
+				if(m_pGameTiles[(y + Height/7*6)*Width+x].m_Index == 1)
+				{
+					pTiles[(y + Height/7*6)*Width+x].m_Index = 1;
 				}
 			}
 		}
