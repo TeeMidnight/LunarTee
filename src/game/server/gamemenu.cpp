@@ -168,7 +168,7 @@ bool CMenu::UseOptions(const char *pDesc, const char *pReason, int ClientID)
     
     auto pOption = FindOption(pDesc, ClientID);
     
-    if(pOption == 0x0)
+    if(pOption == nullptr)
     {
         return false;
     }
