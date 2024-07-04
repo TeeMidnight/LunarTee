@@ -634,7 +634,9 @@ void CCharacter::TickDefered()
 	// advance the dummy
 	{
 		CGameWorld TempWorld;
+		TempWorld.m_Core.m_Tuning = *m_pPlayer->GetNextTuningParams();
 		TempWorld.m_Core.m_Tuning.m_Gravity = 0.5f;
+
 		m_ReckoningCore.Init(&TempWorld.m_Core, Collision());
 		m_ReckoningCore.Tick(false, &TempWorld.m_Core.m_Tuning);
 		m_ReckoningCore.Move(&TempWorld.m_Core.m_Tuning);
