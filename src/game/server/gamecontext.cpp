@@ -2776,132 +2776,138 @@ void CGameContext::DoRegisterLogin(const char* PinHash, int ClientID, bool Timeo
 		return;
 	}
 
-	std::string Buffer;
-
-	CUuid Uuid = CalculateUuid(Server()->ClientName(ClientID));
-
-	char aUuidStr[UUID_MAXSTRSIZE];
-	FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
-
-	Buffer.append("WHERE Uuid='");
-	Buffer.append(aUuidStr);
-	Buffer.append("';");
-
-	SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
-		Buffer.c_str(), "*");
-
-	if(!pSqlResult)
+	std::thread([this, PinHash](int ClientID, bool TimeoutCode)
 	{
-		return;
-	}
+		char aPinHash[64];
+		str_copy(aPinHash, PinHash);
 
-	if(!pSqlResult->size()) // register part
-	{
-		nlohmann::json Json;
-		if(TimeoutCode)
-		{
-			Json = {{"TimeoutCode", PinHash}, 
-				{"Nickname", Server()->ClientName(ClientID)}};
-			SendChatTarget_Localization(ClientID, _("Auto registered! Because of your timeout code!"));
-			SendChatTarget_Localization(ClientID, _("Don't forget to use /pin to set your pin!"));
-		}
-		else
-		{
-			Json = {{"Pin", PinHash}, 
-				{"Nickname", Server()->ClientName(ClientID)}};
+		std::string Buffer;
 
-			SendChatTarget_Localization(ClientID, _("Registered with pin."));
-		}
-		Buffer.clear();
-		Buffer.append("(Uuid, Data) VALUES ('");
+		CUuid Uuid = CalculateUuid(Server()->ClientName(ClientID));
+
+		char aUuidStr[UUID_MAXSTRSIZE];
+		FormatUuid(Uuid, aUuidStr, sizeof(aUuidStr));
+
+		Buffer.append("WHERE Uuid='");
 		Buffer.append(aUuidStr);
-		Buffer.append("', '");
-		Buffer.append(Json.dump());
-		Buffer.append("');");
+		Buffer.append("';");
 
-		s_RegisterMutex.lock();
+		SqlResult *pSqlResult = Sql()->Execute<SqlType::SELECT>("lt_playerdata",
+			Buffer.c_str(), "*");
 
-		Sql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
-
-		s_RegisterMutex.unlock();
-
-		DoRegisterLogin(PinHash, ClientID, TimeoutCode);
-	}
-	else // login part
-	{
-		SqlResult::const_iterator Iter = pSqlResult->begin(); // no need to use for()
-
-		nlohmann::json Json = nlohmann::json::parse(Iter["Data"].as<const char*>());
-		if(!Json.contains("Pin") && !Json.contains("TimeoutCode"))
+		if(!pSqlResult)
 		{
-			SendChatTarget_Localization(ClientID, _("Oops! The database of this server has something wrong!"));
 			return;
 		}
 
-		std::string Pin;
-		if(TimeoutCode)
+		if(!pSqlResult->size()) // register part
 		{
-			if(!Json.contains("TimeoutCode"))
+			nlohmann::json Json;
+			if(TimeoutCode)
 			{
-				SendChatTarget_Localization(ClientID, _("The account of this nickname doesn't have any timeout code."));
-				SendChatTarget_Localization(ClientID, _("Use the pin of account to login to set a new timeout code."));
-				return;
+				Json = {{"TimeoutCode", aPinHash}, 
+					{"Nickname", Server()->ClientName(ClientID)}};
+				SendChatTarget_Localization(ClientID, _("Auto registered! Because of your timeout code!"));
+				SendChatTarget_Localization(ClientID, _("Don't forget to use /pin to set your pin!"));
 			}
-			Pin = Json["TimeoutCode"];
-			if(Pin != PinHash)
+			else
 			{
-				SendChatTarget_Localization(ClientID, _("Wrong timeout code."));
-				SendChatTarget_Localization(ClientID, _("Use the pin of account to login to set a new timeout code."));
+				Json = {{"Pin", aPinHash}, 
+					{"Nickname", Server()->ClientName(ClientID)}};
 
+				SendChatTarget_Localization(ClientID, _("Registered with pin."));
+			}
+			Buffer.clear();
+			Buffer.append("(Uuid, Data) VALUES ('");
+			Buffer.append(aUuidStr);
+			Buffer.append("', '");
+			Buffer.append(Json.dump());
+			Buffer.append("');");
+
+			s_RegisterMutex.lock();
+
+			Sql()->Execute<SqlType::INSERT>("lt_playerdata", Buffer.c_str());
+
+			s_RegisterMutex.unlock();
+
+			DoRegisterLogin(aPinHash, ClientID, TimeoutCode);
+		}
+		else // login part
+		{
+			SqlResult::const_iterator Iter = pSqlResult->begin(); // no need to use for()
+
+			nlohmann::json Json = nlohmann::json::parse(Iter["Data"].as<const char*>());
+			if(!Json.contains("Pin") && !Json.contains("TimeoutCode"))
+			{
+				SendChatTarget_Localization(ClientID, _("Oops! The database of this server has something wrong!"));
 				return;
 			}
-		}
-		else 
-		{
+
+			std::string Pin;
+			if(TimeoutCode)
+			{
+				if(!Json.contains("TimeoutCode"))
+				{
+					SendChatTarget_Localization(ClientID, _("The account of this nickname doesn't have any timeout code."));
+					SendChatTarget_Localization(ClientID, _("Use the pin of account to login to set a new timeout code."));
+					return;
+				}
+				Pin = Json["TimeoutCode"];
+				if(Pin != aPinHash)
+				{
+					SendChatTarget_Localization(ClientID, _("Wrong timeout code."));
+					SendChatTarget_Localization(ClientID, _("Use the pin of account to login to set a new timeout code."));
+
+					return;
+				}
+			}
+			else 
+			{
+				if(!Json.contains("Pin"))
+				{
+					SendChatTarget_Localization(ClientID, _("The account of this nickname doesn't have any pin."));
+					SendChatTarget_Localization(ClientID, _("Use the timeout code of account to login to set a new pin."));
+					return;
+				}
+
+				Pin = Json["Pin"];
+				if(Pin != aPinHash)
+				{
+					SendChatTarget_Localization(ClientID, _("Wrong pin."));
+					SendChatTarget_Localization(ClientID, _("Use the timeout code of account to login to set a new pin."));
+
+					return;
+				}
+			}
+
+			SendChatTarget_Localization(ClientID, _("You are now logged in."));
+
 			if(!Json.contains("Pin"))
 			{
-				SendChatTarget_Localization(ClientID, _("The account of this nickname doesn't have any pin."));
-				SendChatTarget_Localization(ClientID, _("Use the timeout code of account to login to set a new pin."));
-				return;
+				SendChatTarget_Localization(ClientID, _("Warning!!! Please use /pin to set your pin!"));
 			}
 
-			Pin = Json["Pin"];
-			if(Pin != PinHash)
+			const char *pTimeoutCode = m_apPlayers[ClientID]->GetTimeoutCode();
+
+			m_apPlayers[ClientID]->m_Datas = Json;
+			m_apPlayers[ClientID]->Login(Iter["UserID"].as<int>());
+
+			Datas()->Item()->SyncInvItem(ClientID);
+
+			if(!pTimeoutCode || !pTimeoutCode[0])
+				return;
+
+			char aHash[64];
+			Crypt(pTimeoutCode, (const unsigned char*) "d9", 1, 14, aHash);
+
+			if(!Json.contains("TimeoutCode") || Json["TimeoutCode"] != pTimeoutCode)
 			{
-				SendChatTarget_Localization(ClientID, _("Wrong pin."));
-				SendChatTarget_Localization(ClientID, _("Use the timeout code of account to login to set a new pin."));
-
-				return;
+				m_apPlayers[ClientID]->m_Datas["TimeoutCode"] = aHash;
 			}
+
+			UpdatePlayerData(ClientID);
 		}
-
-		SendChatTarget_Localization(ClientID, _("You are now logged in."));
-
-		if(!Json.contains("Pin"))
-		{
-			SendChatTarget_Localization(ClientID, _("Warning!!! Please use /pin to set your pin!"));
-		}
-
-		const char *pTimeoutCode = m_apPlayers[ClientID]->GetTimeoutCode();
-
-		m_apPlayers[ClientID]->m_Datas = Json;
-		m_apPlayers[ClientID]->Login(Iter["UserID"].as<int>());
-
-		Datas()->Item()->SyncInvItem(ClientID);
-
-		if(!pTimeoutCode || !pTimeoutCode[0])
-			return;
-
-		char aHash[64];
-		Crypt(pTimeoutCode, (const unsigned char*) "d9", 1, 14, aHash);
-
-		if(!Json.contains("TimeoutCode") || Json["TimeoutCode"] != pTimeoutCode)
-		{
-			m_apPlayers[ClientID]->m_Datas["TimeoutCode"] = aHash;
-		}
-
-		UpdatePlayerData(ClientID);
-	}
+	}, ClientID, TimeoutCode).detach();
 }
 
 static std::mutex s_UpdateMutex;
