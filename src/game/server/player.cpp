@@ -61,7 +61,7 @@ void CPlayer::Reset()
 	m_Score = 0;
 	m_ScoreStartTick = Server()->Tick();
 	m_ForceBalanced = 0;
-	m_LastActionTick = 0;
+	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = 0;
 
 	m_Emote = EMOTE_NORMAL;
