@@ -24,6 +24,9 @@ LunarTee translation
 = '{STR}' entered the server
 ## '{STR}' 进入服务器
 
+= '{STR}' has bought your {UUID}x{INT}
+## 
+
 = '{STR}' is going to check the world
 ## '{STR}' 将去查看世界
 
@@ -180,6 +183,9 @@ LunarTee translation
 = You are now logged in.
 ## 你现在登录了.
 
+= You can't buy your own items.
+## 
+
 = You can't kick admins
 ## 你不能踢出管理
 
@@ -237,6 +243,9 @@ LunarTee translation
 = {STR} by {STR}
 ## {STR} by {STR}
 
+= {STR}'s Shop
+## {STR}的商店
+
 = {UUID}'s Shop
-## 
+## {UUID}的商店
 
