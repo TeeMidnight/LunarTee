@@ -106,7 +106,7 @@ void CPlayer::BotInit()
 				TradeData.m_Needs[Need.m_Uuid] = random_int(Need.m_MinNum, Need.m_MaxNum);
 			TradeData.m_Give.first = Trade.m_Give.m_Uuid;
 			TradeData.m_Give.second = random_int(Trade.m_Give.m_MinNum, Trade.m_Give.m_MaxNum);
-			Datas()->Trade()->AddTrade(-m_ClientID, TradeData);
+			Datas()->Trade()->AddTrade(m_ClientID, TradeData);
 		}
 	}
 	
