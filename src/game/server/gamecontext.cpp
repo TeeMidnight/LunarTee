@@ -167,10 +167,10 @@ CGameWorld *CGameContext::CreateNewWorld(IMap *pMap, const char *WorldName, bool
 
 class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 {
-	if(ClientID < 0)
-		return 0;
+	if(ClientID == -1)
+		return nullptr;
 	
-	CPlayer *pPlayer = (ClientID >= MAX_CLIENTS) ? GetBotWithCID(ClientID) : m_apPlayers[ClientID];
+	CPlayer *pPlayer = (ClientID < -1) ? GetBotWithCID(ClientID) : m_apPlayers[ClientID];
 
 	if(pPlayer && pPlayer->GetCharacter())
 		return pPlayer->GetCharacter();
@@ -180,10 +180,10 @@ class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 
 CPlayer *CGameContext::GetPlayer(int ClientID)
 {
-	if(ClientID < 0)
+	if(ClientID == -1)
 		return nullptr;
 	
-	CPlayer *pPlayer = (ClientID >= MAX_CLIENTS) ? GetBotWithCID(ClientID) : m_apPlayers[ClientID];
+	CPlayer *pPlayer = (ClientID < -1) ? GetBotWithCID(ClientID) : m_apPlayers[ClientID];
 
 	if(!pPlayer)
 		return nullptr;
